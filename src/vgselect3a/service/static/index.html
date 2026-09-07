@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VG Select: 3A</title>
+<style>
+  :root{
+    --vg-red:#96151D;--vg-red-dark:#6E0E14;--vg-red-tint:#F8ECED;--vg-red-mid:#C4353F;
+    --ink:#1E1E1E;--ink-2:#4A4A4A;--ink-3:#6F6F6F;--line:#D9D6D2;--line-2:#ECEAE6;
+    --paper:#F5F3F0;--card:#FFFFFF;--well:#FAF9F7;
+    --ok:#1B7F4C;--ok-tint:#E6F4EC;--warn:#A6620A;--warn-tint:#FBF1E2;--bad:#B3261E;--bad-tint:#FBE9E7;--info:#245E9E;--info-tint:#E7EFF9;
+    --r:10px;--shadow:0 1px 2px rgba(30,30,30,.06),0 4px 14px rgba(30,30,30,.05);
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 var(--font)}
+  a{color:var(--vg-red)}
+  :focus-visible{outline:3px solid #F2B8BC;outline-offset:2px;border-radius:6px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  /* header */
+  .hdr{background:var(--vg-red);color:#fff;padding:0 28px;height:64px;display:flex;align-items:center;gap:18px}
+  .hdr .brand{display:flex;align-items:center;gap:12px}
+  .hdr .mark{width:34px;height:34px;border-radius:8px;background:#fff;color:var(--vg-red);display:grid;place-items:center;font-weight:800;font-size:13px;letter-spacing:.02em}
+  .hdr h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.01em}
+  .hdr .sub{font-size:12.5px;opacity:.9;margin-top:-2px}
+  .hdr nav{margin-left:auto;display:flex;gap:6px}
+  .hdr nav a{color:#fff;text-decoration:none;font-size:13px;padding:7px 11px;border-radius:7px;border:1px solid rgba(255,255,255,.35)}
+  .hdr nav a:hover{background:rgba(255,255,255,.12)}
+  .band{background:var(--vg-red-dark);color:#fff;padding:9px 28px;font-size:13px;display:flex;gap:22px;flex-wrap:wrap}
+  .band b{font-weight:600}
+
+  /* layout */
+  main{display:grid;grid-template-columns:minmax(360px,440px) minmax(0,1fr);gap:22px;padding:22px 28px 60px;max-width:1680px;margin:0 auto}
+  @media (max-width:1040px){main{grid-template-columns:1fr;padding:16px}.inputs{position:static;max-height:none;overflow:visible}.hdr{padding:0 16px}.band{padding:9px 16px}}
+  .inputs{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);overflow:auto;padding-right:2px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:16px}
+  .card h2{font-size:16px;margin:0 0 4px;font-weight:700}
+  .card h3{font-size:13.5px;margin:18px 0 8px;font-weight:700;color:var(--ink-2);text-transform:uppercase;letter-spacing:.05em}
+  .lede{color:var(--ink-3);font-size:13px;margin:0 0 12px}
+
+  /* steps */
+  .step{display:flex;align-items:center;gap:10px;margin:14px 0 8px}
+  .step .n{width:26px;height:26px;border-radius:50%;background:var(--vg-red);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+  .step h2{margin:0;font-size:15px}
+  .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:var(--well);border:1px solid var(--line-2);padding:5px;border-radius:9px}
+  .seg button{border:0;background:transparent;padding:8px 6px;border-radius:7px;cursor:pointer;font:inherit;font-size:13px;color:var(--ink-2);font-weight:600}
+  .seg button[aria-selected="true"]{background:#fff;color:var(--vg-red);box-shadow:var(--shadow)}
+  .pane{display:none;margin-top:12px}.pane.on{display:block}
+
+  /* fields */
+  .field{margin-top:14px}
+  .lbl{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
+  .help{font-size:12px;color:var(--ink-3);margin-top:2px}
+  input[type=text],input[type=number],input[type=url],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff;color:var(--ink)}
+  input:hover,select:hover,textarea:hover{border-color:#b9b4ae}
+  input:focus,select:focus,textarea:focus{border-color:var(--vg-red);outline:none;box-shadow:0 0 0 3px #F2D0D3}
+  textarea{min-height:96px}
+  .unit{position:relative}.unit span{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:12px;pointer-events:none}
+  .unit input{padding-right:70px}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .pills label{border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer;background:#fff;user-select:none}
+  .pills input{position:absolute;opacity:0;width:0;height:0}
+  .pills label:has(input:checked){background:var(--vg-red);border-color:var(--vg-red);color:#fff}
+  .pills label:has(input:focus-visible){outline:3px solid #F2B8BC}
+  .switch{display:flex;align-items:center;gap:10px;margin-top:6px;cursor:pointer}
+  .switch input{appearance:none;width:40px;height:22px;border-radius:999px;background:#CFCAC4;position:relative;transition:background .15s;margin:0;cursor:pointer}
+  .switch input::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+  .switch input:checked{background:var(--vg-red)}.switch input:checked::after{left:21px}
+  .switch .txt{font-size:13px}
+  .slider{margin-top:6px}
+  .slider input{width:100%;accent-color:var(--vg-red)}
+  .slider .ends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-3)}
+  .slider .val{font-weight:700;color:var(--vg-red);font-size:12.5px;margin-left:6px}
+  details.grp{border-top:1px solid var(--line-2);margin-top:14px;padding-top:4px}
+  details.grp summary{cursor:pointer;font-weight:700;font-size:13.5px;padding:8px 0;list-style:none;display:flex;align-items:center;gap:8px}
+  details.grp summary::before{content:"";width:0;height:0;border-left:6px solid var(--ink-3);border-top:5px solid transparent;border-bottom:5px solid transparent;transition:transform .15s}
+  details.grp[open] summary::before{transform:rotate(90deg)}
+  details.grp summary .cnt{margin-left:auto;font-weight:500;font-size:12px;color:var(--ink-3)}
+  .cta{display:flex;gap:10px;margin-top:18px;align-items:center}
+  .btn{padding:11px 18px;border-radius:8px;border:1px solid var(--vg-red);background:var(--vg-red);color:#fff;font-weight:700;cursor:pointer;font:inherit;font-size:14px}
+  .btn:hover{background:var(--vg-red-dark)}
+  .btn.ghost{background:#fff;color:var(--vg-red)}
+  .btn.ghost:hover{background:var(--vg-red-tint)}
+  .btn.sm{padding:7px 12px;font-size:13px;font-weight:600}
+  .btn:disabled{opacity:.5;cursor:default}
+  .err{display:none;margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--bad-tint);color:var(--bad);font-weight:600;border-left:4px solid var(--bad)}
+  .err.on{display:block}
+  .summary{margin-top:14px;padding:12px 14px;border-radius:8px;background:var(--well);border:1px dashed var(--line);font-size:13px;color:var(--ink-2)}
+  .summary b{color:var(--ink)}
+  .drop{border:2px dashed var(--line);border-radius:10px;padding:16px;text-align:center;color:var(--ink-3);font-size:13px;cursor:pointer;margin-top:6px}
+  .drop.hot{border-color:var(--vg-red);background:var(--vg-red-tint);color:var(--vg-red)}
+  .drop b{color:var(--ink)}
+
+  /* tooltips */
+  .tip{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--ink-3);color:var(--ink-3);font-size:10px;font-weight:700;background:#fff;cursor:help;flex:none}
+  [data-tip]{position:relative}
+  [data-tip]::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 10px;border-radius:7px;font-size:12px;font-weight:500;line-height:1.4;width:max-content;max-width:280px;white-space:normal;text-align:left;opacity:0;pointer-events:none;transition:opacity .12s;z-index:50;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+  [data-tip]::before{content:"";position:absolute;left:50%;bottom:calc(100% + 3px);transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ink);opacity:0;transition:opacity .12s;z-index:50}
+  [data-tip]:hover::after,[data-tip]:hover::before,[data-tip]:focus-visible::after,[data-tip]:focus-visible::before{opacity:1}
+  [data-tip].dn::after{bottom:auto;top:calc(100% + 8px)}[data-tip].dn::before{bottom:auto;top:calc(100% + 3px);border-top-color:transparent;border-bottom-color:var(--ink)}
+  th[data-tip]{cursor:help;text-decoration:underline dotted var(--ink-3);text-underline-offset:3px}
+  .cite{display:inline-block;font-size:11px;color:var(--info);background:var(--info-tint);border-radius:5px;padding:1px 6px;cursor:help;margin-left:4px;font-weight:600}
+
+  /* results */
+  .empty{padding:36px 24px;text-align:center;color:var(--ink-3)}
+  .empty .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px;text-align:left}
+  .empty .steps div{background:var(--well);border:1px solid var(--line-2);border-radius:9px;padding:12px 14px;font-size:13px}
+  .empty .steps b{display:block;color:var(--ink);margin-bottom:3px}
+  .verdict{border-top:5px solid var(--vg-red)}
+  .verdict .top{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .verdict .name{font-size:24px;font-weight:800;letter-spacing:-.01em;margin:2px 0 4px}
+  .verdict .fam{font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+  .badge.ok{background:var(--ok-tint);color:var(--ok)}.badge.warn{background:var(--warn-tint);color:var(--warn)}.badge.bad{background:var(--bad-tint);color:var(--bad)}.badge.info{background:var(--info-tint);color:var(--info)}.badge.neutral{background:var(--line-2);color:var(--ink-2)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0 6px}
+  .tile{background:var(--well);border:1px solid var(--line-2);border-radius:9px;padding:12px 14px}
+  .tile .k{font-size:11.5px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px}
+  .tile .v{font-size:22px;font-weight:800;margin-top:2px}
+  .tile .v small{font-size:12px;color:var(--ink-3);font-weight:600;margin-left:4px}
+  .bar{height:6px;background:var(--line-2);border-radius:99px;margin-top:8px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--ok);border-radius:99px}
+  .bar i.warn{background:var(--warn)}.bar i.bad{background:var(--bad)}
+  .why li{margin:6px 0}
+  .why .d{font-family:var(--mono);font-size:12px;color:var(--ok);font-weight:700;margin-right:6px}
+  .why .d.neg{color:var(--bad)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .chip{background:var(--line-2);border-radius:6px;padding:3px 9px;font-size:12px}
+  .chip.red{background:var(--vg-red-tint);color:var(--vg-red);font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line-2);vertical-align:top}
+  th{color:var(--ink-3);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:var(--well)}
+  tr.primary td{background:var(--vg-red-tint)}
+  tr.nv td{color:#9a958f}
+  tr.nv td .nm{text-decoration:line-through}
+  .scorebar{display:inline-block;width:70px;height:7px;background:var(--line-2);border-radius:99px;vertical-align:middle;margin-right:6px;position:relative;overflow:hidden}
+  .scorebar i{position:absolute;top:0;bottom:0;background:var(--vg-red)}
+  .exp{cursor:pointer;color:var(--vg-red);font-weight:600;font-size:12px;background:none;border:0;font-family:inherit;padding:0}
+  .sig{display:none;background:var(--well)}
+  .sig.on{display:table-row}
+  .sig ul{margin:4px 0;padding-left:18px;font-size:12.5px}
+  .wrap{overflow-x:auto}
+  .conf{height:6px;width:60px;background:var(--line-2);border-radius:99px;display:inline-block;vertical-align:middle;margin-right:6px;overflow:hidden}
+  .conf i{display:block;height:100%;background:var(--info)}
+  .conf i.lo{background:var(--warn)}
+  .gap{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .gap .col{border:1px solid var(--line-2);border-radius:9px;padding:12px 14px;background:var(--well)}
+  .gap .col.rec{border-color:var(--vg-red);background:var(--vg-red-tint)}
+  .gap .col .t{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700}
+  .gap .col .n{font-weight:800;font-size:15px;margin:2px 0 8px}
+  .gap .col dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0;font-size:13px}
+  .gap dt{color:var(--ink-3)}.gap dd{margin:0;font-weight:600;text-align:right}
+  .comps{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:8px}
+  .comp{border:1px solid var(--line-2);border-radius:9px;padding:10px 12px;background:#fff;border-left:4px solid var(--vg-red)}
+  .comp.sonnet{border-left-color:var(--info)}.comp.haiku{border-left-color:#7FA7D6}.comp.code{border-left-color:#B5B0AA}
+  .comp .n{font-weight:700}.comp .m{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin:2px 0 4px}.comp .r{font-size:12.5px;color:var(--ink-2)}
+  .comp .pg{font-size:11px;color:var(--info);font-weight:700;margin-top:4px}
+  .diagram{border:1px solid var(--line-2);border-radius:9px;padding:8px;overflow:auto;background:#fff;margin-top:10px}
+  .diagram svg{max-width:100%;height:auto}
+  .check li{list-style:none;display:flex;gap:10px;align-items:flex-start;margin:8px 0}
+  .check input{margin-top:3px;accent-color:var(--vg-red)}
+  .check ul{padding:0;margin:0}
+  pre{background:#2A2A2A;color:#F2F2F2;padding:12px;border-radius:8px;overflow:auto;font-size:12px}
+  .muted{color:var(--ink-3);font-size:12.5px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .spin{display:inline-block;width:16px;height:16px;border:2px solid #E3C1C4;border-top-color:var(--vg-red);border-radius:50%;animation:s .9s linear infinite;vertical-align:middle;margin-right:8px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .chart{width:100%;height:240px;margin-top:8px}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--ink-3);flex-wrap:wrap;margin-top:6px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .sr{position:absolute;left:-9999px}
+  .toast{position:fixed;bottom:18px;right:18px;background:var(--ink);color:#fff;padding:10px 14px;border-radius:8px;font-size:13px;box-shadow:var(--shadow);display:none}
+  .toast.on{display:block}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="brand"><div class="mark">3A</div><div><h1>VG Select: 3A</h1><div class="sub">Automated Agentic Architecture</div></div></div>
+  <nav aria-label="Links"><a href="#" id="help-link">How it works</a><a href="/docs" target="_blank" rel="noopener">API docs</a></nav>
+</header>
+<div class="band" id="band"><span><b>Purpose</b> Recommend the architecture of an agentic application that balances latency and accuracy, with an evidence-cited rationale and a build plan.</span></div>
+
+<main>
+  <section class="inputs" aria-label="Inputs">
+    <div class="card">
+      <div class="step"><span class="n">1</span><h2>Start from</h2></div>
+      <div class="seg" role="tablist" aria-label="Input source">
+        <button role="tab" aria-selected="true" data-pane="example">Example</button>
+        <button role="tab" aria-selected="false" data-pane="scan">Scan code</button>
+        <button role="tab" aria-selected="false" data-pane="describe">Describe</button>
+        <button role="tab" aria-selected="false" data-pane="blank">Blank</button>
+      </div>
+      <div class="pane on" id="pane-example">
+        <div class="field"><div class="lbl">Pick a scenario <button class="tip" type="button" data-tip="Eight canonical workloads. Loading one fills every field below; edit anything before recommending." aria-label="About examples">i</button></div>
+          <select id="example" aria-label="Example scenario"><option value="">Choose a scenario…</option></select></div>
+      </div>
+      <div class="pane" id="pane-scan">
+        <p class="lede">Scanning reads your code for tools, data sources, side effects and existing agent loops, and pre-fills the profile with a confidence for each inference. Your entries in step 2 override anything inferred.</p>
+        <div class="field"><div class="lbl">Upload a zip of the repository <button class="tip" type="button" data-tip="Zip the project folder. Dependency and build directories (node_modules, .git, venv, dist) are skipped automatically. Nothing is executed; the archive is deleted after the scan." aria-label="About upload">i</button></div>
+          <label class="drop" id="drop" for="zip"><b>Drop a .zip here</b> or click to choose<input type="file" id="zip" accept=".zip,application/zip" class="sr"></label><div class="help" id="zipname"></div></div>
+        <div class="field"><div class="lbl">Or a path on the server <button class="tip" type="button" data-tip="Only directories under the service's configured scan roots are allowed. The status line at the bottom shows which." aria-label="About server path">i</button></div><input type="text" id="scan-path" placeholder="/scan/my-repo"></div>
+        <div class="field"><div class="lbl">Or a git URL <button class="tip" type="button" data-tip="Shallow clone into a temporary directory, scanned and deleted. Must be enabled on the server." aria-label="About git URL">i</button></div><input type="url" id="scan-git" placeholder="https://github.com/org/repo.git"></div>
+        <div class="cta"><button class="btn" id="btn-scan">Scan and pre-fill profile</button></div>
+      </div>
+      <div class="pane" id="pane-describe">
+        <p class="lede">Describe the application in plain language. Claude fills in the profile; the recommendation itself stays deterministic. Needs Anthropic credentials on the server.</p>
+        <div class="field"><textarea id="describe-text" placeholder="A support agent that looks up orders, issues refunds and opens tickets. 20k chats a day; answers within about 8 seconds; refunds must never be wrong."></textarea></div>
+        <div class="cta"><button class="btn" id="btn-describe">Infer profile and recommend</button></div>
+      </div>
+      <div class="pane" id="pane-blank"><p class="lede">Fill in step 2 from scratch. Every field has a sensible default; the ones that matter most are marked.</p></div>
+
+      <div class="step"><span class="n">2</span><h2>Describe the workload</h2><span class="muted" id="setcount"></span></div>
+      <form id="profile-form" aria-label="Workload profile"></form>
+      <div class="summary" id="summary" aria-live="polite"></div>
+
+      <div class="step"><span class="n">3</span><h2>Get the recommendation</h2></div>
+      <div class="cta"><button class="btn" id="btn-recommend">Recommend architecture</button><button class="btn ghost" id="btn-reset" type="button">Reset</button></div>
+      <div class="err" id="error" role="alert"></div>
+    </div>
+    <div class="card muted" id="status">Loading field definitions…</div>
+  </section>
+
+  <section id="results" aria-live="polite" aria-label="Results">
+    <div class="card empty">
+      <div style="font-size:15px;color:var(--ink)"><b>Your recommendation will appear here.</b></div>
+      <div>Three steps: pick a starting point, describe the workload, get a ranked, cited recommendation with a build plan.</div>
+      <div class="steps">
+        <div><b>1 · Start</b>Load a scenario, scan a repository, or describe the app.</div>
+        <div><b>2 · Describe</b>Set the latency budget, how costly errors are, and cost sensitivity. These drive the trade-off.</div>
+        <div><b>3 · Decide</b>Compare options on latency, cost and evidence; take the plan and next steps to your design review.</div>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+const title = n => n.replace(/_s$/, ' (seconds)').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
+let FIELDS = [], CITES = {}, EXTRAS = {}, LAST = null, LAST_SCAN = null;
+
+const GROUPS = {meta:"About the application", task:"Task shape", tools:"Tools", knowledge:"Knowledge and context", quality:"Quality and risk", ops:"Operating constraints"};
+const KEY = new Set(['task_complexity','steps_predictable','parallel_subtasks','latency_budget_s','accuracy_priority','cost_sensitivity','tool_calls_per_task','retrieval_depth']);
+const UNITS = {latency_budget_s:'seconds', tool_latency_s:'seconds', context_tokens_per_task:'tokens', requests_per_day:'per day'};
+const ENDS = {accuracy_priority:['Best effort is fine','Errors are very costly'], cost_sensitivity:['Cost is no concern','Cost dominates']};
+const OPTION_TIPS = {
+  task_complexity:{trivial:'Lookup or classification; one obvious step.', simple:'One-step generation.', moderate:'A few dependent steps.', complex:'Many dependent steps needing judgment.', open_ended:'Steps cannot be enumerated in advance; the model must explore.'},
+  retrieval_depth:{none:'No retrieval.', single_lookup:'One query answers it (classic RAG in code).', multi_hop:'Follow-up queries depend on earlier results.', exhaustive:'Breadth-first coverage across many documents or sources.'},
+  tool_side_effects:{read_only:'Tools only read.', reversible_writes:'Drafts, files under version control, staged changes.', irreversible:'Sends email, moves money, deletes, creates tickets.'},
+  output_type:{short_answer:'A sentence or a paragraph.', structured_data:'JSON / records for a system.', long_document:'Reports, specs, articles.', code_change:'Edits to a code base.', action:'The deliverable is something done in the world.'},
+};
+const HEAD_TIPS = {
+  score:'Fit plus the latency and cost adjustments. Higher is better. Roughly: one strong rule ≈ +3; missing the budget by 50% ≈ −2.',
+  fit:'Sum of the evidence-based rules that fired for this topology (positive and negative). See the reasons below each row.',
+  latency:'Estimated p50 end-to-end latency on the critical path (parallel branches count once). Order-of-magnitude, from published serving assumptions and your tool latency.',
+  budget:'How the latency estimate compares with your budget: fits (≤70%), tight (≤100%), exceeds (≤2x), far over.',
+  cost:'List-price cost per request summing every model call, without prompt caching.',
+  tokens:'Total tokens relative to one plain model call. Anthropic reports agents ≈4x chat and multi-agent ≈15x.',
+  calls:'Number of model calls on a typical request.',
+};
+
+async function init(){
+  try{
+    [FIELDS, CITES] = await Promise.all([fetch('/api/v1/fields').then(r=>r.json()), fetch('/api/v1/citations').then(r=>r.json())]);
+    buildForm();
+    const ex = await fetch('/api/v1/examples').then(r=>r.json());
+    for(const e of ex){ const o=document.createElement('option'); o.value=e.name; o.textContent=`${title(e.name)} — ${e.description}`; o.dataset.profile=JSON.stringify(e.profile); $('#example').appendChild(o); }
+    const h = await fetch('/health').then(r=>r.json());
+    $('#status').innerHTML = `<b>${esc(h.product)}</b> v${esc(h.version)} &middot; scan by path: ${h.scan_roots.length? esc(h.scan_roots.join(', ')) : 'disabled (use zip upload)'} &middot; git clone: ${h.git_clone_enabled?'on':'off'} &middot; describe: ${h.describe_enabled?'on':'off'}`;
+    updateSummary();
+  }catch(e){ showError('Could not load field definitions: '+e.message); }
+}
+
+function buildForm(){
+  const form = $('#profile-form'); form.innerHTML='';
+  const groups = {};
+  for(const f of FIELDS) (groups[f.group] ||= []).push(f);
+  for(const [g, fs] of Object.entries(groups)){
+    const d = document.createElement('details'); d.className='grp'; d.open = (g==='meta'||g==='task'||g==='ops');
+    d.innerHTML = `<summary>${GROUPS[g]||g}<span class="cnt">${fs.length} fields</span></summary>`;
+    for(const f of fs) d.appendChild(fieldEl(f));
+    form.appendChild(d);
+  }
+  form.addEventListener('input', updateSummary);
+  form.addEventListener('change', updateSummary);
+}
+function fieldEl(f){
+  const wrap = document.createElement('div'); wrap.className='field';
+  const key = KEY.has(f.name) ? '<span class="badge info" style="font-size:10px;padding:1px 7px">key</span>' : '';
+  wrap.innerHTML = `<div class="lbl">${title(f.name)} ${key}<button class="tip" type="button" data-tip="${esc(f.description)}" aria-label="About ${esc(f.name)}">i</button></div>`;
+  let el;
+  if(f.kind==='enum' && f.choices.length<=5){
+    el = document.createElement('div'); el.className='pills'; el.setAttribute('role','radiogroup');
+    for(const c of f.choices){ const tip = (OPTION_TIPS[f.name]||{})[c]; el.insertAdjacentHTML('beforeend', `<label ${tip?`data-tip="${esc(tip)}" class="dn"`:''}><input type="radio" name="${f.name}" value="${c}" ${c===f.default?'checked':''}>${c.replace(/_/g,' ')}</label>`); }
+  } else if(f.kind==='enum'){
+    el = document.createElement('select'); el.name=f.name; for(const c of f.choices){const o=document.createElement('option');o.value=c;o.textContent=c;el.appendChild(o);} el.value=f.default;
+  } else if(f.kind==='bool'){
+    el = document.createElement('label'); el.className='switch'; el.innerHTML = `<input type="checkbox" name="${f.name}" ${f.default?'checked':''}><span class="txt">${f.default?'Yes':'No'}</span>`;
+    el.querySelector('input').addEventListener('change', e=>{ el.querySelector('.txt').textContent = e.target.checked?'Yes':'No'; });
+  } else if(f.kind==='int' && f.minimum===1 && f.maximum===5){
+    el = document.createElement('div'); el.className='slider';
+    el.innerHTML = `<div><input type="range" name="${f.name}" min="1" max="5" step="1" value="${f.default}" aria-valuetext="${f.default} of 5"><span class="val">${f.default} / 5</span></div><div class="ends"><span>${ENDS[f.name]?.[0]||'Low'}</span><span>${ENDS[f.name]?.[1]||'High'}</span></div>`;
+    el.querySelector('input').addEventListener('input', e=>{ el.querySelector('.val').textContent = e.target.value+' / 5'; });
+  } else if(f.kind==='str'){
+    el = document.createElement(f.name==='description'?'textarea':'input'); if(el.tagName==='INPUT') el.type='text'; el.name=f.name; el.value=f.default||''; if(f.name==='description') el.style.minHeight='64px';
+  } else {
+    el = document.createElement('div'); el.className='unit';
+    el.innerHTML = `<input type="number" name="${f.name}" step="${f.kind==='float'?'any':'1'}" ${f.minimum!=null?`min="${f.minimum}"`:''} ${f.maximum!=null?`max="${f.maximum}"`:''} value="${f.default}">${UNITS[f.name]?`<span>${UNITS[f.name]}</span>`:''}`;
+  }
+  wrap.appendChild(el);
+  if(f.name==='single_agent_baseline') wrap.insertAdjacentHTML('beforeend','<div class="help">Leave at −1 if you have not measured it. Values above 0.45 penalise multi-agent options.</div>');
+  return wrap;
+}
+function readForm(onlyChanged=false){
+  const form=$('#profile-form'), out={};
+  for(const f of FIELDS){
+    let v;
+    if(f.kind==='enum' && f.choices.length<=5){ const c=form.querySelector(`input[name="${f.name}"]:checked`); v=c?c.value:f.default; }
+    else if(f.kind==='bool'){ v=form.querySelector(`input[name="${f.name}"]`).checked; }
+    else { const el=form.elements[f.name]; if(!el) continue; v=el.value; if(f.kind==='int') v=parseInt(v,10); else if(f.kind==='float') v=parseFloat(v); }
+    if(Number.isNaN(v)) continue;
+    if(onlyChanged && String(v)===String(f.default)) continue;
+    out[f.name]=v;
+  }
+  return out;
+}
+function fillForm(p){
+  const form=$('#profile-form');
+  for(const f of FIELDS){
+    if(p[f.name]===undefined) continue;
+    if(f.kind==='enum' && f.choices.length<=5){ const r=form.querySelector(`input[name="${f.name}"][value="${p[f.name]}"]`); if(r) r.checked=true; }
+    else if(f.kind==='bool'){ const c=form.querySelector(`input[name="${f.name}"]`); c.checked=!!p[f.name]; c.dispatchEvent(new Event('change')); }
+    else { const el=form.elements[f.name]; if(el){ el.value=String(p[f.name]); el.dispatchEvent(new Event('input')); } }
+  }
+  updateSummary();
+}
+function updateSummary(){
+  const p=readForm(); if(!FIELDS.length) return;
+  const changed=Object.keys(readForm(true)).length; $('#setcount').textContent = changed? `${changed} of ${FIELDS.length} changed from defaults` : 'all defaults';
+  const acc=['','best effort','some care','balanced','errors costly','errors very costly'][p.accuracy_priority]||'';
+  const cost=['','cost no concern','cost minor','cost matters','cost important','cost dominates'][p.cost_sensitivity]||'';
+  $('#summary').innerHTML = `You are asking for a <b>${esc(p.task_complexity)}</b> task, ${p.steps_predictable?'with steps <b>fixed in code</b>':'where the <b>model chooses the steps</b>'}, ${p.tool_calls_per_task?`about <b>${p.tool_calls_per_task} tool calls</b>`:'<b>no tools</b>'}, retrieval <b>${esc(p.retrieval_depth)}</b>, answered within <b>${p.latency_budget_s}s</b>; ${acc}; ${cost}.`;
+}
+
+/* tabs */
+document.querySelectorAll('.seg [role=tab]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.seg [role=tab]').forEach(x=>x.setAttribute('aria-selected','false')); b.setAttribute('aria-selected','true');
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on')); $('#pane-'+b.dataset.pane).classList.add('on');
+}));
+$('#example').addEventListener('change', e=>{ const o=e.target.selectedOptions[0]; if(o&&o.dataset.profile){ const p=JSON.parse(o.dataset.profile); fillForm(p); EXTRAS={}; for(const k of ['domains','sources','tools','subtasks','sections']) if(p[k]) EXTRAS[k]=p[k]; toast('Scenario loaded. Adjust anything, then recommend.'); } });
+$('#btn-reset').addEventListener('click', ()=>{ buildForm(); EXTRAS={}; $('#example').value=''; updateSummary(); });
+$('#help-link').addEventListener('click', e=>{ e.preventDefault(); $('#results').innerHTML = helpCard(); window.scrollTo({top:0}); });
+const drop=$('#drop'); ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hot');})); ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('hot');}));
+drop.addEventListener('drop', e=>{ $('#zip').files=e.dataTransfer.files; $('#zipname').textContent=$('#zip').files[0]?.name||''; });
+$('#zip').addEventListener('change', ()=>{ $('#zipname').textContent=$('#zip').files[0]?.name||''; });
+
+function busy(on,msg){ document.querySelectorAll('.btn').forEach(b=>b.disabled=on); if(on) $('#results').innerHTML=`<div class="card"><span class="spin"></span>${esc(msg||'Working…')}</div>`; }
+function showError(m){ const e=$('#error'); e.textContent=m; e.classList.toggle('on', !!m); }
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'), 2600); }
+async function post(url, body, isForm){ const r = await fetch(url, isForm? {method:'POST', body} : {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}); const j=await r.json(); if(!r.ok) throw new Error(typeof j.detail==='string'? j.detail : JSON.stringify(j.detail)); return j; }
+
+$('#btn-recommend').addEventListener('click', async e=>{
+  e.preventDefault(); showError('');
+  const profile={...EXTRAS, ...readForm()};
+  busy(true,'Scoring ten topologies…');
+  try{ render(await post('/api/v1/recommend',{profile})); }
+  catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
+});
+$('#btn-scan').addEventListener('click', async e=>{
+  e.preventDefault(); showError('');
+  const overrides=readForm(true);
+  busy(true,'Scanning repository…');
+  try{
+    let j;
+    if($('#zip').files.length){ const fd=new FormData(); fd.append('archive',$('#zip').files[0]); fd.append('overrides',JSON.stringify(overrides)); j=await post('/api/v1/scan/upload', fd, true); }
+    else { const body={overrides}; if($('#scan-path').value) body.path=$('#scan-path').value; else if($('#scan-git').value) body.git_url=$('#scan-git').value; else throw new Error('Choose a zip, a server path, or a git URL.'); j=await post('/api/v1/scan', body); }
+    fillForm(j.profile); EXTRAS={tools:j.profile.tools, sources:j.profile.sources};
+    render(j.recommendation, j.scan); toast('Profile pre-filled from the scan. Review the low-confidence fields.');
+  }catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
+});
+$('#btn-describe').addEventListener('click', async e=>{
+  e.preventDefault(); showError(''); busy(true,'Asking Claude to infer the profile…');
+  try{ const j=await post('/api/v1/describe',{text:$('#describe-text').value}); fillForm(j.profile); render(j); }
+  catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
+});
+
+/* rendering */
+const cite = k => `<span class="cite" data-tip="${esc(CITES[k]||k)}" tabindex="0">${esc(k.replace(/_/g,' ').toLowerCase())}</span>`;
+const verdictClass = v => v==='fits'?'ok': v==='tight'?'warn':'bad';
+const verdictText = v => ({fits:'Fits the budget', tight:'Tight against budget', exceeds:'Exceeds budget', 'far over':'Far over budget'})[v]||v;
+function pct(n,d){ return Math.max(2, Math.min(100, Math.round(100*n/d))); }
+
+function render(rec, scan){
+  LAST=rec; LAST_SCAN=scan||null;
+  const byId = Object.fromEntries(rec.candidates.map(c=>[c.topology,c]));
+  const best=rec.candidates[0], p=rec.profile, budget=p.latency_budget_s;
+  const ratio = best.estimate.latency_s/budget;
+  const pos=best.signals.filter(s=>s.delta>0).sort((a,b)=>b.delta-a.delta);
+  const neg=best.signals.filter(s=>s.delta<0).sort((a,b)=>a.delta-b.delta);
+  let h = `<div class="card verdict">
+    <div class="top"><div style="flex:1"><div class="fam">Recommended architecture · ${esc(best.family.replace('_',' '))}</div><div class="name">${esc(best.name)}</div>
+      <div><span class="badge ${verdictClass(best.latency_verdict)}">${esc(verdictText(best.latency_verdict))}</span> ${scan? (scan.current_topology===best.topology? '<span class="badge ok">Matches current implementation</span>' : `<span class="badge neutral">Currently: ${esc(byId[scan.current_topology]?.name||scan.current_topology)}</span>`):''}</div></div>
+      <div class="toolbar"><button class="btn sm" id="dl-pdf" data-tip="A4 architecture document: summary, evidence, options compared, plan with diagram, next steps, assumptions, sources." class="dn">Architecture doc (PDF)</button><button class="btn sm" id="dl-skel" data-tip="Runnable LangGraph project for this topology: graph wiring, role agents on the recommended models, tool stubs, limits, tests.">LangGraph skeleton (.zip)</button><button class="btn sm ghost" id="dl-md">Markdown</button><button class="btn sm ghost" id="dl-json">JSON</button></div></div>
+    <div class="tiles">
+      <div class="tile"><div class="k">Est. latency <button class="tip" data-tip="${esc(HEAD_TIPS.latency)}" aria-label="About latency">i</button></div><div class="v">~${Math.round(best.estimate.latency_s)}s<small>of ${budget}s budget</small></div><div class="bar"><i class="${ratio>1?'bad':ratio>0.7?'warn':''}" style="width:${pct(best.estimate.latency_s,budget)}%"></i></div></div>
+      <div class="tile"><div class="k">Cost / request <button class="tip" data-tip="${esc(HEAD_TIPS.cost)}" aria-label="About cost">i</button></div><div class="v">$${best.estimate.cost_usd.toFixed(3)}</div></div>
+      <div class="tile"><div class="k">Tokens <button class="tip" data-tip="${esc(HEAD_TIPS.tokens)}" aria-label="About tokens">i</button></div><div class="v">${Math.round(best.estimate.token_multiplier)}x<small>one call</small></div></div>
+      <div class="tile"><div class="k">Score <button class="tip" data-tip="${esc(HEAD_TIPS.score)}" aria-label="About score">i</button></div><div class="v">${best.score>0?'+':''}${best.score.toFixed(1)}</div></div>
+    </div>
+    <p>${md(rec.headline)}</p>
+    <h3>Why this architecture</h3><ul class="why">${pos.slice(0,6).map(s=>`<li><span class="d">+${s.delta.toFixed(1)}</span>${esc(s.rationale)} ${cite(s.citation)}</li>`).join('')||'<li>No rule specifically favours it; it wins on viability, latency and cost. Treat the runners-up as close calls.</li>'}</ul>
+    ${neg.length?`<details><summary class="muted" style="cursor:pointer">Counter-signals to keep in mind (${neg.length})</summary><ul class="why">${neg.map(s=>`<li><span class="d neg">${s.delta.toFixed(1)}</span>${esc(s.rationale)} ${cite(s.citation)}</li>`).join('')}</ul></details>`:''}
+  </div>`;
+
+  if(scan){
+    const cur = byId[scan.current_topology];
+    h += `<div class="card"><h2>What the scan found</h2><p class="lede">${scan.files_scanned} files read. Inferences below are starting points; anything you set in step 2 overrides them.</p>
+      <div class="chips">${scan.frameworks.map(f=>`<span class="chip red">${esc(f)}</span>`).join('')}<span class="chip">${scan.tools.length} tools</span><span class="chip">${scan.knowledge_sources.length? 'sources: '+esc(scan.knowledge_sources.join(', ')) : 'no retrieval'}</span>${scan.side_effects.map(s=>`<span class="chip">${esc(s)}</span>`).join('')}</div>
+      ${scan.warnings.map(w=>`<div class="badge warn" style="margin:4px 0">${esc(w)}</div>`).join('')}
+      ${cur && cur.topology!==best.topology ? `<h3>Current vs. recommended</h3><div class="gap">
+        <div class="col"><div class="t">As implemented</div><div class="n">${esc(cur.name)}</div><dl><dt>Score</dt><dd>${cur.score.toFixed(1)}</dd><dt>Latency</dt><dd>~${Math.round(cur.estimate.latency_s)}s</dd><dt>Cost / req</dt><dd>$${cur.estimate.cost_usd.toFixed(3)}</dd><dt>Tokens</dt><dd>${Math.round(cur.estimate.token_multiplier)}x</dd></dl></div>
+        <div class="col rec"><div class="t">Recommended</div><div class="n">${esc(best.name)}</div><dl><dt>Score</dt><dd>${best.score.toFixed(1)}</dd><dt>Latency</dt><dd>~${Math.round(best.estimate.latency_s)}s</dd><dt>Cost / req</dt><dd>$${best.estimate.cost_usd.toFixed(3)}</dd><dt>Tokens</dt><dd>${Math.round(best.estimate.token_multiplier)}x</dd></dl></div></div>` : ''}
+      <h3>Inferred profile</h3><div class="wrap"><table><tr><th>Field</th><th>Value</th><th data-tip="How sure the scanner is. Under 50% is a guess to confirm." tabindex="0">Confidence</th><th>Reason</th></tr>
+      ${scan.inferred.map(i=>`<tr><td><b>${esc(title(i.field))}</b></td><td>${esc(i.value)}</td><td><span class="conf"><i class="${i.confidence<0.5?'lo':''}" style="width:${Math.round(i.confidence*100)}%"></i></span>${Math.round(i.confidence*100)}%</td><td class="muted">${esc(i.reason)}</td></tr>`).join('')}</table></div>
+      <details style="margin-top:10px"><summary class="muted" style="cursor:pointer">Evidence (${scan.evidence.length} locations)</summary><div class="wrap"><table><tr><th>Category</th><th>Label</th><th>Location</th><th>Snippet</th></tr>${scan.evidence.map(e=>`<tr><td>${esc(e.category)}</td><td>${esc(e.label)}</td><td style="font-family:var(--mono);font-size:12px">${esc(e.path)}:${e.line}</td><td class="muted">${esc(e.snippet)}</td></tr>`).join('')}</table></div></details></div>`;
+  }
+
+  h += `<div class="card"><h2>Compare the options</h2><p class="lede">Ranked by score. Expand a row to see every rule that fired. Struck-through options cannot do the job.</p>
+    <div class="wrap"><table id="cmp"><tr><th>#</th><th>Architecture</th><th data-tip="${esc(HEAD_TIPS.score)}" tabindex="0">Score</th><th data-tip="${esc(HEAD_TIPS.fit)}" tabindex="0">Fit</th><th data-tip="${esc(HEAD_TIPS.latency)}" tabindex="0">Latency</th><th data-tip="${esc(HEAD_TIPS.budget)}" tabindex="0">Budget</th><th data-tip="${esc(HEAD_TIPS.cost)}" tabindex="0">Cost</th><th data-tip="${esc(HEAD_TIPS.tokens)}" tabindex="0">Tokens</th><th data-tip="${esc(HEAD_TIPS.calls)}" tabindex="0">Calls</th><th></th></tr>`;
+  const maxScore = Math.max(...rec.candidates.map(c=>Math.abs(c.score)), 1);
+  rec.candidates.forEach((c,i)=>{
+    const sigs = c.signals.slice().sort((a,b)=>b.delta-a.delta);
+    h += `<tr class="${i===0?'primary':''} ${c.viable?'':'nv'}"><td>${i+1}</td><td><span class="nm"><b>${esc(c.name)}</b></span>${c.viable?'':`<div class="muted">Not viable: ${esc(c.infeasible_reason)}</div>`}</td>
+      <td><span class="scorebar"><i style="left:${c.score>=0?50:50-50*Math.abs(c.score)/maxScore}%;width:${50*Math.abs(c.score)/maxScore}%"></i></span>${c.score>0?'+':''}${c.score.toFixed(1)}</td>
+      <td>${c.fit>0?'+':''}${c.fit.toFixed(1)}</td><td>~${Math.round(c.estimate.latency_s)}s</td><td><span class="badge ${verdictClass(c.latency_verdict)}">${esc(c.latency_verdict)}</span></td><td>$${c.estimate.cost_usd.toFixed(3)}</td><td>${Math.round(c.estimate.token_multiplier)}x</td><td>${c.estimate.llm_calls}</td>
+      <td><button class="exp" data-row="${i}" aria-expanded="false">Why</button></td></tr>
+      <tr class="sig" id="sig-${i}"><td colspan="10"><ul>${sigs.length? sigs.map(s=>`<li><span class="${s.delta>0?'':'d neg'}" style="font-family:var(--mono);font-weight:700;color:${s.delta>0?'var(--ok)':'var(--bad)'}">${s.delta>0?'+':''}${s.delta.toFixed(1)}</span> ${esc(s.rationale)} ${cite(s.citation)}</li>`).join('') : '<li class="muted">No rules fired for this topology.</li>'}<li class="muted">${esc(c.estimate.assumptions.join(' '))}</li></ul></td></tr>`;
+  });
+  h += `</table></div>
+    <h3>Latency vs. structural fit</h3><p class="lede">Each dot is a viable option. Up is a better evidence fit; left is faster. The dashed line is your budget. The highlighted dot is the recommendation.</p>
+    <svg class="chart" id="chart" role="img" aria-label="Latency versus fit chart"></svg>
+    <div class="legend"><span><i style="background:var(--vg-red)"></i>Recommended</span><span><i style="background:var(--info)"></i>On the frontier (no option is both faster and a better fit)</span><span><i style="background:#B5B0AA"></i>Other viable options</span></div>
+    <p class="muted">Fastest viable within budget: <b>${esc(rec.fastest_viable? byId[rec.fastest_viable].name : 'none')}</b> · Strongest structural fit: <b>${esc(byId[rec.most_accurate]?.name||'')}</b></p></div>`;
+
+  h += `<div class="card"><h2>Build plan</h2><p class="lede">${esc(best.name)}: who does what, on which model, and what runs in parallel.</p>
+    <div class="comps">${rec.plan.components.map(c=>`<div class="comp ${esc(c.tier)}"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.model_id)}${c.effort!=='n/a'?' · effort '+esc(c.effort):''}</div><div class="r">${esc(c.role)}</div>${c.tools?`<div class="muted" style="margin-top:4px">Tools: ${esc(c.tools)}</div>`:''}${c.parallel_group?`<div class="pg">runs in parallel · ${esc(c.parallel_group)}</div>`:''}</div>`).join('')}</div>
+    <div class="diagram">${rec.svg||''}</div>
+    ${rec.plan.briefing_rules.length?`<h3>Briefing and coordination rules</h3><ul>${rec.plan.briefing_rules.map(b=>`<li>${esc(b)}</li>`).join('')}</ul>`:''}
+    <details><summary class="muted" style="cursor:pointer">Mermaid source for wikis and docs</summary><pre>${esc(rec.mermaid)}</pre></details></div>`;
+
+  h += `<div class="card"><h2>Next steps</h2><p class="lede">Cross-cutting recommendations the evidence ties to success, regardless of topology. Tick them off in your design review.</p>
+    <div class="check"><ul>${rec.plan.augmentations.map((a,i)=>`<li><input type="checkbox" id="aug${i}"><label for="aug${i}"><b>${esc(a.title)}.</b> ${esc(a.why)} ${cite(a.citation)}</label></li>`).join('')}</ul></div></div>`;
+
+  h += `<div class="card"><h2>Assumptions behind the numbers</h2><ul>${best.estimate.assumptions.map(a=>`<li>${esc(a)}</li>`).join('')}<li>Latency is the critical path (parallel branches count once); cost sums every call at list prices without caching. Treat both as order-of-magnitude for ranking, not as measurements.</li></ul></div>`;
+
+  $('#results').innerHTML=h;
+  document.querySelectorAll('.exp').forEach(b=>b.addEventListener('click',()=>{ const r=$('#sig-'+b.dataset.row); const on=!r.classList.contains('on'); r.classList.toggle('on',on); b.setAttribute('aria-expanded',String(on)); b.textContent=on?'Hide':'Why'; }));
+  $('#dl-md').addEventListener('click',()=>download('vgselect-recommendation.md', rec.report_markdown||'', 'text/markdown'));
+  $('#dl-pdf').addEventListener('click',()=>deliverable('/api/v1/recommend/pdf', `${rec.profile.name||'app'}-architecture.pdf`, 'Building the PDF…'));
+  $('#dl-skel').addEventListener('click',()=>deliverable('/api/v1/recommend/skeleton', `${rec.profile.name||'app'}-langgraph-skeleton.zip`, 'Generating the skeleton…'));
+  $('#dl-json').addEventListener('click',()=>download('vgselect-recommendation.json', JSON.stringify(rec,null,2), 'application/json'));
+  drawChart(rec, budget);
+  if(window.innerWidth<=1040) $('#results').scrollIntoView({behavior:'smooth'}); else window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function drawChart(rec, budget){
+  const svg=$('#chart'); const W=svg.clientWidth||800, H=240, L=46, R=16, T=14, B=34;
+  const pts = rec.candidates.filter(c=>c.viable);
+  const xs = pts.map(c=>c.estimate.latency_s).concat([budget]);
+  const lx = v=>Math.log10(Math.max(0.5,v)); const xmin=lx(Math.min(...xs))-0.1, xmax=lx(Math.max(...xs))+0.15;
+  const ys = pts.map(c=>c.quality_proxy); const ymin=Math.min(...ys,0)-1, ymax=Math.max(...ys,1)+1;
+  const X=v=>L+(lx(v)-xmin)/(xmax-xmin)*(W-L-R), Y=v=>T+(ymax-v)/(ymax-ymin)*(H-T-B);
+  let s=`<rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>`;
+  for(const t of [1,3,10,30,100,300,1000,3000]){ if(t<Math.pow(10,xmin)||t>Math.pow(10,xmax)) continue; s+=`<line x1="${X(t)}" y1="${T}" x2="${X(t)}" y2="${H-B}" stroke="#ECEAE6"/><text x="${X(t)}" y="${H-B+16}" font-size="11" text-anchor="middle" fill="#6F6F6F">${t}s</text>`; }
+  s+=`<line x1="${L}" y1="${Y(0)}" x2="${W-R}" y2="${Y(0)}" stroke="#D9D6D2"/><text x="${L-6}" y="${Y(0)+4}" font-size="11" text-anchor="end" fill="#6F6F6F">0</text>`;
+  s+=`<line x1="${X(budget)}" y1="${T}" x2="${X(budget)}" y2="${H-B}" stroke="#96151D" stroke-dasharray="5 4"/><text x="${X(budget)+4}" y="${T+10}" font-size="11" fill="#96151D" font-weight="700">budget ${budget}s</text>`;
+  s+=`<text x="${L-6}" y="${T+10}" font-size="11" text-anchor="end" fill="#6F6F6F">fit ↑</text>`;
+  const fr = rec.frontier.map(id=>rec.candidates.find(c=>c.topology===id)).filter(Boolean);
+  if(fr.length>1) s+=`<polyline fill="none" stroke="#245E9E" stroke-width="1.5" stroke-dasharray="3 3" points="${fr.map(c=>X(c.estimate.latency_s)+','+Y(c.quality_proxy)).join(' ')}"/>`;
+  for(const c of pts){
+    const isBest=c.topology===rec.primary, onF=rec.frontier.includes(c.topology);
+    const fill=isBest?'#96151D':onF?'#245E9E':'#B5B0AA', r=isBest?8:6;
+    s+=`<g><title>${esc(c.name)}: ~${Math.round(c.estimate.latency_s)}s, fit ${c.quality_proxy.toFixed(1)}, score ${c.score.toFixed(1)}</title><circle cx="${X(c.estimate.latency_s)}" cy="${Y(c.quality_proxy)}" r="${r}" fill="${fill}" stroke="#fff" stroke-width="2"/>`;
+    if(isBest||onF) s+=`<text x="${X(c.estimate.latency_s)+10}" y="${Y(c.quality_proxy)+4}" font-size="11" fill="#1E1E1E" font-weight="${isBest?700:500}">${esc(c.name.split(' (')[0])}</text>`;
+    s+=`</g>`;
+  }
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML=s;
+}
+function helpCard(){
+  return `<div class="card"><h2>How VG Select: 3A decides</h2>
+  <ol><li><b>Profile.</b> Twenty-six fields describe the workload. A repository scan pre-fills what code can reveal; you supply the latency budget, how costly errors are, cost sensitivity and volume.</li>
+  <li><b>Rules.</b> Forty-one rules from published guidance (Anthropic, OpenAI, Google, Microsoft, LangChain, and the MAST and agent-scaling studies) add or subtract fit for each of ten architectures. Every rule shows its citation.</li>
+  <li><b>Viability.</b> Options that cannot do the job (a single call with tools, a fixed chain on an open-ended task) are ranked last.</li>
+  <li><b>Estimates.</b> A call tree per architecture gives critical-path latency and list-price cost. Order-of-magnitude, assumptions shown.</li>
+  <li><b>Balance.</b> Score = fit + latency adjustment + cost adjustment. Higher accuracy priority tolerates lateness; higher cost sensitivity penalises expensive designs.</li>
+  <li><b>Plan.</b> The winner becomes components (orchestrator, workers, routers, evaluators), model per role, parallel groups, briefing rules, and next steps.</li></ol>
+  <p class="muted">Full write-up: docs/METHODOLOGY.md. Evidence: docs/industry_guidance.md.</p></div>`;
+}
+async function deliverable(url, filename, msg){
+  const b=$('#dl-pdf'), k=$('#dl-skel'); [b,k].forEach(x=>x.disabled=true); toast(msg);
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({profile:LAST.profile, scan:LAST_SCAN, include_markdown:false, framework:'langgraph'})});
+    if(!r.ok){ let d=''; try{ d=(await r.json()).detail; }catch(_){} throw new Error(d||r.statusText); }
+    const blob=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); toast('Downloaded '+filename);
+  }catch(err){ showError('Download failed: '+err.message); }
+  finally{ [b,k].forEach(x=>x.disabled=false); }
+}
+function download(name, text, type){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; a.click(); }
+init();
+</script>
+</body>
+</html>

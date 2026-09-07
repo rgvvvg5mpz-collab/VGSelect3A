@@ -1,0 +1,21 @@
+{
+  "name": "document_extraction",
+  "description": "Batch pipeline extracting structured fields from invoices and contracts into a database, validated against business rules.",
+  "task_complexity": "moderate",
+  "steps_predictable": true,
+  "scope_breadth": 1,
+  "parallel_subtasks": 1,
+  "output_type": "structured_data",
+  "tool_count": 0,
+  "tool_calls_per_task": 0,
+  "knowledge_sources": 0,
+  "retrieval_depth": "none",
+  "context_tokens_per_task": 12000,
+  "accuracy_priority": 5,
+  "verifiability": "strong",
+  "error_recoverability": "easy",
+  "latency_budget_s": 120,
+  "interaction": "single_turn",
+  "requests_per_day": 200000,
+  "cost_sensitivity": 4
+}

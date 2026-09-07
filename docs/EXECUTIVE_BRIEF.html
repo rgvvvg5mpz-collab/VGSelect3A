@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VG Select: 3A — Executive Brief</title>
+<style>
+  @page{size:A4;margin:16mm}
+  body{font:13.5px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1c2128;max-width:820px;margin:0 auto;padding:28px 24px;background:#fff}
+  h1{font-size:24px;margin:0}
+  .tag{color:#5b6470;font-size:13px;margin:2px 0 18px}
+  h2{font-size:15px;margin:18px 0 6px;color:#0f1a33;text-transform:uppercase;letter-spacing:.04em}
+  p{margin:6px 0}ul{margin:4px 0 4px 18px;padding:0}li{margin:3px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .box{border:1px solid #e1e5ea;border-radius:8px;padding:10px 14px;background:#f9fafb}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0 4px}
+  .kpi div{border-left:3px solid #1f5eff;padding:4px 10px}.kpi b{display:block;font-size:20px}.kpi span{font-size:12px;color:#5b6470}
+  .foot{font-size:11.5px;color:#5b6470;margin-top:14px;border-top:1px solid #e1e5ea;padding-top:8px}
+  @media print{body{padding:0}}
+</style>
+</head>
+<body>
+<h1>VG Select: 3A — Automated Agentic Architecture</h1>
+<p class="tag">Executive brief &middot; What it is and why it helps the enterprise &middot; September 2026</p>
+
+<h2>The problem</h2>
+<p>Every team building an AI agent faces the same early decision: one model call, one agent with tools, a fixed workflow, or a team of agents with an orchestrator. The choice sets latency, cost and reliability for the life of the product, and today it is made by instinct. The published evidence says instinct gets it wrong in both directions: multi-agent designs use about <b>15x</b> the tokens of a chat interaction and fail 41-87% of the time in studied frameworks, mostly from coordination and specification errors; yet on breadth-first research the same designs cut wall-clock time by up to 90% and beat a single agent by 90%. Over-building wastes money and adds failure modes; under-building caps quality. Neither mistake is visible until production.</p>
+
+<div class="kpi">
+  <div><b>15x</b><span>tokens: multi-agent vs chat (Anthropic)</span></div>
+  <div><b>41-87%</b><span>failure rate of studied multi-agent systems (MAST)</span></div>
+  <div><b>~45%</b><span>single-agent accuracy above which adding agents hurts (Google/MIT)</span></div>
+  <div><b>90%</b><span>time saved on parallel research with subagents (Anthropic)</span></div>
+</div>
+
+<h2>What VG Select: 3A is</h2>
+<p>A decision service that recommends the architecture of an agentic application before it is built, or audits one that exists. It scans the code repository to learn what the application actually does (tools, data sources, side effects, existing agent loops), combines that with the few facts only the team knows (latency budget, accuracy priority, cost sensitivity, volume), and ranks ten candidate architectures using rules drawn from Anthropic, OpenAI, Google, Microsoft, LangChain and peer-reviewed failure studies. Every rule carries its citation. The output is a ranked table with estimated latency and cost per option, the latency/accuracy frontier, a concrete decomposition plan (orchestrator, subagents, model per role, what runs in parallel) with a diagram, and the guardrails the evidence says every design needs.</p>
+
+<div class="grid">
+  <div class="box"><b>Delivered as</b>
+    <ul><li>Web UI for design reviews (guided, tooltips throughout)</li><li>REST API with OpenAPI spec for CI and internal tooling</li><li>Claude Code skill so engineers get the answer inside their editor</li><li>CLI and Python library</li><li>Outputs: an architecture document (PDF) and a runnable LangGraph project skeleton</li></ul></div>
+  <div class="box"><b>Answers it gives</b>
+    <ul><li>Which topology, and why (cited)</li><li>What the current code implements and the gap</li><li>Fastest option that fits the budget; most accurate option and its cost</li><li>An architecture document (PDF) for the design review</li><li>A runnable LangGraph project skeleton for the chosen design</li></ul></div>
+</div>
+
+<h2>Why it helps the enterprise</h2>
+<ul>
+  <li><b>Cost avoidance.</b> Steers teams away from multi-agent designs when a single agent with a better model or prompt would score higher, and quantifies the token multiplier when multi-agent is justified. On a product doing 100k requests/day, choosing a 4x design over a 15x design where the evidence says they perform the same is the difference between tens and hundreds of thousands of dollars a month.</li>
+  <li><b>Faster, consistent design reviews.</b> Architects and platform teams review a cited recommendation instead of debating from first principles. The same workload gets the same answer in every business unit.</li>
+  <li><b>Latency and accuracy made explicit.</b> The trade-off is a table, not an opinion: product owners set the budget and the stakes; the service shows what each option costs in seconds and dollars.</li>
+  <li><b>Governance built in.</b> Every recommendation carries the guardrails the literature ties to failure: evaluation sets before structure, termination limits, verification at the orchestrator, gated approval for irreversible actions, tracing. Irreversible integrations (payments, email, ticketing) are detected from code.</li>
+  <li><b>Drift detection.</b> Run in CI, it reports when an implementation's topology no longer matches the agreed design.</li>
+  <li><b>Auditable and self-hosted.</b> Deterministic rules, no data leaves the network, evidence down to file and line, and a methodology document. Assumptions are printed with every result and can be recalibrated from the enterprise's own traces.</li>
+</ul>
+
+<h2>How to adopt</h2>
+<p><b>Week 1:</b> deploy the container behind the internal gateway; publish the OpenAPI spec to the API catalog; distribute the Claude Code skill. <b>Weeks 2-4:</b> run it on the three to five agent initiatives in flight; require the 3A architecture PDF in each architecture review and start new implementations from the generated skeleton. <b>Quarter:</b> calibrate latency and cost assumptions from production traces; add in-house frameworks to the scanner and house conventions to the skeleton templates; track the metrics below.</p>
+<div class="grid">
+  <div class="box"><b>Metrics to track</b><ul><li>Cost per completed task before/after</li><li>p50/p95 latency vs budget</li><li>Share of agent projects with an eval set at design time</li><li>Architecture review cycle time</li></ul></div>
+  <div class="box"><b>What it is not</b><ul><li>Not a framework or vendor choice</li><li>Not a benchmark: estimates rank options, they do not predict production numbers</li><li>Not a substitute for evaluation: it tells you to build the eval first</li></ul></div>
+</div>
+<p class="foot">Sources: Anthropic (Building effective agents; multi-agent research system; context engineering), OpenAI (A practical guide to building agents), Google ADK, LangChain/LangGraph, Microsoft Azure Architecture Center, Cemri et al. "Why Do Multi-Agent LLM Systems Fail?", Google/MIT "Towards a Science of Scaling Agent Systems", Cognition. Full evidence: docs/industry_guidance.md.</p>
+</body>
+</html>

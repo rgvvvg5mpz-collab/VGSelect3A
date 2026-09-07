@@ -1,0 +1,1579 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VG Select: 3A (Automated Agentic Architecture)",
+    "summary": "Scans a repository and workload profile, then recommends an agentic application architecture that balances latency and accuracy.",
+    "description": "VG Select: 3A ranks ten agent topologies (single call, single agent, prompt chain, router, parallel sectioning, voting, evaluator-optimizer, orchestrator + workers, hierarchical, handoffs) using evidence-cited rules, estimates latency and cost for each, and produces a concrete orchestrator/subagent decomposition plan.\n\nTypical flow: `POST /api/v1/scan` (or `/api/v1/scan/upload`) to infer a profile from code, review the inferred fields, then `POST /api/v1/recommend` with corrections.",
+    "contact": {
+      "name": "VG Select: 3A"
+    },
+    "license": {
+      "name": "MIT"
+    },
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "reference"
+        ],
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fields": {
+      "get": {
+        "tags": [
+          "reference"
+        ],
+        "summary": "Profile field definitions",
+        "operationId": "fields_api_v1_fields_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Fields Api V1 Fields Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/citations": {
+      "get": {
+        "tags": [
+          "reference"
+        ],
+        "summary": "Citation keys used in rules and recommendations",
+        "operationId": "citations_api_v1_citations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Citations Api V1 Citations Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/topologies": {
+      "get": {
+        "tags": [
+          "reference"
+        ],
+        "summary": "Topology catalog",
+        "operationId": "topologies_api_v1_topologies_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Topologies Api V1 Topologies Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/examples": {
+      "get": {
+        "tags": [
+          "reference"
+        ],
+        "summary": "Bundled example profiles",
+        "operationId": "examples_api_v1_examples_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Examples Api V1 Examples Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recommend": {
+      "post": {
+        "tags": [
+          "recommend"
+        ],
+        "summary": "Recommend a topology for a profile",
+        "operationId": "api_recommend_api_v1_recommend_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recommend/pdf": {
+      "post": {
+        "tags": [
+          "deliverables"
+        ],
+        "summary": "Architecture document (PDF)",
+        "operationId": "api_recommend_pdf_api_v1_recommend_pdf_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliverableRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "PDF architecture document",
+            "content": {
+              "application/pdf": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recommend/skeleton": {
+      "post": {
+        "tags": [
+          "deliverables"
+        ],
+        "summary": "Downloadable agent skeleton (zip) for the recommended topology",
+        "operationId": "api_recommend_skeleton_api_v1_recommend_skeleton_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliverableRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Zip archive of a runnable project skeleton",
+            "content": {
+              "application/zip": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scan": {
+      "post": {
+        "tags": [
+          "scan"
+        ],
+        "summary": "Scan a repository by server path or git URL",
+        "operationId": "api_scan_api_v1_scan_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scan/upload": {
+      "post": {
+        "tags": [
+          "scan"
+        ],
+        "summary": "Scan an uploaded zip archive of a repository",
+        "operationId": "api_scan_upload_api_v1_scan_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_api_scan_upload_api_v1_scan_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/describe": {
+      "post": {
+        "tags": [
+          "recommend"
+        ],
+        "summary": "Infer a profile from prose with Claude, then recommend",
+        "operationId": "api_describe_api_v1_describe_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DescribeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AugmentationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "why": {
+            "type": "string",
+            "title": "Why"
+          },
+          "citation": {
+            "type": "string",
+            "title": "Citation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "why",
+          "citation"
+        ],
+        "title": "AugmentationOut"
+      },
+      "Body_api_scan_upload_api_v1_scan_upload_post": {
+        "properties": {
+          "archive": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Archive",
+            "description": "Zip archive of the repository (node_modules, .git etc. are skipped)."
+          },
+          "overrides": {
+            "type": "string",
+            "title": "Overrides",
+            "description": "JSON object of profile fields that override scan inferences.",
+            "default": "{}"
+          },
+          "recommend": {
+            "type": "boolean",
+            "title": "Recommend",
+            "default": true
+          },
+          "include_markdown": {
+            "type": "boolean",
+            "title": "Include Markdown",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "archive"
+        ],
+        "title": "Body_api_scan_upload_api_v1_scan_upload_post"
+      },
+      "CandidateOut": {
+        "properties": {
+          "topology": {
+            "type": "string",
+            "title": "Topology"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "family": {
+            "type": "string",
+            "title": "Family"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "fit": {
+            "type": "number",
+            "title": "Fit"
+          },
+          "quality_proxy": {
+            "type": "number",
+            "title": "Quality Proxy"
+          },
+          "latency_adj": {
+            "type": "number",
+            "title": "Latency Adj"
+          },
+          "cost_adj": {
+            "type": "number",
+            "title": "Cost Adj"
+          },
+          "latency_verdict": {
+            "type": "string",
+            "title": "Latency Verdict"
+          },
+          "viable": {
+            "type": "boolean",
+            "title": "Viable"
+          },
+          "infeasible_reason": {
+            "type": "string",
+            "title": "Infeasible Reason"
+          },
+          "estimate": {
+            "$ref": "#/components/schemas/EstimateOut"
+          },
+          "signals": {
+            "items": {
+              "$ref": "#/components/schemas/SignalOut"
+            },
+            "type": "array",
+            "title": "Signals"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topology",
+          "name",
+          "family",
+          "score",
+          "fit",
+          "quality_proxy",
+          "latency_adj",
+          "cost_adj",
+          "latency_verdict",
+          "viable",
+          "infeasible_reason",
+          "estimate",
+          "signals"
+        ],
+        "title": "CandidateOut"
+      },
+      "ComponentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "tier": {
+            "type": "string",
+            "title": "Tier"
+          },
+          "effort": {
+            "type": "string",
+            "title": "Effort"
+          },
+          "tools": {
+            "type": "string",
+            "title": "Tools"
+          },
+          "parallel_group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parallel Group"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "role",
+          "tier",
+          "effort",
+          "tools",
+          "parallel_group",
+          "notes",
+          "model_id"
+        ],
+        "title": "ComponentOut"
+      },
+      "DeliverableRequest": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/WorkloadProfileIn",
+            "description": "Workload profile. Omitted fields take engine defaults."
+          },
+          "include_markdown": {
+            "type": "boolean",
+            "title": "Include Markdown",
+            "description": "Include the full Markdown report in the response.",
+            "default": true
+          },
+          "scan": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scan",
+            "description": "The `scan` object returned by a previous /api/v1/scan call, to include scan findings in the document."
+          },
+          "framework": {
+            "type": "string",
+            "const": "langgraph",
+            "title": "Framework",
+            "description": "Skeleton framework (skeleton endpoint only).",
+            "default": "langgraph"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile"
+        ],
+        "title": "DeliverableRequest"
+      },
+      "DescribeRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 10,
+            "title": "Text",
+            "description": "Prose description of the application."
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Claude model used to infer the profile.",
+            "default": "claude-opus-5"
+          },
+          "overrides": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkloadProfileIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "include_markdown": {
+            "type": "boolean",
+            "title": "Include Markdown",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "DescribeRequest"
+      },
+      "EdgeOut": {
+        "properties": {
+          "src": {
+            "type": "string",
+            "title": "Src"
+          },
+          "dst": {
+            "type": "string",
+            "title": "Dst"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "src",
+          "dst",
+          "label"
+        ],
+        "title": "EdgeOut"
+      },
+      "EstimateOut": {
+        "properties": {
+          "latency_s": {
+            "type": "number",
+            "title": "Latency S"
+          },
+          "cost_usd": {
+            "type": "number",
+            "title": "Cost Usd"
+          },
+          "llm_calls": {
+            "type": "integer",
+            "title": "Llm Calls"
+          },
+          "total_tokens": {
+            "type": "number",
+            "title": "Total Tokens"
+          },
+          "token_multiplier": {
+            "type": "number",
+            "title": "Token Multiplier"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "latency_s",
+          "cost_usd",
+          "llm_calls",
+          "total_tokens",
+          "token_multiplier",
+          "assumptions"
+        ],
+        "title": "EstimateOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthOut": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "product": {
+            "type": "string",
+            "title": "Product"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "scan_roots": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scan Roots"
+          },
+          "git_clone_enabled": {
+            "type": "boolean",
+            "title": "Git Clone Enabled"
+          },
+          "describe_enabled": {
+            "type": "boolean",
+            "title": "Describe Enabled"
+          },
+          "pdf_enabled": {
+            "type": "boolean",
+            "title": "Pdf Enabled",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "product",
+          "version",
+          "scan_roots",
+          "git_clone_enabled",
+          "describe_enabled"
+        ],
+        "title": "HealthOut"
+      },
+      "PlanOut": {
+        "properties": {
+          "topology": {
+            "type": "string",
+            "title": "Topology"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/ComponentOut"
+            },
+            "type": "array",
+            "title": "Components"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/EdgeOut"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "augmentations": {
+            "items": {
+              "$ref": "#/components/schemas/AugmentationOut"
+            },
+            "type": "array",
+            "title": "Augmentations"
+          },
+          "briefing_rules": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Briefing Rules"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topology",
+          "components",
+          "edges",
+          "augmentations",
+          "briefing_rules"
+        ],
+        "title": "PlanOut"
+      },
+      "RecommendRequest": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/WorkloadProfileIn",
+            "description": "Workload profile. Omitted fields take engine defaults."
+          },
+          "include_markdown": {
+            "type": "boolean",
+            "title": "Include Markdown",
+            "description": "Include the full Markdown report in the response.",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile"
+        ],
+        "title": "RecommendRequest"
+      },
+      "RecommendationOut": {
+        "properties": {
+          "product": {
+            "type": "string",
+            "title": "Product"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "profile": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Profile"
+          },
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "primary": {
+            "type": "string",
+            "title": "Primary"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateOut"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "frontier": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Frontier"
+          },
+          "fastest_viable": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fastest Viable"
+          },
+          "most_accurate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Most Accurate"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/PlanOut"
+          },
+          "mermaid": {
+            "type": "string",
+            "title": "Mermaid"
+          },
+          "svg": {
+            "type": "string",
+            "title": "Svg",
+            "description": "Standalone SVG rendering of the plan (no external dependencies).",
+            "default": ""
+          },
+          "scan": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scan"
+          },
+          "report_markdown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Markdown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product",
+          "version",
+          "profile",
+          "headline",
+          "primary",
+          "candidates",
+          "frontier",
+          "fastest_viable",
+          "most_accurate",
+          "plan",
+          "mermaid"
+        ],
+        "title": "RecommendationOut"
+      },
+      "ScanOut": {
+        "properties": {
+          "scan": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Scan"
+          },
+          "profile": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Profile",
+            "description": "Merged profile (scan inferences + overrides) that was recommended on."
+          },
+          "recommendation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecommendationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "scan",
+          "profile"
+        ],
+        "title": "ScanOut"
+      },
+      "ScanRequest": {
+        "properties": {
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path",
+            "description": "Server-side directory to scan. Must be under one of VGSELECT_SCAN_ROOTS."
+          },
+          "git_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Git Url",
+            "description": "Git URL to clone (shallow) and scan. Requires VGSELECT_ALLOW_GIT_CLONE=1."
+          },
+          "overrides": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkloadProfileIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Profile fields that override scan inferences."
+          },
+          "recommend": {
+            "type": "boolean",
+            "title": "Recommend",
+            "description": "Also run the recommender on the merged profile.",
+            "default": true
+          },
+          "include_markdown": {
+            "type": "boolean",
+            "title": "Include Markdown",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "ScanRequest"
+      },
+      "SignalOut": {
+        "properties": {
+          "rule_id": {
+            "type": "string",
+            "title": "Rule Id"
+          },
+          "topology_id": {
+            "type": "string",
+            "title": "Topology Id"
+          },
+          "delta": {
+            "type": "number",
+            "title": "Delta"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          },
+          "citation": {
+            "type": "string",
+            "title": "Citation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule_id",
+          "topology_id",
+          "delta",
+          "rationale",
+          "citation"
+        ],
+        "title": "SignalOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WorkloadProfileIn": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Short name for the application."
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "One or two sentences describing what the application does."
+          },
+          "task_complexity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "trivial",
+                  "simple",
+                  "moderate",
+                  "complex",
+                  "open_ended"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Complexity",
+            "description": "How much reasoning a single request needs. trivial: lookup/classification; simple: one-step generation; moderate: a few dependent steps; complex: many dependent steps with judgment; open_ended: the steps cannot be enumerated in advance."
+          },
+          "steps_predictable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steps Predictable",
+            "description": "Can the sequence of steps be fixed in code ahead of time (workflow) rather than decided by the model at run time (agent)?"
+          },
+          "scope_breadth": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 20.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope Breadth",
+            "description": "Number of distinct domains or skill areas one request can span (e.g. code + security + docs = 3)."
+          },
+          "parallel_subtasks": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parallel Subtasks",
+            "description": "Typical number of independent sub-tasks in one request that could run at the same time (0 or 1 = none)."
+          },
+          "output_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "short_answer",
+                  "structured_data",
+                  "long_document",
+                  "code_change",
+                  "action"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Type",
+            "description": "Primary deliverable of a request."
+          },
+          "tool_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 500.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Count",
+            "description": "Number of distinct tools/functions available to the application."
+          },
+          "tool_calls_per_task": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Calls Per Task",
+            "description": "Expected average number of tool calls per request."
+          },
+          "tool_dependency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "sequential",
+                  "mixed",
+                  "independent"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Dependency",
+            "description": "Are tool calls mostly sequential (each depends on the last), independent (can be issued together), or mixed?"
+          },
+          "tool_side_effects": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "read_only",
+                  "reversible_writes",
+                  "irreversible"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Side Effects",
+            "description": "Worst-case side effect of the tools: read_only, reversible_writes (drafts, files under VCS), irreversible (send email, payments, deletes)."
+          },
+          "tool_overlap": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Overlap",
+            "description": "Do several tools have similar or overlapping purposes (so the model may pick the wrong one)? OpenAI's split trigger is overlap, not count."
+          },
+          "tool_latency_s": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 600.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Latency S",
+            "description": "Average wall-clock latency of one tool call in seconds."
+          },
+          "knowledge_sources": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 50.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Sources",
+            "description": "Number of distinct knowledge sources (vector stores, wikis, APIs, the web) that must be consulted."
+          },
+          "retrieval_depth": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "single_lookup",
+                  "multi_hop",
+                  "exhaustive"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieval Depth",
+            "description": "none: no retrieval; single_lookup: one query answers it; multi_hop: follow-up queries depend on earlier results; exhaustive: breadth-first coverage of a topic across many documents."
+          },
+          "context_tokens_per_task": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 50000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Tokens Per Task",
+            "description": "Approximate tokens of documents/tool output that must be read to answer one request."
+          },
+          "accuracy_priority": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy Priority",
+            "description": "1 = best effort is fine ... 5 = errors are very costly (money, safety, compliance)."
+          },
+          "single_agent_baseline": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": -1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Single Agent Baseline",
+            "description": "Measured accuracy (0.0-1.0) of a single agent/call on your eval, if you have one; -1 = not measured. Above ~0.45, adding agents tends to hurt."
+          },
+          "verifiability": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "partial",
+                  "strong"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verifiability",
+            "description": "Can an answer be checked objectively? none: purely subjective; partial: rubric/spot checks; strong: tests, schemas, ground truth."
+          },
+          "error_recoverability": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "easy",
+                  "moderate",
+                  "hard"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Recoverability",
+            "description": "How easily a wrong action can be caught and undone: easy (review before commit), moderate, hard (acts on the world immediately)."
+          },
+          "latency_budget_s": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 86400.0,
+                "minimum": 0.5
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Budget S",
+            "description": "Target end-to-end latency for one request, in seconds (p50 is fine)."
+          },
+          "interaction": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "single_turn",
+                  "multi_turn",
+                  "long_running"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interaction",
+            "description": "single_turn: one request, one answer; multi_turn: conversational; long_running: one task spanning many minutes/hours."
+          },
+          "requests_per_day": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Per Day",
+            "description": "Expected volume, requests per day."
+          },
+          "cost_sensitivity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Sensitivity",
+            "description": "1 = cost is not a concern ... 5 = cost dominates the decision."
+          },
+          "human_in_loop": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Human In Loop",
+            "description": "Is a human available to approve risky actions during a request?"
+          },
+          "domains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domains",
+            "description": "Names of the distinct domains/skill areas (used to name specialists)."
+          },
+          "sources": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sources",
+            "description": "Names of the knowledge sources (used to name research workers)."
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools",
+            "description": "Tool names (shown in the plan)."
+          },
+          "subtasks": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtasks",
+            "description": "Names of independent sub-tasks (used to name workers)."
+          },
+          "sections": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sections",
+            "description": "Names of independent sections for code-defined fan-out."
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "WorkloadProfileIn"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "recommend",
+      "description": "Rank topologies for a workload profile and return a decomposition plan."
+    },
+    {
+      "name": "scan",
+      "description": "Scan a code repository to infer the workload profile before recommending."
+    },
+    {
+      "name": "deliverables",
+      "description": "Architecture document (PDF) and downloadable agent skeleton (zip) for the recommendation."
+    },
+    {
+      "name": "reference",
+      "description": "Field definitions, bundled examples, topology catalog."
+    }
+  ]
+}

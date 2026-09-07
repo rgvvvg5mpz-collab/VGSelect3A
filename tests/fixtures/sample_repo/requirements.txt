@@ -1,0 +1,4 @@
+anthropic>=1.0
+fastapi
+pinecone-client
+stripe

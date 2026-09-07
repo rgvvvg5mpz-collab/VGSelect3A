@@ -1,0 +1,21 @@
+{
+  "name": "content_moderation",
+  "description": "Real-time moderation classifier for user posts with strict policy accuracy requirements.",
+  "task_complexity": "trivial",
+  "steps_predictable": true,
+  "scope_breadth": 1,
+  "parallel_subtasks": 0,
+  "output_type": "structured_data",
+  "tool_count": 0,
+  "tool_calls_per_task": 0,
+  "knowledge_sources": 0,
+  "retrieval_depth": "none",
+  "context_tokens_per_task": 1500,
+  "accuracy_priority": 5,
+  "verifiability": "partial",
+  "error_recoverability": "moderate",
+  "latency_budget_s": 2,
+  "interaction": "single_turn",
+  "requests_per_day": 2000000,
+  "cost_sensitivity": 5
+}

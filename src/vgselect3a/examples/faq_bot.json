@@ -1,0 +1,21 @@
+{
+  "name": "faq_bot",
+  "description": "Customer-facing FAQ assistant answering product questions from a help-center knowledge base.",
+  "task_complexity": "trivial",
+  "steps_predictable": true,
+  "scope_breadth": 1,
+  "parallel_subtasks": 0,
+  "output_type": "short_answer",
+  "tool_count": 0,
+  "tool_calls_per_task": 0,
+  "knowledge_sources": 1,
+  "retrieval_depth": "single_lookup",
+  "context_tokens_per_task": 4000,
+  "accuracy_priority": 3,
+  "verifiability": "partial",
+  "error_recoverability": "easy",
+  "latency_budget_s": 3,
+  "interaction": "multi_turn",
+  "requests_per_day": 50000,
+  "cost_sensitivity": 4
+}

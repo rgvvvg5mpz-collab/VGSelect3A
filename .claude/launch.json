@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vgselect-service",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "uvicorn", "vgselect3a.service.app:app", "--host", "127.0.0.1", "--port", "8765"],
+      "port": 8765,
+      "env": {"VGSELECT_SCAN_ROOTS": "${workspaceFolder}/tests/fixtures", "PYTHONPATH": "${workspaceFolder}/src"}
+    }
+  ]
+}
