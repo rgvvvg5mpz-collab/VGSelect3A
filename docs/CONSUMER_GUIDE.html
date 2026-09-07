@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VG Select: 3A — Consumer Guide</title>
+<style>
+  body{font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1c2128;max-width:960px;margin:0 auto;padding:32px 24px;background:#fff}
+  h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:36px 0 10px;border-bottom:1px solid #e1e5ea;padding-bottom:6px}h3{font-size:16px;margin:22px 0 6px;color:#96151D}
+  .sub{color:#5b6470;margin-bottom:24px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#f1f3f6;padding:1px 5px;border-radius:4px}
+  pre{background:#0f1a33;color:#e6ecff;padding:14px;border-radius:8px;overflow:auto;font-size:13px}pre code{background:none;color:inherit;padding:0}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #e1e5ea;vertical-align:top}th{color:#5b6470;font-size:13px;background:#faf9f7}
+  .note{border-left:4px solid #96151D;background:#f8eced;padding:10px 14px;border-radius:6px;margin:14px 0}
+  .ok{border-left:4px solid #1a7f4b;background:#eaf7ef;padding:10px 14px;border-radius:6px;margin:14px 0}
+  nav{background:#f6f7f9;border:1px solid #e1e5ea;border-radius:8px;padding:12px 18px;margin-bottom:24px}nav a{margin-right:14px;color:#96151D}
+  a{color:#96151D}
+  ul li,ol li{margin:4px 0}
+</style>
+</head>
+<body>
+<h1>VG Select: 3A — Consumer Guide</h1>
+<p class="sub">For engineers who want an architecture recommendation for an agentic application from a running <b>VG Select: 3A</b> service, the CLI, the Python library or the Claude Code skill. Deployers should read the <a href="DEPLOYMENT.html">Deployment guide</a>; the reasoning behind the answers is in <a href="METHODOLOGY.md">Methodology</a>; model selection in <a href="MODEL_CATALOG.md">Model catalog</a>; the evidence in <a href="industry_guidance.md">Industry guidance</a>.</p>
+
+<nav>
+  <a href="#quick">60-second version</a><a href="#ways">Ways to consume</a><a href="#endpoints">Endpoints</a><a href="#profile">Profile</a><a href="#result">Reading the result</a><a href="#models">Model per role</a><a href="#deliverables">Deliverables</a><a href="#clients">Client snippets</a><a href="#ci">CI</a><a href="#skill">Claude Code skill</a><a href="#faq">FAQ</a>
+</nav>
+
+<h2 id="quick">1. The 60-second version</h2>
+<pre><code>export VGSELECT_URL=https://vgselect.internal.example.com
+
+# 1. Scan your repository (zip it; node_modules, .git, venv are skipped by the scanner)
+zip -qr /tmp/repo.zip . -x '*.git*' -x '*node_modules*'
+curl -s "$VGSELECT_URL/api/v1/scan/upload" \
+  -F archive=@/tmp/repo.zip \
+  -F 'overrides={"latency_budget_s": 8, "accuracy_priority": 4, "cost_sensitivity": 3, "requests_per_day": 20000, "data_sensitivity": "confidential"}' \
+  -F 'policy={"allowed_providers": ["anthropic", "self_hosted"]}' \
+  > result.json
+
+# 2. Read the answer
+python -c 'import json; d=json.load(open("result.json")); print(d["recommendation"]["headline"])'
+
+# 3. Get the two deliverables (the PDF and the LangGraph skeleton) for that answer
+python -c 'import json; d=json.load(open("result.json")); json.dump({"profile": d["profile"], "scan": d["scan"]}, open("request.json","w"))'
+curl -s "$VGSELECT_URL/api/v1/recommend/pdf"      -H 'content-type: application/json' -d @request.json -o architecture.pdf
+curl -s "$VGSELECT_URL/api/v1/recommend/skeleton" -H 'content-type: application/json' -d @request.json -o my-agent.zip</code></pre>
+<p>The scan infers what the code reveals (tools, retrieval, side effects, current agent loop, serving surface). You supply what code cannot show: latency budget, accuracy priority, cost sensitivity, volume, data sensitivity. Review the inferred fields and their confidence in <code>result.json["scan"]["inferred"]</code>, correct any that are wrong via <code>overrides</code>, and re-run.</p>
+<p>Or open the UI at <code>$VGSELECT_URL/</code> and do the same interactively: it has the same scan, profile, model-ecosystem and download steps with a tooltip on every field.</p>
+
+<h2 id="ways">2. Ways to consume</h2>
+<table>
+<tr><th>Surface</th><th>When</th></tr>
+<tr><td>Web UI at <code>/</code></td><td>Design reviews and first looks. Three steps: start from a scenario, scan, description or blank; describe the workload and constrain the model ecosystem; get the verdict, comparison, chart, model per role, plan, next steps and both downloads.</td></tr>
+<tr><td>REST API (<code>/api/v1/*</code>, OpenAPI at <code>/openapi.json</code>, Swagger at <code>/docs</code>, ReDoc at <code>/redoc</code>)</td><td>CI checks, architecture linting, internal tooling, generated clients</td></tr>
+<tr><td>CLI <code>vgselect</code> (<code>pip install -e '.[pdf]'</code> from the repository)</td><td>Local use without the service; the same reports, PDF and skeleton</td></tr>
+<tr><td>Claude Code skill <code>.claude/skills/vg-select-3a</code></td><td>Ask Claude Code "which architecture should this agent use?"; it scans, asks for the missing fields, recommends, and writes the PDF and skeleton</td></tr>
+<tr><td>Python API <code>from vgselect3a import WorkloadProfile, recommend</code></td><td>Embedding in your own tools; <code>rec.to_pdf()</code>, <code>rec.to_skeleton()</code>, <code>rec.selection</code></td></tr>
+</table>
+
+<h2 id="endpoints">3. Endpoints</h2>
+<table>
+<tr><th>Method</th><th>Path</th><th>Body</th><th>Returns</th></tr>
+<tr><td>POST</td><td><code>/api/v1/recommend</code></td><td><code>{"profile": {...}, "include_markdown": true, "policy": {...}, "catalog_models": [...]}</code></td><td><code>RecommendationOut</code></td></tr>
+<tr><td>POST</td><td><code>/api/v1/scan</code></td><td><code>{"path": "/scan/repo"}</code> or <code>{"git_url": "https://..."}</code> plus optional <code>overrides</code>, <code>policy</code>, <code>recommend</code>, <code>include_markdown</code></td><td><code>ScanOut</code> (<code>scan</code>, merged <code>profile</code>, <code>recommendation</code>)</td></tr>
+<tr><td>POST</td><td><code>/api/v1/scan/upload</code></td><td>multipart: <code>archive</code> (zip), <code>overrides</code> (JSON string), <code>policy</code> (JSON string), <code>recommend</code>, <code>include_markdown</code></td><td><code>ScanOut</code></td></tr>
+<tr><td>POST</td><td><code>/api/v1/recommend/pdf</code></td><td><code>{"profile": {...}, "scan": &lt;scan object, optional&gt;, "policy": {...}}</code></td><td><code>application/pdf</code> architecture document (503 if the server lacks reportlab)</td></tr>
+<tr><td>POST</td><td><code>/api/v1/recommend/skeleton</code></td><td><code>{"profile": {...}, "scan": &lt;optional&gt;, "policy": {...}, "framework": "langgraph"}</code></td><td><code>application/zip</code> runnable project skeleton</td></tr>
+<tr><td>POST</td><td><code>/api/v1/describe</code></td><td><code>{"text": "prose description", "model": "claude-opus-5", "overrides": {...}, "policy": {...}}</code></td><td><code>RecommendationOut</code> (503 if the server has no Anthropic credentials)</td></tr>
+<tr><td>GET</td><td><code>/api/v1/catalog</code></td><td></td><td>The model ecosystem catalog (models, providers, platforms, regions)</td></tr>
+<tr><td>POST</td><td><code>/api/v1/catalog/validate</code></td><td><code>[ModelSpec, ...]</code></td><td>Validates entries; lists illustrative ones</td></tr>
+<tr><td>GET</td><td><code>/api/v1/fields</code></td><td></td><td>Profile field definitions (name, kind, choices, range, description, group)</td></tr>
+<tr><td>GET</td><td><code>/api/v1/examples</code></td><td></td><td>Eight bundled example profiles</td></tr>
+<tr><td>GET</td><td><code>/api/v1/topologies</code></td><td></td><td>The ten topologies with summaries and trade-offs</td></tr>
+<tr><td>GET</td><td><code>/api/v1/citations</code></td><td></td><td>Citation key to source name, for rendering rule rationales</td></tr>
+<tr><td>GET</td><td><code>/health</code></td><td></td><td>Status, version, scan roots, catalog, and whether git clone, describe and PDF are enabled</td></tr>
+</table>
+<p>Every recommend, scan, PDF and skeleton request accepts an optional <code>policy</code> (<code>allowed_providers</code>, <code>blocked_providers</code>, <code>allowed_platforms</code>, <code>regions</code>, <code>require_verified</code>, <code>require_approved</code>, <code>prefer_provider</code>) and optional <code>catalog_models</code> (extra or overriding catalog entries for that request). Path scanning and git cloning are enabled per deployment; <code>GET /health</code> tells you which are on. Zip upload always works. The <code>scan</code> object returned by a scan call can be passed back to the PDF and skeleton endpoints so the document includes the scan findings and gap.</p>
+
+<h2 id="profile">4. The profile</h2>
+<p>Every field has a default, so you can send only what you know. Run <code>GET /api/v1/fields</code> or <code>vgselect fields</code> for the full list. The ones that change the answer most (marked "key" in the UI):</p>
+<table>
+<tr><th>Field</th><th>Meaning</th></tr>
+<tr><td><code>task_complexity</code></td><td>trivial, simple, moderate, complex, open_ended</td></tr>
+<tr><td><code>steps_predictable</code></td><td>Can the steps be fixed in code (workflow) or must the model choose them (agent)?</td></tr>
+<tr><td><code>parallel_subtasks</code></td><td>Independent pieces of work per request that could run concurrently</td></tr>
+<tr><td><code>scope_breadth</code></td><td>Distinct domains one request spans</td></tr>
+<tr><td><code>tool_count</code>, <code>tool_calls_per_task</code>, <code>tool_dependency</code>, <code>tool_side_effects</code>, <code>tool_overlap</code>, <code>tool_latency_s</code></td><td>Tool surface</td></tr>
+<tr><td><code>knowledge_sources</code>, <code>retrieval_depth</code>, <code>context_tokens_per_task</code></td><td>Retrieval and reading load</td></tr>
+<tr><td><code>accuracy_priority</code> (1-5), <code>verifiability</code>, <code>error_recoverability</code>, <code>single_agent_baseline</code></td><td>Quality and risk</td></tr>
+<tr><td><code>latency_budget_s</code>, <code>interaction</code>, <code>requests_per_day</code>, <code>cost_sensitivity</code>, <code>human_in_loop</code></td><td>Operating constraints</td></tr>
+<tr><td><code>data_sensitivity</code></td><td>public / internal / confidential / restricted: only catalog models cleared for this class can staff a role</td></tr>
+</table>
+<p>Optional lists <code>domains</code>, <code>sources</code>, <code>tools</code>, <code>subtasks</code>, <code>sections</code> name the components in the plan and the tool stubs in the skeleton (for example <code>sources: ["web", "wiki"]</code> yields "Researcher: web" and "Researcher: wiki").</p>
+
+<h2 id="result">5. Reading the result</h2>
+<p><code>RecommendationOut</code> fields:</p>
+<ul>
+  <li><code>product</code>, <code>version</code>: what produced the result.</li>
+  <li><code>headline</code>: the recommendation, its estimated latency versus your budget, its token multiplier, and the fastest/most-accurate alternatives when they differ. When a scan was supplied it also says whether the topology changes.</li>
+  <li><code>primary</code>: the recommended topology id.</li>
+  <li><code>candidates[]</code>: all ten topologies, ranked. <code>score</code> = <code>fit</code> (rule evidence) + <code>latency_adj</code> + <code>cost_adj</code>. <code>quality_proxy</code> is the fit excluding latency and cost rules. <code>latency_verdict</code> is fits / tight / exceeds / far over against your budget. <code>viable=false</code> means the topology cannot do the job (<code>infeasible_reason</code>). Each candidate lists its <code>signals</code> (rule id, delta, rationale, citation) and <code>estimate.assumptions</code>.</li>
+  <li><code>frontier[]</code>: the Pareto set over (latency, quality_proxy). <code>fastest_viable</code> and <code>most_accurate</code> are the two ends.</li>
+  <li><code>plan</code>: components (name, role, <code>model_id</code>, <code>provider</code>, <code>fallback_model</code>, <code>tier</code>, <code>effort</code>, tools, <code>parallel_group</code>), edges, <code>briefing_rules</code> for subagents, and <code>augmentations</code> (cross-cutting recommendations with citations).</li>
+  <li><code>selection</code>: model per role (see section 6). <code>selected_estimate</code> re-runs the topology estimate on the chosen models; <code>tiers</code> lists the reference model per capability level used for the ranking.</li>
+  <li><code>mermaid</code>: a flowchart of the plan for docs and wikis; <code>svg</code>: the same diagram rendered server-side as standalone SVG.</li>
+  <li><code>scan</code>: present when the recommendation came from a scan: frameworks, tools, sources, side effects, <code>current_topology</code>, <code>inferred[]</code> with confidence, and <code>evidence[]</code> with file:line.</li>
+  <li><code>report_markdown</code>: the whole thing as a document you can commit.</li>
+</ul>
+<div class="note">Latency and cost are order-of-magnitude estimates for ranking, computed from the catalog's serving figures and your tool latency. Do not quote them as measurements.</div>
+
+<h2 id="models">6. Model per role</h2>
+<p>Every plan component is staffed from the model ecosystem catalog under your policy. Send a <code>policy</code> with any request:</p>
+<pre><code>{"profile": {...}, "policy": {"allowed_providers": ["anthropic", "self_hosted"], "regions": ["eu"], "require_verified": true}}</code></pre>
+<p>and read <code>selection.choices[]</code> in the response: the derived <code>requirements</code> (capability level, latency share, context, tools, structured output, stakes, volume, data class, task family), the chosen <code>model_id</code> and <code>effort</code>, the <code>fallback_model_id</code> (another provider where possible), per-call latency and cost, the scored <code>alternatives</code>, every <code>rejected</code> model with its reason, and the <code>rationale</code>. <code>selection.unfilled</code> lists roles no model could staff; <code>selection.warnings</code> flags placeholder entries and roles whose best model still exceeds its latency share. Set <code>data_sensitivity</code> in the profile so only cleared models are eligible. Register your own models (or override bundled ones) per request with <code>catalog_models</code>, or ask the platform team to deploy a catalog. Schema and procedure: <a href="MODEL_CATALOG.md">Model catalog</a>.</p>
+
+<h2 id="deliverables">7. The two deliverables</h2>
+<h3>Architecture document (PDF)</h3>
+<p>A4, Vanguard-styled, ready for a design review: summary table, why this architecture (cited) with counter-signals, repository scan findings and current-vs-recommended gap when a scan was supplied, options compared with the winner highlighted, frontier and runners-up, decomposition plan with the diagram, briefing rules, model selection per role, cross-cutting recommendations, estimate assumptions, the profile used, and sources.</p>
+<pre><code>curl -s "$VGSELECT_URL/api/v1/recommend/pdf" -H 'content-type: application/json' \
+  -d @request.json -o architecture.pdf          # request.json = {"profile": {...}, "scan": {...}, "policy": {...}}
+vgselect recommend --scan . --format pdf --out architecture.pdf</code></pre>
+<p>In the UI: the "Architecture doc (PDF)" button on the verdict card.</p>
+
+<h3>Agent skeleton (zip, LangChain/LangGraph)</h3>
+<p>A runnable project for the recommended topology, named <code>&lt;app&gt;-agent/</code>:</p>
+<table>
+<tr><th>File</th><th>Contents</th></tr>
+<tr><td><code>app/graph.py</code></td><td><code>StateGraph</code> wiring for the topology: fan-out with <code>Send</code>, conditional edges for routers and evaluator loops, a subgraph per domain lead for hierarchies, handoff routing with a cap</td></tr>
+<tr><td><code>app/agents.py</code></td><td>Provider-agnostic role agent factory on <code>langchain.chat_models.init_chat_model</code> (Anthropic, OpenAI, Azure OpenAI, Google, Bedrock, Mistral, self-hosted OpenAI-compatible, ...); uses <code>langchain.agents.create_agent</code> (LangChain 1.x) with a fallback to <code>langgraph.prebuilt.create_react_agent</code></td></tr>
+<tr><td><code>app/config.py</code></td><td>Model, provider, fallback and effort per role from the catalog selection; <code>RECURSION_LIMIT</code>, <code>MAX_TOOL_CALLS</code>, <code>MAX_ITERATIONS</code>, <code>MAX_WORKERS</code>, latency budget</td></tr>
+<tr><td><code>app/tools.py</code></td><td><code>@tool</code> stubs named after the tools in your profile or scan; an approval hook when irreversible tools exist</td></tr>
+<tr><td><code>app/state.py</code></td><td><code>TypedDict</code> state with reducers for parallel results</td></tr>
+<tr><td><code>main.py</code>, <code>tests/test_graph.py</code></td><td>Run one request; smoke test that the graph compiles without an API key</td></tr>
+<tr><td><code>README.md</code>, <code>ARCHITECTURE.md</code>, <code>vgselect_profile.json</code></td><td>How to run and what to fill in; the full recommendation; the profile it came from</td></tr>
+<tr><td><code>requirements.txt</code>, <code>.env.example</code>, <code>.gitignore</code></td><td>Only the integration packages and credentials the chosen providers need</td></tr>
+</table>
+<pre><code>curl -s "$VGSELECT_URL/api/v1/recommend/skeleton" -H 'content-type: application/json' \
+  -d '{"profile": {...}, "framework": "langgraph"}' -o my-agent.zip
+vgselect scaffold --scan . --out my-agent.zip
+unzip my-agent.zip && cd *-agent
+python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+pytest                                    # graph compiles
+python main.py "a representative request" # needs the provider credentials in .env</code></pre>
+<p>In the UI: the "LangGraph skeleton (.zip)" button on the verdict card.</p>
+<div class="ok">Everything marked <code>TODO</code> in the skeleton needs product-specific work: tool bodies, prompts, acceptance criteria. The graph structure, limits, model per role and tiering are the parts the recommendation determines. All ten templates have been verified to compile and pass their smoke test against LangGraph 1.2 and LangChain 1.4.</div>
+
+<h2 id="clients">8. Client snippets</h2>
+<p>Python:</p>
+<pre><code>import requests
+
+VG = "https://vgselect.internal.example.com"
+profile = {"task_complexity": "complex", "steps_predictable": False, "tool_count": 25,
+           "tool_calls_per_task": 40, "output_type": "code_change", "verifiability": "strong",
+           "latency_budget_s": 900, "interaction": "long_running", "accuracy_priority": 4,
+           "data_sensitivity": "confidential"}
+policy = {"allowed_providers": ["anthropic", "self_hosted"], "regions": ["eu"]}
+rec = requests.post(f"{VG}/api/v1/recommend", json={"profile": profile, "policy": policy}, timeout=30).json()
+print(rec["primary"], rec["headline"])
+for c in rec["candidates"][:3]:
+    print(c["name"], c["score"], c["estimate"]["latency_s"], c["latency_verdict"])
+for ch in rec["selection"]["choices"]:
+    print(ch["component_id"], ch["model_id"], ch["effort"], ch["fallback_model_id"])
+
+pdf = requests.post(f"{VG}/api/v1/recommend/pdf", json={"profile": profile, "policy": policy}, timeout=60).content
+open("architecture.pdf", "wb").write(pdf)</code></pre>
+<p>TypeScript:</p>
+<pre><code>const res = await fetch(`${VG}/api/v1/recommend`, {
+  method: "POST", headers: { "content-type": "application/json" },
+  body: JSON.stringify({ profile: { task_complexity: "moderate", scope_breadth: 3, tool_count: 12, tool_calls_per_task: 3,
+                                    tool_side_effects: "irreversible", latency_budget_s: 8, interaction: "multi_turn" },
+                         policy: { allowed_providers: ["anthropic"] } }),
+});
+const rec = await res.json();
+console.log(rec.primary, rec.plan.components.map((c: any) => `${c.name} -> ${c.model_id} (${c.provider})`));</code></pre>
+<p>CLI (no service needed):</p>
+<pre><code>pip install -e '.[pdf]'                           # from the repository
+vgselect scan .                                   # what the code reveals (add --format json --profile-out p.json)
+vgselect recommend --scan . --set latency_budget_s=8 --set accuracy_priority=4
+vgselect recommend --example deep_research --format mermaid
+vgselect recommend --scan . --format pdf --out architecture.pdf
+vgselect scaffold --scan . --out my-agent.zip
+vgselect catalog --catalog my_catalog.json        # list/validate the model ecosystem
+vgselect recommend --scan . --providers anthropic,self_hosted --regions eu --allow-unverified
+vgselect wizard --out my_app.json                 # interactive questionnaire</code></pre>
+<p>Generate a typed client from the spec: <code>openapi-generator-cli generate -i $VG/openapi.json -g python</code> (or <code>typescript-fetch</code>).</p>
+
+<h2 id="ci">9. Using it in CI</h2>
+<p>Fail a pull request when the implemented topology drifts from the agreed one:</p>
+<pre><code>zip -qr repo.zip . -x '*.git*'
+curl -sf "$VGSELECT_URL/api/v1/scan/upload" -F archive=@repo.zip -F 'overrides=@architecture/profile.json' -F include_markdown=false > out.json
+python - &lt;&lt;'PY'
+import json, sys
+d = json.load(open("out.json")); rec = d["recommendation"]; cur = d["scan"]["current_topology"]
+agreed = json.load(open("architecture/decision.json"))["topology"]
+print("current:", cur, "recommended:", rec["primary"], "agreed:", agreed)
+sys.exit(0 if cur == agreed else 1)
+PY</code></pre>
+<p>Commit the profile you agreed on (<code>architecture/profile.json</code>) so the scan inferences are always corrected by the same known facts, and commit the PDF from the design review next to it.</p>
+
+<h2 id="skill">10. The Claude Code skill</h2>
+<p>Copy <code>.claude/skills/vg-select-3a/</code> into your project (or <code>~/.claude/skills/</code>) and set <code>VGSELECT_URL</code> if you have a deployment. Then ask Claude Code, for example, "Should this agent be split into subagents?" It scans the repository, asks for the few fields code cannot reveal (including data sensitivity and provider or region constraints), runs the recommender, reports the topology, the gap from the current implementation, the latency/accuracy frontier, the plan and the model per role, and writes the architecture PDF and the skeleton zip.</p>
+
+<h2 id="faq">11. FAQ</h2>
+<ul>
+  <li><b>The recommendation is "single agent" but I expected multi-agent.</b> Check <code>parallel_subtasks</code>, <code>retrieval_depth</code>, <code>context_tokens_per_task</code> and <code>single_agent_baseline</code>. Multi-agent needs independent sub-tasks, context overflow, or breadth-first research to score; above a ~45% single-agent baseline it is penalised.</li>
+  <li><b>Everything "exceeds" my latency budget.</b> The headline names the fastest viable option. If nothing fits, the budget is incompatible with the tool calls and reading per request; the estimate assumptions list what to cut.</li>
+  <li><b>Can I trust the scan?</b> Treat inferences below 50% confidence as guesses. Evidence rows show exactly which lines produced each inference.</li>
+  <li><b>The PDF endpoint returns 503.</b> The server was installed without the <code>pdf</code>/<code>service</code> extra (reportlab). <code>GET /health</code> shows <code>pdf_enabled</code>.</li>
+  <li><b>Which LangGraph version does the skeleton target?</b> LangChain 1.x with LangGraph 1.x; it falls back to the older prebuilt agent on LangGraph 0.2/0.3. Other frameworks are not generated yet; the <code>framework</code> parameter exists so more can be added (<code>src/vgselect3a/scaffold/</code>).</li>
+  <li><b>Which models does the plan assume?</b> Whatever the catalog and policy allow. With the bundled catalog and default policy that is Claude Opus 5 for orchestration/synthesis, Sonnet 5 for workers and Haiku 4.5 for routers, because only the Anthropic entries are verified. Register your OpenAI, Google, self-hosted or other models in the catalog (see <a href="MODEL_CATALOG.md">Model catalog</a>) and the selector will use them where they fit.</li>
+  <li><b>A role is "unfilled".</b> No catalog model passed the hard filters (typically data class, approval, region or capability). The table lists the rejection reasons; clear a model for that data class, approve it, or lower the role's ambition by changing the topology or budget.</li>
+</ul>
+</body>
+</html>

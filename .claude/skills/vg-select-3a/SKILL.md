@@ -14,7 +14,7 @@ not produce.
 ## Workflow
 
 1. **Locate the engine.** Prefer, in order:
-   - a deployed service: if `VGSELECT_URL` is set, use `POST $VGSELECT_URL/api/v1/scan/upload` (zip of the repo), `/api/v1/recommend`, `/api/v1/recommend/pdf` and `/api/v1/recommend/skeleton` (see `docs/CONSUMER_GUIDE.md`); pass the `scan` object from the scan response back to the PDF and skeleton calls;
+   - a deployed service: if `VGSELECT_URL` is set, use `POST $VGSELECT_URL/api/v1/scan/upload` (zip of the repo), `/api/v1/recommend`, `/api/v1/recommend/pdf` and `/api/v1/recommend/skeleton` (see `docs/CONSUMER_GUIDE.html`); pass the `scan` object from the scan response back to the PDF and skeleton calls;
    - the CLI: `vgselect` on PATH, or `python -m vgselect3a.cli` with `PYTHONPATH=src` from this repository.
    If none is available, install with `pip install -e .` from the VG Select repository and continue.
 

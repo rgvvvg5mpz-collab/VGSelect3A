@@ -61,7 +61,7 @@ Full write-up: [docs/METHODOLOGY.md](docs/METHODOLOGY.md) and [docs/MODEL_CATALO
 |---|---|
 | Executives | [Executive brief](docs/EXECUTIVE_BRIEF.html) - what it is and why it helps the enterprise (one page, print-ready) |
 | Engineers deploying the service | [Deployment guide](docs/DEPLOYMENT.html) - install, Docker, configuration, security model, operations |
-| Engineers consuming the service, CLI or skill | [Consumer guide](docs/CONSUMER_GUIDE.md) - endpoints, profile fields, policy, reading results, PDF and skeleton, CI use |
+| Engineers consuming the service, CLI or skill | [Consumer guide](docs/CONSUMER_GUIDE.html) - endpoints, profile fields, policy, reading results, PDF and skeleton, CI use |
 | Architects and reviewers | [Methodology](docs/METHODOLOGY.md) - how the recommendation, estimates, plan, model selection and skeleton are computed |
 | Platform teams | [Model catalog](docs/MODEL_CATALOG.md) - catalog schema, per-role requirements, the selection procedure, policy, maintenance |
 | Everyone | [Industry guidance](docs/industry_guidance.md) - the evidence behind every rule and how vendor patterns map to topologies |
