@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 - 2026-09-07
+
+- Model ecosystem: a JSON model catalog (`src/vgselect3a/catalogs/default.json`, `VGSELECT_CATALOG`, `--catalog`, per-request `catalog_models`) describing governance, capability, performance, cost and measured evidence per model, including non-Anthropic and self-hosted models.
+- Per-role requirements derived from the plan (capability level, latency share, context, tools, structured output, stakes, volume, data class, task family, independence, cache group).
+- Model selector: hard filters, capability floor with evidence override, latency/cost scoring, orchestrator-not-weaker-than-workers, verifier independence, shared model per loop, fallback on another provider, unfilled-role feedback.
+- Selection policy (providers, platforms, regions, verified-only, approved-only, preferred provider) on CLI, API and UI; new `data_sensitivity` profile field.
+- Topology ranking estimates now use reference models per capability level from the catalog under the policy; the primary is re-estimated on the chosen models.
+- Report, PDF and UI gain a "Model selection per role" section; the skeleton becomes provider-aware (`init_chat_model`, per-provider packages and credentials, fallback per role).
+- `GET /api/v1/catalog`, `POST /api/v1/catalog/validate`, `vgselect catalog`.
+- docs/MODEL_CATALOG.md.
+
 ## 0.2.0 - 2026-09-07
 
 - Renamed to VG Select: 3A (Automated Agentic Architecture); package `vgselect3a`, CLI `vgselect`.

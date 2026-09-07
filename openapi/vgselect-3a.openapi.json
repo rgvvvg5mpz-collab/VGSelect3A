@@ -10,7 +10,7 @@
     "license": {
       "name": "MIT"
     },
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "paths": {
     "/health": {
@@ -53,6 +53,77 @@
                   },
                   "type": "array",
                   "title": "Response Fields Api V1 Fields Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Model ecosystem catalog",
+        "operationId": "api_catalog_api_v1_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Api Catalog Api V1 Catalog Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog/validate": {
+      "post": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Validate catalog entries (ModelSpec objects) without storing them",
+        "operationId": "api_catalog_validate_api_v1_catalog_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array",
+                "title": "Models"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Api Catalog Validate Api V1 Catalog Validate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -429,6 +500,12 @@
             "type": "boolean",
             "title": "Include Markdown",
             "default": true
+          },
+          "policy": {
+            "type": "string",
+            "title": "Policy",
+            "description": "JSON SelectionPolicy object.",
+            "default": "{}"
           }
         },
         "type": "object",
@@ -559,6 +636,39 @@
           "model_id": {
             "type": "string",
             "title": "Model Id"
+          },
+          "chosen_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chosen Model"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "fallback_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Model"
           }
         },
         "type": "object",
@@ -586,6 +696,33 @@
             "title": "Include Markdown",
             "description": "Include the full Markdown report in the response.",
             "default": true
+          },
+          "policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SelectionPolicyIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Model selection policy; default policy uses the whole catalog, verified and approved entries only."
+          },
+          "catalog_models": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Models",
+            "description": "Extra or overriding model catalog entries (ModelSpec objects) merged over the server's catalog for this request."
           },
           "scan": {
             "anyOf": [
@@ -616,6 +753,16 @@
       },
       "DescribeRequest": {
         "properties": {
+          "policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SelectionPolicyIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "text": {
             "type": "string",
             "minLength": 10,
@@ -760,6 +907,16 @@
             "type": "boolean",
             "title": "Pdf Enabled",
             "default": true
+          },
+          "catalog": {
+            "type": "string",
+            "title": "Catalog",
+            "default": ""
+          },
+          "catalog_models": {
+            "type": "integer",
+            "title": "Catalog Models",
+            "default": 0
           }
         },
         "type": "object",
@@ -829,6 +986,33 @@
             "title": "Include Markdown",
             "description": "Include the full Markdown report in the response.",
             "default": true
+          },
+          "policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SelectionPolicyIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Model selection policy; default policy uses the whole catalog, verified and approved entries only."
+          },
+          "catalog_models": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Models",
+            "description": "Extra or overriding model catalog entries (ModelSpec objects) merged over the server's catalog for this request."
           }
         },
         "type": "object",
@@ -921,6 +1105,47 @@
             ],
             "title": "Scan"
           },
+          "selection": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selection",
+            "description": "Model selection per role: requirements, chosen model, effort, fallback, alternatives, rejections, warnings."
+          },
+          "selected_estimate": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Estimate",
+            "description": "Topology estimate re-run on the chosen models."
+          },
+          "tiers": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tiers",
+            "description": "Reference model per capability level used for the ranking estimates."
+          },
           "report_markdown": {
             "anyOf": [
               {
@@ -982,6 +1207,31 @@
       },
       "ScanRequest": {
         "properties": {
+          "policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SelectionPolicyIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "catalog_models": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Models"
+          },
           "path": {
             "anyOf": [
               {
@@ -1031,6 +1281,89 @@
         },
         "type": "object",
         "title": "ScanRequest"
+      },
+      "SelectionPolicyIn": {
+        "properties": {
+          "allowed_providers": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Providers",
+            "description": "Only these providers (e.g. anthropic, openai, google, self_hosted)."
+          },
+          "blocked_providers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Blocked Providers"
+          },
+          "allowed_platforms": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Platforms",
+            "description": "Only models available on these platforms (anthropic_api, bedrock, vertex, foundry, openai_api, azure_openai, google_api, self_hosted)."
+          },
+          "regions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regions",
+            "description": "Model must be served in at least one of these regions."
+          },
+          "require_verified": {
+            "type": "boolean",
+            "title": "Require Verified",
+            "description": "Exclude illustrative (placeholder) catalog entries.",
+            "default": true
+          },
+          "require_approved": {
+            "type": "boolean",
+            "title": "Require Approved",
+            "description": "Exclude entries not approved by the platform team.",
+            "default": true
+          },
+          "prefer_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prefer Provider",
+            "description": "Small bonus for this provider (consistency)."
+          }
+        },
+        "type": "object",
+        "title": "SelectionPolicyIn",
+        "description": "Constraints on which catalog models may staff a role."
       },
       "SignalOut": {
         "properties": {
@@ -1476,6 +1809,24 @@
             "title": "Human In Loop",
             "description": "Is a human available to approve risky actions during a request?"
           },
+          "data_sensitivity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "public",
+                  "internal",
+                  "confidential",
+                  "restricted"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Sensitivity",
+            "description": "Most sensitive class of data a request can contain. Only models cleared for this class in the catalog are eligible."
+          },
           "domains": {
             "anyOf": [
               {
@@ -1574,6 +1925,10 @@
     {
       "name": "reference",
       "description": "Field definitions, bundled examples, topology catalog."
+    },
+    {
+      "name": "catalog",
+      "description": "The model ecosystem catalog used for per-role model selection."
     }
   ]
 }

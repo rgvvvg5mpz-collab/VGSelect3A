@@ -72,6 +72,12 @@ def to_dict(rec: "Recommendation") -> dict:
         "mermaid": to_mermaid(rec.plan),
         "svg": to_svg(rec.plan),
         "scan": rec.scan.to_dict() if rec.scan else None,
+        "selection": rec.selection.to_dict() if rec.selection else None,
+        "selected_estimate": {
+            "latency_s": rec.selected_estimate.latency_s, "cost_usd": rec.selected_estimate.cost_usd,
+            "token_multiplier": rec.selected_estimate.token_multiplier, "tiers_used": rec.selected_estimate.tiers_used,
+        } if rec.selected_estimate else None,
+        "tiers": {k: v.model_id for k, v in rec.tiers.items()},
     }
 
 
@@ -98,6 +104,47 @@ def to_mermaid(plan: Plan) -> str:
         lbl = f"|{e.label}|" if e.label else ""
         lines.append(f"    {e.src} -->{lbl} {e.dst}")
     return "\n".join(lines)
+
+
+def selection_markdown(rec: "Recommendation") -> str:
+    sel = rec.selection
+    out = ["## Model selection per role\n"]
+    pol = sel.policy
+    constraints = []
+    if pol.allowed_providers:
+        constraints.append("providers " + ", ".join(pol.allowed_providers))
+    if pol.allowed_platforms:
+        constraints.append("platforms " + ", ".join(pol.allowed_platforms))
+    if pol.regions:
+        constraints.append("regions " + ", ".join(pol.regions))
+    constraints.append("verified entries only" if pol.require_verified else "illustrative entries allowed")
+    out.append(f"Catalog `{sel.catalog_name}`; data class **{rec.profile.data_sensitivity}**; policy: {'; '.join(constraints)}. "
+               f"Providers used: {', '.join(sel.providers_used) or 'none'}. "
+               + (f"Estimated per request on the chosen models: ~{rec.selected_estimate.latency_s:.0f}s, ${rec.selected_estimate.cost_usd:.3f}." if rec.selected_estimate else "") + "\n")
+    out.append("| Role | Needs | Chosen model | Effort | Fallback | Est. per call | Alternatives |")
+    out.append("|---|---|---|---|---|---|---|")
+    for c in sel.choices:
+        r = c.requirements
+        needs = f"tier ≥{r.reasoning_level}; {r.latency_share_s:.0f}s share; {r.context_tokens:,} ctx" + ("; tools" if r.needs_tools else "") + ("; structured" if r.needs_structured_output else "")
+        chosen = f"**{c.model_id}**" if c.model_id else "**unfilled**"
+        est = f"~{c.est_latency_s:.1f}s, ${c.est_cost_per_call:.4f}" if c.model_id else "-"
+        alts = ", ".join(f"{a.model_id} ({a.score:+.1f})" for a in c.alternatives[:3]) or "-"
+        out.append(f"| {c.component_id} ({r.role_type}) | {needs} | {chosen} | {c.effort} | {c.fallback_model_id or '-'} | {est} | {alts} |")
+    out.append("")
+    for c in sel.choices:
+        if c.rationale:
+            out.append(f"- **{c.component_id}**: " + " ".join(c.rationale))
+    if sel.warnings:
+        out.append("\nWarnings:")
+        for w in sel.warnings:
+            out.append(f"- {w}")
+    unfilled = [c for c in sel.choices if not c.model_id]
+    if unfilled:
+        out.append("\nWhy roles are unfilled (first rejections):")
+        for c in unfilled[:3]:
+            out.append(f"- {c.component_id}: " + "; ".join(f"{j.model_id}: {j.reason}" for j in c.rejected[:4]))
+    out.append("")
+    return "\n".join(out)
 
 
 def to_markdown(rec: "Recommendation") -> str:
@@ -169,6 +216,9 @@ def to_markdown(rec: "Recommendation") -> str:
     out.append(to_mermaid(rec.plan))
     out.append("```\n")
 
+    if rec.selection is not None:
+        out.append(selection_markdown(rec))
+
     out.append("## Cross-cutting recommendations\n")
     for a in rec.plan.augmentations:
         out.append(f"- **{a.title}.** {a.why} _[{CITATIONS.get(a.citation, a.citation)}]_")
@@ -177,7 +227,7 @@ def to_markdown(rec: "Recommendation") -> str:
     out.append("## Estimate assumptions\n")
     for n in best.estimate.assumptions:
         out.append(f"- {n}")
-    out.append("- Serving assumptions: " + "; ".join(f"{t.model_id} ~{t.ttft_s}s TTFT, ~{t.tokens_per_s:.0f} tok/s" for t in MODEL_TIERS.values()) + f"; tool call ~{p.tool_latency_s}s.")
+    out.append("- Serving assumptions (reference model per capability level from the catalog): " + "; ".join(f"{t.model_id} ~{t.ttft_s}s TTFT, ~{t.tokens_per_s:.0f} tok/s" for t in rec.tiers.values()) + f"; tool call ~{p.tool_latency_s}s.")
     out.append(f"- Reading load per task {p.context_tokens_per_task:,} tokens (context pressure: {p.context_pressure}); output type {p.output_type}.")
     out.append("- Latency is the critical path (parallel branches count once); cost sums every call at list prices without caching. Treat both as order-of-magnitude.\n")
 

@@ -213,6 +213,13 @@
 
       <div class="step"><span class="n">2</span><h2>Describe the workload</h2><span class="muted" id="setcount"></span></div>
       <form id="profile-form" aria-label="Workload profile"></form>
+      <details class="grp" id="ecosystem"><summary>Model ecosystem <span class="cnt" id="eco-cnt"></span></summary>
+        <p class="lede">Which catalog models may staff each role. Each role's needs (capability, latency share, context, tools, data class) are derived from the plan; the selector matches them against the catalog.</p>
+        <div class="field"><div class="lbl">Allowed providers <button class="tip" type="button" data-tip="Leave all unticked to allow every provider in the catalog." aria-label="About providers">i</button></div><div class="pills" id="pol-providers"></div></div>
+        <div class="field"><div class="lbl">Allowed platforms <button class="tip" type="button" data-tip="Where the model must be reachable from (first-party API, Bedrock, Vertex, Foundry, Azure OpenAI, self-hosted). Leave unticked for any." aria-label="About platforms">i</button></div><div class="pills" id="pol-platforms"></div></div>
+        <div class="field"><div class="lbl">Regions <button class="tip" type="button" data-tip="The model must be served in at least one ticked region. Leave unticked for any." aria-label="About regions">i</button></div><div class="pills" id="pol-regions"></div></div>
+        <div class="field"><label class="switch"><input type="checkbox" id="pol-unverified"><span class="txt">Allow illustrative (unverified) catalog entries</span></label><div class="help">Placeholder entries carry example numbers; verify them in the catalog before letting them win.</div></div>
+      </details>
       <div class="summary" id="summary" aria-live="polite"></div>
 
       <div class="step"><span class="n">3</span><h2>Get the recommendation</h2></div>
@@ -244,7 +251,8 @@ const title = n => n.replace(/_s$/, ' (seconds)').replace(/_/g, ' ').replace(/^.
 let FIELDS = [], CITES = {}, EXTRAS = {}, LAST = null, LAST_SCAN = null;
 
 const GROUPS = {meta:"About the application", task:"Task shape", tools:"Tools", knowledge:"Knowledge and context", quality:"Quality and risk", ops:"Operating constraints"};
-const KEY = new Set(['task_complexity','steps_predictable','parallel_subtasks','latency_budget_s','accuracy_priority','cost_sensitivity','tool_calls_per_task','retrieval_depth']);
+let CATALOG = null;
+const KEY = new Set(['task_complexity','steps_predictable','parallel_subtasks','latency_budget_s','accuracy_priority','cost_sensitivity','tool_calls_per_task','retrieval_depth','data_sensitivity']);
 const UNITS = {latency_budget_s:'seconds', tool_latency_s:'seconds', context_tokens_per_task:'tokens', requests_per_day:'per day'};
 const ENDS = {accuracy_priority:['Best effort is fine','Errors are very costly'], cost_sensitivity:['Cost is no concern','Cost dominates']};
 const OPTION_TIPS = {
@@ -269,12 +277,26 @@ async function init(){
     buildForm();
     const ex = await fetch('/api/v1/examples').then(r=>r.json());
     for(const e of ex){ const o=document.createElement('option'); o.value=e.name; o.textContent=`${title(e.name)} — ${e.description}`; o.dataset.profile=JSON.stringify(e.profile); $('#example').appendChild(o); }
+    try{ CATALOG = await fetch('/api/v1/catalog').then(r=>r.json()); buildPolicy(); }catch(_){ }
     const h = await fetch('/health').then(r=>r.json());
-    $('#status').innerHTML = `<b>${esc(h.product)}</b> v${esc(h.version)} &middot; scan by path: ${h.scan_roots.length? esc(h.scan_roots.join(', ')) : 'disabled (use zip upload)'} &middot; git clone: ${h.git_clone_enabled?'on':'off'} &middot; describe: ${h.describe_enabled?'on':'off'}`;
+    $('#status').innerHTML = `<b>${esc(h.product)}</b> v${esc(h.version)} &middot; catalog: ${esc(h.catalog)} (${h.catalog_models} models) &middot; scan by path: ${h.scan_roots.length? esc(h.scan_roots.join(', ')) : 'disabled (use zip upload)'} &middot; git clone: ${h.git_clone_enabled?'on':'off'} &middot; describe: ${h.describe_enabled?'on':'off'} &middot; PDF: ${h.pdf_enabled?'on':'off'}`;
     updateSummary();
   }catch(e){ showError('Could not load field definitions: '+e.message); }
 }
 
+function buildPolicy(){
+  if(!CATALOG) return;
+  const mk=(id, items, name)=>{ const el=$('#'+id); el.innerHTML=''; for(const v of items){ el.insertAdjacentHTML('beforeend', `<label><input type="checkbox" name="${name}" value="${esc(v)}">${esc(v)}</label>`);} };
+  mk('pol-providers', CATALOG.providers, 'pol_provider'); mk('pol-platforms', CATALOG.platforms, 'pol_platform'); mk('pol-regions', CATALOG.regions, 'pol_region');
+  $('#eco-cnt').textContent = `${CATALOG.models.length} models · ${CATALOG.models.filter(m=>!m.illustrative).length} verified`;
+}
+function readPolicy(){
+  const vals = n => [...document.querySelectorAll(`input[name="${n}"]:checked`)].map(i=>i.value);
+  const pol = {require_verified: !$('#pol-unverified')?.checked};
+  const p=vals('pol_provider'), pl=vals('pol_platform'), rg=vals('pol_region');
+  if(p.length) pol.allowed_providers=p; if(pl.length) pol.allowed_platforms=pl; if(rg.length) pol.regions=rg;
+  return pol;
+}
 function buildForm(){
   const form = $('#profile-form'); form.innerHTML='';
   const groups = {};
@@ -367,7 +389,7 @@ $('#btn-recommend').addEventListener('click', async e=>{
   e.preventDefault(); showError('');
   const profile={...EXTRAS, ...readForm()};
   busy(true,'Scoring ten topologies…');
-  try{ render(await post('/api/v1/recommend',{profile})); }
+  try{ render(await post('/api/v1/recommend',{profile, policy: readPolicy()})); }
   catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
 });
 $('#btn-scan').addEventListener('click', async e=>{
@@ -376,15 +398,15 @@ $('#btn-scan').addEventListener('click', async e=>{
   busy(true,'Scanning repository…');
   try{
     let j;
-    if($('#zip').files.length){ const fd=new FormData(); fd.append('archive',$('#zip').files[0]); fd.append('overrides',JSON.stringify(overrides)); j=await post('/api/v1/scan/upload', fd, true); }
-    else { const body={overrides}; if($('#scan-path').value) body.path=$('#scan-path').value; else if($('#scan-git').value) body.git_url=$('#scan-git').value; else throw new Error('Choose a zip, a server path, or a git URL.'); j=await post('/api/v1/scan', body); }
+    if($('#zip').files.length){ const fd=new FormData(); fd.append('archive',$('#zip').files[0]); fd.append('overrides',JSON.stringify(overrides)); fd.append('policy',JSON.stringify(readPolicy())); j=await post('/api/v1/scan/upload', fd, true); }
+    else { const body={overrides, policy: readPolicy()}; if($('#scan-path').value) body.path=$('#scan-path').value; else if($('#scan-git').value) body.git_url=$('#scan-git').value; else throw new Error('Choose a zip, a server path, or a git URL.'); j=await post('/api/v1/scan', body); }
     fillForm(j.profile); EXTRAS={tools:j.profile.tools, sources:j.profile.sources};
     render(j.recommendation, j.scan); toast('Profile pre-filled from the scan. Review the low-confidence fields.');
   }catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
 });
 $('#btn-describe').addEventListener('click', async e=>{
   e.preventDefault(); showError(''); busy(true,'Asking Claude to infer the profile…');
-  try{ const j=await post('/api/v1/describe',{text:$('#describe-text').value}); fillForm(j.profile); render(j); }
+  try{ const j=await post('/api/v1/describe',{text:$('#describe-text').value, policy: readPolicy()}); fillForm(j.profile); render(j); }
   catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
 });
 
@@ -446,8 +468,17 @@ function render(rec, scan){
     <div class="legend"><span><i style="background:var(--vg-red)"></i>Recommended</span><span><i style="background:var(--info)"></i>On the frontier (no option is both faster and a better fit)</span><span><i style="background:#B5B0AA"></i>Other viable options</span></div>
     <p class="muted">Fastest viable within budget: <b>${esc(rec.fastest_viable? byId[rec.fastest_viable].name : 'none')}</b> · Strongest structural fit: <b>${esc(byId[rec.most_accurate]?.name||'')}</b></p></div>`;
 
+  if(rec.selection){
+    const sel=rec.selection, se=rec.selected_estimate;
+    h += `<div class="card"><h2>Model selection per role</h2><p class="lede">Each role's needs are derived from the plan and matched against the catalog <b>${esc(sel.catalog)}</b> under your policy (${sel.policy.require_verified?'verified entries only':'illustrative entries allowed'}${sel.policy.allowed_providers?'; providers '+esc(sel.policy.allowed_providers.join(', ')):''}${sel.policy.regions?'; regions '+esc(sel.policy.regions.join(', ')):''}). Data class: <b>${esc(rec.profile.data_sensitivity||'internal')}</b>. Providers used: <b>${esc(sel.providers_used.join(', ')||'none')}</b>.${se?` On the chosen models this request is estimated at <b>~${Math.round(se.latency_s)}s</b> and <b>$${se.cost_usd.toFixed(3)}</b>.`:''}</p>
+      ${sel.warnings.map(w=>`<div class="badge warn" style="white-space:normal;margin:3px 0">${esc(w)}</div>`).join('')}
+      <div class="wrap"><table><tr><th>Role</th><th data-tip="Derived requirement: minimum capability tier, latency share of the budget, context to hold, tools/structured output." tabindex="0">Needs</th><th data-tip="Best-scoring catalog model passing the hard filters (approval, data class, context, tools, structured output, modality, capability floor)." tabindex="0">Chosen</th><th>Effort</th><th data-tip="Next-best model, preferably on another provider, for outages or refusals." tabindex="0">Fallback</th><th data-tip="This role's own latency and cost per call on the chosen model." tabindex="0">Est. / call</th><th>Alternatives</th><th></th></tr>
+      ${sel.choices.map((c,i)=>{ const r=c.requirements; const needs=`tier ≥${r.reasoning_level} · ${Math.round(r.latency_share_s)}s · ${(r.context_tokens/1000).toFixed(0)}k ctx${r.needs_tools?' · tools':''}${r.needs_structured_output?' · structured':''}`;
+        return `<tr class="${c.model_id?'':'nv'}"><td><b>${esc(c.component_id)}</b><div class="muted">${esc(c.role_type)}</div></td><td class="muted">${esc(needs)}</td><td>${c.model_id?`<span class="pill">${esc(c.model_id)}</span>`:'<span class="badge bad">unfilled</span>'}</td><td>${esc(c.effort)}</td><td>${c.fallback_model_id?`<span class="pill">${esc(c.fallback_model_id)}</span>`:'-'}</td><td>${c.model_id?`~${c.est_latency_s.toFixed(1)}s<br><span class="muted">$${c.est_cost_per_call.toFixed(4)}</span>`:'-'}</td><td class="muted">${c.alternatives.slice(0,3).map(a=>`${esc(a.model_id)} (${a.score>0?'+':''}${a.score.toFixed(1)})`).join('<br>')||'-'}</td><td><button class="exp" data-sel="${i}" aria-expanded="false">Why</button></td></tr>
+        <tr class="sig" id="sel-${i}"><td colspan="8"><ul>${c.rationale.map(x=>`<li>${esc(x)}</li>`).join('')}${c.rejected.length?`<li class="muted">Rejected: ${c.rejected.slice(0,6).map(j=>esc(j.model_id)+' ('+esc(j.reason)+')').join('; ')}${c.rejected.length>6?' …':''}</li>`:''}</ul></td></tr>`; }).join('')}</table></div></div>`;
+  }
   h += `<div class="card"><h2>Build plan</h2><p class="lede">${esc(best.name)}: who does what, on which model, and what runs in parallel.</p>
-    <div class="comps">${rec.plan.components.map(c=>`<div class="comp ${esc(c.tier)}"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.model_id)}${c.effort!=='n/a'?' · effort '+esc(c.effort):''}</div><div class="r">${esc(c.role)}</div>${c.tools?`<div class="muted" style="margin-top:4px">Tools: ${esc(c.tools)}</div>`:''}${c.parallel_group?`<div class="pg">runs in parallel · ${esc(c.parallel_group)}</div>`:''}</div>`).join('')}</div>
+    <div class="comps">${rec.plan.components.map(c=>`<div class="comp ${esc(c.tier)}"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.model_id)}${c.provider?' · '+esc(c.provider):''}${c.effort!=='n/a'?' · effort '+esc(c.effort):''}${c.fallback_model?'<br>fallback: '+esc(c.fallback_model):''}</div><div class="r">${esc(c.role)}</div>${c.tools?`<div class="muted" style="margin-top:4px">Tools: ${esc(c.tools)}</div>`:''}${c.parallel_group?`<div class="pg">runs in parallel · ${esc(c.parallel_group)}</div>`:''}</div>`).join('')}</div>
     <div class="diagram">${rec.svg||''}</div>
     ${rec.plan.briefing_rules.length?`<h3>Briefing and coordination rules</h3><ul>${rec.plan.briefing_rules.map(b=>`<li>${esc(b)}</li>`).join('')}</ul>`:''}
     <details><summary class="muted" style="cursor:pointer">Mermaid source for wikis and docs</summary><pre>${esc(rec.mermaid)}</pre></details></div>`;
@@ -458,7 +489,7 @@ function render(rec, scan){
   h += `<div class="card"><h2>Assumptions behind the numbers</h2><ul>${best.estimate.assumptions.map(a=>`<li>${esc(a)}</li>`).join('')}<li>Latency is the critical path (parallel branches count once); cost sums every call at list prices without caching. Treat both as order-of-magnitude for ranking, not as measurements.</li></ul></div>`;
 
   $('#results').innerHTML=h;
-  document.querySelectorAll('.exp').forEach(b=>b.addEventListener('click',()=>{ const r=$('#sig-'+b.dataset.row); const on=!r.classList.contains('on'); r.classList.toggle('on',on); b.setAttribute('aria-expanded',String(on)); b.textContent=on?'Hide':'Why'; }));
+  document.querySelectorAll('.exp').forEach(b=>b.addEventListener('click',()=>{ const r=b.dataset.sel!==undefined? $('#sel-'+b.dataset.sel) : $('#sig-'+b.dataset.row); const on=!r.classList.contains('on'); r.classList.toggle('on',on); b.setAttribute('aria-expanded',String(on)); b.textContent=on?'Hide':'Why'; }));
   $('#dl-md').addEventListener('click',()=>download('vgselect-recommendation.md', rec.report_markdown||'', 'text/markdown'));
   $('#dl-pdf').addEventListener('click',()=>deliverable('/api/v1/recommend/pdf', `${rec.profile.name||'app'}-architecture.pdf`, 'Building the PDF…'));
   $('#dl-skel').addEventListener('click',()=>deliverable('/api/v1/recommend/skeleton', `${rec.profile.name||'app'}-langgraph-skeleton.zip`, 'Generating the skeleton…'));
@@ -503,7 +534,7 @@ function helpCard(){
 async function deliverable(url, filename, msg){
   const b=$('#dl-pdf'), k=$('#dl-skel'); [b,k].forEach(x=>x.disabled=true); toast(msg);
   try{
-    const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({profile:LAST.profile, scan:LAST_SCAN, include_markdown:false, framework:'langgraph'})});
+    const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({profile:LAST.profile, scan:LAST_SCAN, policy: readPolicy(), include_markdown:false, framework:'langgraph'})});
     if(!r.ok){ let d=''; try{ d=(await r.json()).detail; }catch(_){} throw new Error(d||r.statusText); }
     const blob=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); toast('Downloaded '+filename);
   }catch(err){ showError('Download failed: '+err.message); }

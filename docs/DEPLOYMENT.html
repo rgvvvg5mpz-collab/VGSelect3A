@@ -33,6 +33,7 @@
 <tr><td><code>/api/v1/scan</code>, <code>/api/v1/scan/upload</code></td><td>Scan a repository (server path, git URL, or uploaded zip) and infer the profile, then recommend</td></tr>
 <tr><td><code>/api/v1/recommend/pdf</code>, <code>/api/v1/recommend/skeleton</code></td><td>Architecture document (PDF, needs reportlab) and downloadable LangGraph project skeleton (zip)</td></tr>
 <tr><td><code>/api/v1/describe</code></td><td>Optional: infer the profile from prose with Claude (needs Anthropic credentials)</td></tr>
+<tr><td><code>/api/v1/catalog</code>, <code>/api/v1/catalog/validate</code></td><td>The model ecosystem catalog and a validator for new entries</td></tr>
 <tr><td><code>/api/v1/fields</code>, <code>/api/v1/examples</code>, <code>/api/v1/topologies</code>, <code>/api/v1/citations</code></td><td>Reference data (profile fields, bundled scenarios, topology catalog, citation keys)</td></tr>
 <tr><td><code>/health</code>, <code>/docs</code>, <code>/redoc</code>, <code>/openapi.json</code></td><td>Health, Swagger UI, ReDoc, OpenAPI 3 document</td></tr>
 </table>
@@ -58,12 +59,12 @@ vgselect-service                               # http://localhost:8080</code></p
 export ANTHROPIC_API_KEY=...                   # or an `ant auth login` profile plus VGSELECT_DESCRIBE_ENABLED=1</code></pre>
 
 <h2 id="docker">4. Docker</h2>
-<pre><code>docker build -t vgselect-3a:0.2.0 .
+<pre><code>docker build -t vgselect-3a:0.3.0 .
 docker run --rm -p 8080:8080 \
   -v /srv/repos:/scan:ro \
   -e VGSELECT_SCAN_ROOTS=/scan \
   -e VGSELECT_ALLOW_GIT_CLONE=0 \
-  vgselect-3a:0.2.0</code></pre>
+  vgselect-3a:0.3.0</code></pre>
 <p>The image runs as a non-root user, exposes 8080, and has a <code>HEALTHCHECK</code> on <code>/health</code>. Mount repositories read-only under <code>/scan</code>. To add the <code>describe</code> endpoint, uncomment the <code>[service,llm]</code> line in the <code>Dockerfile</code> and pass <code>ANTHROPIC_API_KEY</code> as a secret.</p>
 
 <h3>Kubernetes sketch</h3>
@@ -79,6 +80,7 @@ livenessProbe:   { httpGet: { path: /health, port: 8080 }, periodSeconds: 30 }</
 <tr><td><code>VGSELECT_SCAN_ROOTS</code></td><td>empty (path scanning disabled)</td><td>Colon-separated directories that <code>POST /api/v1/scan {path}</code> may read. Paths outside these roots return 403.</td></tr>
 <tr><td><code>VGSELECT_ALLOW_GIT_CLONE</code></td><td><code>0</code></td><td>Set to <code>1</code> to allow <code>POST /api/v1/scan {git_url}</code> (shallow clone into a temp dir, deleted afterwards). Only https://, ssh:// and git@ URLs are accepted.</td></tr>
 <tr><td><code>VGSELECT_MAX_UPLOAD_MB</code></td><td><code>50</code></td><td>Maximum zip size for <code>/api/v1/scan/upload</code>.</td></tr>
+<tr><td><code>VGSELECT_CATALOG</code></td><td>bundled default</td><td>Path to your model ecosystem catalog JSON (schema in <code>docs/MODEL_CATALOG.md</code>). The bundled default has verified Anthropic entries and placeholder entries for other providers, which are excluded until verified.</td></tr>
 <tr><td><code>VGSELECT_CORS_ORIGINS</code></td><td>empty</td><td>Comma-separated origins allowed to call the API from a browser on another host.</td></tr>
 <tr><td><code>ANTHROPIC_API_KEY</code></td><td>unset</td><td>Enables <code>/api/v1/describe</code> when the <code>llm</code> extra is installed. <code>VGSELECT_DESCRIBE_ENABLED=1</code> enables it when credentials come from an <code>ant auth login</code> profile instead.</td></tr>
 </table>
@@ -116,7 +118,7 @@ curl -s http://localhost:8080/api/v1/recommend/pdf -H 'content-type: application
   -d '{"profile":{"name":"smoke","task_complexity":"moderate","tool_count":3,"tool_calls_per_task":3}}' -o /tmp/smoke.pdf && file /tmp/smoke.pdf
 curl -s http://localhost:8080/api/v1/recommend/skeleton -H 'content-type: application/json' \
   -d '{"profile":{"name":"smoke","task_complexity":"moderate","tool_count":3,"tool_calls_per_task":3}}' -o /tmp/smoke.zip && unzip -l /tmp/smoke.zip | tail -3</code></pre>
-<p>Run the test suite before promoting a build: <code>pip install -e '.[dev]' && pytest</code> (55 tests: engine, scanner, every endpoint, PDF generation, and syntax checks of the generated skeleton for all ten topologies).</p>
+<p>Run the test suite before promoting a build: <code>pip install -e '.[dev]' && pytest</code> (68 tests: engine, scanner, catalog and model selection, every endpoint, PDF generation, and syntax checks of the generated skeleton for all ten topologies).</p>
 
 <h2 id="upgrade">9. Upgrading and tuning</h2>
 <ul>
@@ -126,6 +128,7 @@ curl -s http://localhost:8080/api/v1/recommend/skeleton -H 'content-type: applic
   <li>Scanner pattern tables are at the top of <code>src/vgselect3a/scanner.py</code>; extend them for in-house frameworks or tool conventions.</li>
   <li>Skeleton templates live in <code>src/vgselect3a/scaffold/langgraph.py</code> (one function per topology). To adapt them to an in-house framework or house style, edit the templates and run <code>pytest</code>; the suite syntax-checks every generated file. To add another framework, register a generator in <code>src/vgselect3a/scaffold/__init__.py</code>.</li>
   <li>The PDF layout is in <code>src/vgselect3a/pdf_report.py</code>; the colours and header band are constants at the top of the file.</li>
+  <li>The model catalog is data: keep it in version control next to your model registry, validate with <code>vgselect catalog --catalog file.json</code>, deploy with <code>VGSELECT_CATALOG</code>. Selection rules are in <code>src/vgselect3a/model_selector.py</code>; role requirements in <code>src/vgselect3a/requirements.py</code>.</li>
   <li>Bump the version in the <code>Dockerfile</code> tag and <code>CHANGELOG.md</code> together with <code>pyproject.toml</code>.</li>
 </ul>
 <h3>Developer preview</h3>

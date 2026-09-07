@@ -109,6 +109,11 @@ FIELD_SPECS: tuple[FieldSpec, ...] = (
     FieldSpec("requests_per_day", "int", "Expected volume, requests per day.", default=1000, minimum=0, maximum=1_000_000_000, group="ops"),
     FieldSpec("cost_sensitivity", "int", "1 = cost is not a concern ... 5 = cost dominates the decision.", default=3, minimum=1, maximum=5, group="ops"),
     FieldSpec("human_in_loop", "bool", "Is a human available to approve risky actions during a request?", default=False, group="ops"),
+    FieldSpec(
+        "data_sensitivity", "enum",
+        "Most sensitive class of data a request can contain. Only models cleared for this class in the catalog are eligible.",
+        choices=("public", "internal", "confidential", "restricted"), default="internal", group="ops",
+    ),
 )
 
 SPEC_BY_NAME = {s.name: s for s in FIELD_SPECS}
@@ -141,6 +146,7 @@ class WorkloadProfile:
     requests_per_day: int = 1000
     cost_sensitivity: int = 3
     human_in_loop: bool = False
+    data_sensitivity: str = "internal"
     extra: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:

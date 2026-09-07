@@ -4,6 +4,8 @@
     vgselect recommend --scan PATH [--profile overrides.json] [--set key=value]
     vgselect recommend --profile app.json [--format md|json|mermaid|svg|pdf] [--out FILE]
     vgselect scaffold --scan PATH --out my-agent.zip [--framework langgraph]
+    vgselect catalog [--catalog models.json]            (list the model ecosystem)
+    (recommend/scaffold accept --catalog, --providers, --platforms, --regions, --allow-unverified, --prefer-provider)
     vgselect recommend --example deep_research
     vgselect recommend --set task_complexity=open_ended --set latency_budget_s=600 ...
     vgselect wizard [--out profile.json]
@@ -20,6 +22,8 @@ import sys
 from importlib import resources
 from pathlib import Path
 
+from .catalog import Catalog
+from .model_selector import SelectionPolicy
 from .profile import FIELD_SPECS, SPEC_BY_NAME, WorkloadProfile
 from .recommender import recommend
 from .scanner import merge_profile, scan_markdown, scan_repository
@@ -79,6 +83,19 @@ def _emit(rec, fmt: str, out: str | None = None) -> None:
         print(rec.to_markdown())
 
 
+def _catalog_and_policy(args: argparse.Namespace):
+    catalog = Catalog.load(args.catalog) if getattr(args, "catalog", None) else Catalog.default()
+    split = lambda v: [x.strip() for x in v.split(",") if x.strip()] if v else None  # noqa: E731
+    policy = SelectionPolicy(
+        allowed_providers=split(getattr(args, "providers", None)),
+        allowed_platforms=split(getattr(args, "platforms", None)),
+        regions=split(getattr(args, "regions", None)),
+        require_verified=not getattr(args, "allow_unverified", False),
+        prefer_provider=getattr(args, "prefer_provider", None),
+    )
+    return catalog, policy
+
+
 def _profile_and_scan(args: argparse.Namespace):
     data: dict = {}
     scan = None
@@ -97,12 +114,15 @@ def _profile_and_scan(args: argparse.Namespace):
 
 def cmd_recommend(args: argparse.Namespace) -> None:
     profile, scan = _profile_and_scan(args)
-    _emit(recommend(profile, scan=scan), args.format, getattr(args, "out", None))
+    catalog, policy = _catalog_and_policy(args)
+    _emit(recommend(profile, scan=scan, catalog=catalog, policy=policy), args.format, getattr(args, "out", None))
 
 
 def cmd_scaffold(args: argparse.Namespace) -> None:
     profile, scan = _profile_and_scan(args)
-    rec = recommend(profile, scan=scan)
+    catalog, policy = _catalog_and_policy(args)
+    rec = recommend(profile, scan=scan, catalog=catalog, policy=policy)
+    rec._catalog = catalog
     Path(args.out).write_bytes(rec.to_skeleton(args.framework))
     print(f"Wrote {args.framework} skeleton for '{rec.primary.topology.name}' to {args.out}", file=sys.stderr)
 
@@ -152,6 +172,14 @@ def cmd_describe(args: argparse.Namespace) -> None:
     _emit(recommend(profile), args.format)
 
 
+def cmd_catalog(args: argparse.Namespace) -> None:
+    cat = Catalog.load(args.catalog) if args.catalog else Catalog.default()
+    print(f"{cat.name} ({cat.source}): {len(cat.models)} models; providers {', '.join(cat.providers())}\n")
+    print(f"{'id':22s} {'provider':12s} tier tools ctx        $/M in/out   ttft  tok/s  approved verified data")
+    for m in cat.models:
+        print(f"{m.id:22s} {m.provider:12s} {m.reasoning_tier:>4} {m.tool_use:>5} {m.context_window:>10,} {m.input_price:>5.2f}/{m.output_price:<6.2f} {m.ttft_s:>4.1f} {m.tokens_per_s:>6.0f}  {'yes' if m.approved else 'no ':8s} {'no ' if m.illustrative else 'yes':8s} {','.join(m.data_classes)}")
+
+
 def cmd_examples(_: argparse.Namespace) -> None:
     pkg = resources.files("vgselect3a") / "examples"
     for p in sorted(pkg.iterdir()):
@@ -170,6 +198,16 @@ def cmd_fields(_: argparse.Namespace) -> None:
         print(f"{spec.name:24s} {spec.kind:6s} default={spec.default!r:12} {rng}\n    {spec.description}")
 
 
+def _add_policy_args(sp: argparse.ArgumentParser) -> None:
+    g = sp.add_argument_group("model ecosystem")
+    g.add_argument("--catalog", help="Path to a model catalog JSON file (default: bundled).")
+    g.add_argument("--providers", help="Comma-separated allowed providers, e.g. anthropic,openai,self_hosted.")
+    g.add_argument("--platforms", help="Comma-separated allowed platforms, e.g. bedrock,vertex.")
+    g.add_argument("--regions", help="Comma-separated regions a model must be served in, e.g. eu.")
+    g.add_argument("--allow-unverified", action="store_true", help="Let illustrative (placeholder) catalog entries be selected.")
+    g.add_argument("--prefer-provider", help="Small selection bonus for this provider.")
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="vgselect", description="VG Select: 3A (Automated Agentic Architecture) - recommend an architecture for an agentic LLM application.")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -181,6 +219,7 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--set", action="append", metavar="KEY=VALUE", help="Override a field (repeatable).")
     r.add_argument("--format", choices=("md", "json", "mermaid", "svg", "pdf"), default="md")
     r.add_argument("--out", help="Write the output to this file (required for pdf).")
+    _add_policy_args(r)
     r.set_defaults(fn=cmd_recommend)
 
     sk = sub.add_parser("scaffold", help="Generate a downloadable agent project skeleton for the recommended topology.")
@@ -190,7 +229,12 @@ def build_parser() -> argparse.ArgumentParser:
     sk.add_argument("--set", action="append", metavar="KEY=VALUE")
     sk.add_argument("--framework", choices=("langgraph",), default="langgraph")
     sk.add_argument("--out", required=True, help="Zip file to write.")
+    _add_policy_args(sk)
     sk.set_defaults(fn=cmd_scaffold)
+
+    ct = sub.add_parser("catalog", help="List the model ecosystem catalog.")
+    ct.add_argument("--catalog", help="Path to a catalog JSON file (default: bundled).")
+    ct.set_defaults(fn=cmd_catalog)
 
     sc = sub.add_parser("scan", help="Scan a repository and print what it reveals about the workload.")
     sc.add_argument("path")

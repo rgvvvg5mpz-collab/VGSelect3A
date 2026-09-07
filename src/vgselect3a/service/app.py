@@ -8,6 +8,7 @@ Config (environment variables):
   VGSELECT_ALLOW_GIT_CLONE   "1" to allow POST /api/v1/scan with git_url (default: off)
   VGSELECT_MAX_UPLOAD_MB     max zip upload size (default 50)
   VGSELECT_CORS_ORIGINS      comma-separated origins for CORS (default: none)
+  VGSELECT_CATALOG           path to a model catalog JSON replacing the bundled default
   VGSELECT_HOST / VGSELECT_PORT  bind address for `vgselect-service` (default 0.0.0.0:8080)
 """
 
@@ -29,6 +30,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 
 from .. import PRODUCT_NAME, __version__
+from ..catalog import Catalog, ModelSpec
+from ..model_selector import SelectionPolicy
 from ..profile import FIELD_SPECS, WorkloadProfile
 from ..recommender import recommend
 from ..render import CITATIONS
@@ -41,6 +44,7 @@ TAGS = [
     {"name": "scan", "description": "Scan a code repository to infer the workload profile before recommending."},
     {"name": "deliverables", "description": "Architecture document (PDF) and downloadable agent skeleton (zip) for the recommendation."},
     {"name": "reference", "description": "Field definitions, bundled examples, topology catalog."},
+    {"name": "catalog", "description": "The model ecosystem catalog used for per-role model selection."},
 ]
 
 app = FastAPI(
@@ -66,6 +70,39 @@ if _origins:
 
 # ------------------------------------------------------------------ helpers
 
+_CATALOG: Catalog | None = None
+
+
+def get_catalog() -> Catalog:
+    global _CATALOG
+    if _CATALOG is None:
+        path = os.environ.get("VGSELECT_CATALOG")
+        _CATALOG = Catalog.load(path) if path else Catalog.default()
+    return _CATALOG
+
+
+def _catalog_for(extra: list[dict[str, Any]] | None) -> Catalog:
+    base = get_catalog()
+    if not extra:
+        return base
+    try:
+        return base.merged([ModelSpec.from_dict(m) for m in extra])
+    except (TypeError, ValueError) as e:
+        raise HTTPException(status_code=422, detail=f"invalid catalog_models: {e}") from e
+
+
+class _PolicyShim:
+    def __init__(self, pol: SelectionPolicy):
+        self._pol = pol
+
+    def model_dump(self) -> dict[str, Any]:
+        return self._pol.to_dict()
+
+
+def _policy_for(policy: Any) -> SelectionPolicy:
+    return SelectionPolicy.from_dict(policy.model_dump() if policy is not None else None)
+
+
 def _scan_roots() -> list[Path]:
     raw = os.environ.get("VGSELECT_SCAN_ROOTS", "")
     return [Path(p).resolve() for p in raw.split(":") if p.strip()]
@@ -89,12 +126,12 @@ def _profile_dict(model: Any) -> dict[str, Any]:
     return {k: v for k, v in model.model_dump(exclude_none=True).items()}
 
 
-def _rec_out(profile_data: dict[str, Any], scan: ScanResult | None, include_markdown: bool) -> RecommendationOut:
+def _rec_out(profile_data: dict[str, Any], scan: ScanResult | None, include_markdown: bool, policy: Any = None, catalog_models: list[dict[str, Any]] | None = None) -> RecommendationOut:
     try:
         profile = WorkloadProfile.from_dict(profile_data)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
-    rec = recommend(profile, scan=scan)
+    rec = recommend(profile, scan=scan, catalog=_catalog_for(catalog_models), policy=_policy_for(policy))
     data = rec.to_dict()
     data["product"] = PRODUCT_NAME
     data["version"] = __version__
@@ -128,12 +165,12 @@ def _clone(url: str) -> Path:
     return tmp / "repo"
 
 
-def _scan_and_maybe_recommend(root: Path, overrides: dict[str, Any], do_recommend: bool, include_markdown: bool) -> ScanOut:
+def _scan_and_maybe_recommend(root: Path, overrides: dict[str, Any], do_recommend: bool, include_markdown: bool, policy: Any = None, catalog_models=None) -> ScanOut:
     scan = scan_repository(root)
     profile = merge_profile(scan, overrides)
     out = ScanOut(scan=scan.to_dict(), profile=profile)
     if do_recommend:
-        out.recommendation = _rec_out(profile, scan, include_markdown)
+        out.recommendation = _rec_out(profile, scan, include_markdown, policy, catalog_models)
     return out
 
 
@@ -151,14 +188,33 @@ def health() -> HealthOut:
         pdf_ok = True
     except ImportError:
         pdf_ok = False
+    cat = get_catalog()
     return HealthOut(status="ok", product=PRODUCT_NAME, version=__version__, scan_roots=[str(r) for r in _scan_roots()],
-                     git_clone_enabled=_git_allowed(), describe_enabled=_describe_enabled(), pdf_enabled=pdf_ok)
+                     git_clone_enabled=_git_allowed(), describe_enabled=_describe_enabled(), pdf_enabled=pdf_ok,
+                     catalog=cat.name, catalog_models=len(cat.models))
 
 
 @app.get("/api/v1/fields", tags=["reference"], summary="Profile field definitions")
 def fields() -> list[dict[str, Any]]:
     return [{"name": s.name, "kind": s.kind, "description": s.description, "choices": list(s.choices), "default": s.default,
              "minimum": s.minimum, "maximum": s.maximum, "group": s.group} for s in FIELD_SPECS]
+
+
+@app.get("/api/v1/catalog", tags=["catalog"], summary="Model ecosystem catalog")
+def api_catalog() -> dict[str, Any]:
+    cat = get_catalog()
+    d = cat.to_dict()
+    d["providers"], d["platforms"], d["regions"] = cat.providers(), cat.platforms(), cat.regions()
+    return d
+
+
+@app.post("/api/v1/catalog/validate", tags=["catalog"], summary="Validate catalog entries (ModelSpec objects) without storing them")
+def api_catalog_validate(models: list[dict[str, Any]]) -> dict[str, Any]:
+    try:
+        cat = Catalog.from_dict(models)
+    except (TypeError, ValueError) as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    return {"ok": True, "models": [m.id for m in cat.models], "illustrative": [m.id for m in cat.models if m.illustrative]}
 
 
 @app.get("/api/v1/citations", tags=["reference"], summary="Citation keys used in rules and recommendations")
@@ -184,7 +240,7 @@ def examples() -> list[dict[str, Any]]:
 
 @app.post("/api/v1/recommend", response_model=RecommendationOut, tags=["recommend"], summary="Recommend a topology for a profile")
 def api_recommend(req: RecommendRequest) -> RecommendationOut:
-    return _rec_out(_profile_dict(req.profile), None, req.include_markdown)
+    return _rec_out(_profile_dict(req.profile), None, req.include_markdown, req.policy, req.catalog_models)
 
 
 def _rec_for_deliverable(req: DeliverableRequest):
@@ -193,7 +249,10 @@ def _rec_for_deliverable(req: DeliverableRequest):
         profile = WorkloadProfile.from_dict(_profile_dict(req.profile))
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
-    return recommend(profile, scan=scan)
+    catalog = _catalog_for(req.catalog_models)
+    rec = recommend(profile, scan=scan, catalog=catalog, policy=_policy_for(req.policy))
+    rec._catalog = catalog  # lets the skeleton resolve providers for request-supplied entries
+    return rec
 
 
 @app.post("/api/v1/recommend/pdf", tags=["deliverables"], summary="Architecture document (PDF)",
@@ -228,7 +287,7 @@ def api_scan(req: ScanRequest) -> ScanOut:
         else:
             root = _clone(req.git_url or "")
             tmp = root.parent
-        return _scan_and_maybe_recommend(root, _profile_dict(req.overrides), req.recommend, req.include_markdown)
+        return _scan_and_maybe_recommend(root, _profile_dict(req.overrides), req.recommend, req.include_markdown, req.policy, req.catalog_models)
     finally:
         if tmp:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -240,6 +299,7 @@ async def api_scan_upload(
     overrides: str = Form("{}", description="JSON object of profile fields that override scan inferences."),
     recommend: bool = Form(True),
     include_markdown: bool = Form(True),
+    policy: str = Form("{}", description="JSON SelectionPolicy object."),
 ) -> ScanOut:
     limit = int(os.environ.get("VGSELECT_MAX_UPLOAD_MB", "50")) * 1024 * 1024
     data = await archive.read()
@@ -247,8 +307,9 @@ async def api_scan_upload(
         raise HTTPException(status_code=413, detail=f"Archive exceeds {limit // (1024 * 1024)} MB.")
     try:
         ov = json.loads(overrides or "{}")
+        pol = SelectionPolicy.from_dict(json.loads(policy or "{}"))
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=422, detail=f"overrides is not valid JSON: {e}") from e
+        raise HTTPException(status_code=422, detail=f"overrides/policy is not valid JSON: {e}") from e
     tmp = Path(tempfile.mkdtemp(prefix="vgselect-"))
     try:
         with zipfile.ZipFile(io.BytesIO(data)) as zf:
@@ -260,7 +321,7 @@ async def api_scan_upload(
         # if the archive wraps everything in one top-level folder, descend into it
         entries = [p for p in tmp.iterdir() if not p.name.startswith("__MACOSX")]
         root = entries[0] if len(entries) == 1 and entries[0].is_dir() else tmp
-        return _scan_and_maybe_recommend(root, ov, recommend, include_markdown)
+        return _scan_and_maybe_recommend(root, ov, recommend, include_markdown, _PolicyShim(pol))
     except zipfile.BadZipFile as e:
         raise HTTPException(status_code=422, detail="Upload is not a valid zip archive.") from e
     finally:
@@ -276,7 +337,7 @@ def api_describe(req: DescribeRequest) -> RecommendationOut:
     profile = profile_from_description(req.text, model=req.model)
     data = profile.to_dict()
     data.update(_profile_dict(req.overrides))
-    return _rec_out(data, None, req.include_markdown)
+    return _rec_out(data, None, req.include_markdown, req.policy)
 
 
 @app.exception_handler(NotADirectoryError)

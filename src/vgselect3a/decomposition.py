@@ -23,9 +23,14 @@ class Component:
     tools: str = ""
     parallel_group: str | None = None
     notes: list[str] = field(default_factory=list)
+    chosen_model: str | None = None      # set by the model selector
+    provider: str | None = None
+    fallback_model: str | None = None
 
     @property
     def model_id(self) -> str:
+        if self.chosen_model:
+            return self.chosen_model
         return MODEL_TIERS[self.tier].model_id if self.tier in MODEL_TIERS else "code"
 
 

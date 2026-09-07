@@ -276,6 +276,39 @@ def build_pdf(rec: "Recommendation") -> bytes:
         for b in rec.plan.briefing_rules:
             S.append(bl(_esc(b)))
 
+    # ------------------------------------------------------------ model selection
+    if rec.selection is not None:
+        sel = rec.selection
+        S.append(Paragraph(f"{sec}. Model selection per role", h2)); sec += 1
+        pol = sel.policy
+        S.append(Paragraph(f"Catalog <font face='Courier'>{_esc(sel.catalog_name)}</font>; data class <b>{_esc(p.data_sensitivity)}</b>; "
+                           f"{'verified entries only' if pol.require_verified else 'illustrative entries allowed'}"
+                           + (f"; providers {_esc(', '.join(pol.allowed_providers))}" if pol.allowed_providers else "")
+                           + (f"; regions {_esc(', '.join(pol.regions))}" if pol.regions else "")
+                           + f". Providers used: {_esc(', '.join(sel.providers_used) or 'none')}."
+                           + (f" Estimated per request on the chosen models: ~{rec.selected_estimate.latency_s:.0f} s, ${rec.selected_estimate.cost_usd:.3f}." if rec.selected_estimate else ""), body))
+        rows = [[Paragraph(h_, cellb) for h_ in ("Role", "Needs", "Chosen", "Effort", "Fallback", "Est./call", "Alternatives")]]
+        for c in sel.choices:
+            r = c.requirements
+            needs = f"tier ≥{r.reasoning_level}; {r.latency_share_s:.0f}s; {r.context_tokens:,} ctx" + ("; tools" if r.needs_tools else "") + ("; structured" if r.needs_structured_output else "")
+            rows.append([Paragraph(f"{_esc(c.component_id)}<br/><font size='7' color='{MUTED}'>{_esc(r.role_type)}</font>", cell), Paragraph(_esc(needs), cell),
+                         Paragraph(f"<b>{_esc(c.model_id or 'unfilled')}</b>", cell), Paragraph(_esc(c.effort), cell), Paragraph(_esc(c.fallback_model_id or '-'), cell),
+                         Paragraph((f"~{c.est_latency_s:.1f}s<br/>${c.est_cost_per_call:.4f}" if c.model_id else "-"), cell),
+                         Paragraph(_esc(", ".join(f"{a.model_id} ({a.score:+.1f})" for a in c.alternatives[:3]) or "-"), cell)])
+        S.append(table(rows, [26 * mm, 40 * mm, 30 * mm, 12 * mm, 26 * mm, 18 * mm, avail - 152 * mm]))
+        for c in sel.choices:
+            if c.rationale:
+                S.append(bl(f"<b>{_esc(c.component_id)}</b>: {_esc(' '.join(c.rationale))}"))
+        if sel.warnings:
+            S.append(Paragraph("Warnings", h3))
+            for w in sel.warnings:
+                S.append(bl(_esc(w)))
+        unfilled = [c for c in sel.choices if not c.model_id]
+        if unfilled:
+            S.append(Paragraph("Why roles are unfilled", h3))
+            for c in unfilled[:3]:
+                S.append(bl(f"<b>{_esc(c.component_id)}</b>: " + _esc("; ".join(f"{j.model_id}: {j.reason}" for j in c.rejected[:4]))))
+
     # ------------------------------------------------------------ next steps
     S.append(Paragraph(f"{sec}. Cross-cutting recommendations", h2)); sec += 1
     for a in rec.plan.augmentations:
@@ -285,7 +318,7 @@ def build_pdf(rec: "Recommendation") -> bytes:
     S.append(Paragraph(f"{sec}. Estimate assumptions", h2)); sec += 1
     for n in best.estimate.assumptions:
         S.append(bl(_esc(n)))
-    S.append(bl("Serving assumptions: " + _esc("; ".join(f"{t.model_id} ~{t.ttft_s}s TTFT, ~{t.tokens_per_s:.0f} tok/s" for t in MODEL_TIERS.values())) + f"; tool call ~{p.tool_latency_s}s."))
+    S.append(bl("Serving assumptions (reference model per capability level from the catalog): " + _esc("; ".join(f"{t.model_id} ~{t.ttft_s}s TTFT, ~{t.tokens_per_s:.0f} tok/s" for t in rec.tiers.values())) + f"; tool call ~{p.tool_latency_s}s."))
     S.append(bl(f"Reading load per task {p.context_tokens_per_task:,} tokens (context pressure: {p.context_pressure}); output type {_esc(p.output_type)}."))
     S.append(bl("Latency is the critical path (parallel branches count once); cost sums every call at list prices without caching. Treat both as order-of-magnitude."))
 

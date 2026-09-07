@@ -9,10 +9,17 @@ breakdown is returned so it can be inspected and overridden.
 from __future__ import annotations
 
 import math
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 
 from .profile import WorkloadProfile
 from .topologies import MODEL_TIERS, ModelTier
+
+_TIERS: ContextVar[dict[str, ModelTier]] = ContextVar("vgselect_tiers", default=MODEL_TIERS)
+
+
+def current_tiers() -> dict[str, ModelTier]:
+    return _TIERS.get()
 
 BASE_PROMPT_TOKENS = 3_000        # system prompt + tool schemas + user request
 TOOL_CALL_OUTPUT_TOKENS = 150     # tokens the model emits to make one tool call
@@ -37,7 +44,7 @@ class Call:
 
     @property
     def model(self) -> ModelTier:
-        return MODEL_TIERS[self.tier]
+        return current_tiers()[self.tier]
 
     @property
     def latency_s(self) -> float:
@@ -89,6 +96,7 @@ class Estimate:
     token_multiplier: float
     assumptions: list[str]
     tree: Segment
+    tiers_used: dict[str, str] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------- building blocks
@@ -167,8 +175,19 @@ def worker_count(p: WorkloadProfile) -> int:
 
 # ---------------------------------------------------------------- per-topology estimators
 
-def estimate(p: WorkloadProfile, topology_id: str) -> Estimate:
+def estimate(p: WorkloadProfile, topology_id: str, tiers: dict[str, ModelTier] | None = None) -> Estimate:
+    """Estimate one topology. `tiers` maps opus/sonnet/haiku to the models the
+    ecosystem actually provides for those capability levels (default: bundled)."""
+    token = _TIERS.set(tiers or MODEL_TIERS)
+    try:
+        return _estimate(p, topology_id)
+    finally:
+        _TIERS.reset(token)
+
+
+def _estimate(p: WorkloadProfile, topology_id: str) -> Estimate:
     notes: list[str] = []
+    MODEL_TIERS = current_tiers()  # noqa: N806 - shadow with the active tier map
     T = float(p.tool_calls_per_task)
     tl = p.tool_latency_s
 
@@ -279,4 +298,5 @@ def estimate(p: WorkloadProfile, topology_id: str) -> Estimate:
         token_multiplier=round(total / base, 1),
         assumptions=notes,
         tree=tree,
+        tiers_used={k: v.model_id for k, v in current_tiers().items()},
     )

@@ -26,7 +26,7 @@ not produce.
 
 3. **Fill the gaps from what you know.** The scan cannot see latency budgets, accuracy priority, cost sensitivity, or request volume. Take them from the user's message, CLAUDE.md, READMEs, or ask one short question with the fields that matter most:
    `latency_budget_s`, `accuracy_priority` (1-5), `cost_sensitivity` (1-5), `requests_per_day`, `parallel_subtasks`, `context_tokens_per_task`.
-   Run `vgselect fields` for definitions. If the user has an eval, ask for the single-agent baseline accuracy (`single_agent_baseline`, 0-1); it changes the answer.
+   Run `vgselect fields` for definitions. If the user has an eval, ask for the single-agent baseline accuracy (`single_agent_baseline`, 0-1); it changes the answer. Also confirm `data_sensitivity` (public/internal/confidential/restricted) and any provider, platform or region constraints: pass them as `--providers`, `--platforms`, `--regions`, and `--catalog` if the team keeps its own model catalog (see `docs/MODEL_CATALOG.md`).
 
 4. **Recommend.** Merge the corrections into the profile and run:
    ```bash
@@ -38,7 +38,8 @@ not produce.
    - the recommended topology and the one-line reason;
    - how it compares with what the repository implements today (the "Gap" table);
    - the latency/accuracy frontier: the fastest viable option and the most accurate one, with estimated seconds and token multiples;
-   - the decomposition plan: components, model per role, what runs in parallel;
+   - the decomposition plan: components, what runs in parallel;
+   - the model per role from the catalog (chosen, effort, fallback), any unfilled roles and why, and any selection warnings;
    - the three most important cross-cutting recommendations (evals first, termination limits, verification, gating of irreversible tools);
    - the assumptions behind the estimates and which inferred fields the user should confirm.
    Then produce the two deliverables and tell the user where they are:

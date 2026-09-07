@@ -165,6 +165,19 @@ prompt caching, streaming, structured outputs, parallel tool use,
 programmatic tool calling, tool search, context editing/compaction/memory,
 model tiering, adaptive RAG, batch API. Each carries a citation.
 
+### 2.7a Model selection per role
+
+Each component of the plan gets a requirements block derived from the profile
+and its role (capability level, latency share, context, tools, structured
+output, stakes, volume, data class, task family, independence, cache group),
+and the selector matches it against the model ecosystem catalog under the
+policy: hard filters, capability floor with measured-evidence override,
+quality/latency/cost scoring, orchestrator-not-weaker-than-workers, verifier
+independence, one model per loop, fallback on another provider, and
+unfilled-role feedback. The topology ranking is estimated on reference models
+per capability level from the same catalog and policy, and the primary is
+re-estimated on the chosen models. Full description: [MODEL_CATALOG.md](MODEL_CATALOG.md).
+
 ### 2.8 Outputs
 
 - **Architecture document (PDF)**: the deliverable for a design review.
@@ -220,9 +233,13 @@ fallback import for LangGraph 0.2/0.3.
   payments side effect, tool overlap, FastAPI surface) and every API endpoint,
   including the PDF and skeleton endpoints and the scan round-trip into the
   PDF.
+- Catalog validation, requirement derivation and model selection are tested
+  under policies (providers, regions, data class, unverified entries,
+  measured evidence lifting a smaller model, verifier independence, the
+  orchestrator floor).
 - PDF generation is tested for several scenarios and for a scan-based
   recommendation; the generated skeleton is syntax-checked for all ten
-  topologies (55 tests in total). Separately, every skeleton was unzipped and
+  topologies and for mixed-provider plans (68 tests in total). Separately, every skeleton was unzipped and
   its own smoke test run against LangGraph 1.2 / LangChain 1.4: all ten
   compile.
 
@@ -236,9 +253,10 @@ fallback import for LangGraph 0.2/0.3.
 - Rules encode published guidance as of September 2026. When you learn
   something from your own evals, add a rule with its evidence rather than
   editing weights ad hoc.
-- The recommender does not choose vendors or frameworks; it chooses a
-  topology and the roles inside it. Model IDs in the plan are defaults to
-  substitute.
+- Model selection is only as good as the catalog: capability tiers and
+  serving figures for non-Anthropic models must come from your registry and
+  evals (the bundled placeholders are excluded until verified), and measured
+  `evidence` per task family is the signal that changes decisions most.
 
 ## 5. Extending
 

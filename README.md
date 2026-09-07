@@ -15,6 +15,14 @@ frontier, and turns the winner into a concrete decomposition plan
 (orchestrator, subagents, model per role, effort, parallel groups, briefing
 rules, guardrails) with a diagram.
 
+Every role in the plan is then staffed from a **model ecosystem catalog**
+(Anthropic, OpenAI, Google, self-hosted open-weights, and any other provider you
+register): each role's requirements (capability level, latency share, context,
+tools, structured output, data class, volume) are matched against the catalog
+under your policy (providers, platforms, regions, approval, data clearance),
+with a fallback on another provider and an explanation of every rejection. See
+[docs/MODEL_CATALOG.md](docs/MODEL_CATALOG.md).
+
 Every recommendation produces two deliverables:
 
 - an **architecture document (PDF)**: summary, evidence, scan findings and
@@ -33,6 +41,7 @@ Every recommendation produces two deliverables:
 | Engineers deploying the service | [Deployment guide](docs/DEPLOYMENT.html) - install, Docker, configuration, security model, operations |
 | Engineers consuming the service, CLI or skill | [Consumer guide](docs/CONSUMER_GUIDE.md) - endpoints, profile fields, reading results, PDF and skeleton, CI use |
 | Architects and reviewers | [Methodology](docs/METHODOLOGY.md) - how the recommendation, estimates, plan and skeleton are computed |
+| Platform teams | [Model catalog](docs/MODEL_CATALOG.md) - catalog schema, per-role requirements, the selection procedure, policy, maintenance |
 | Everyone | [Industry guidance](docs/industry_guidance.md) - the evidence behind every rule and how patterns map to topologies |
 | API consumers | [OpenAPI spec](openapi/vgselect-3a.openapi.json) - also live at `/openapi.json`, Swagger at `/docs` |
 | Claude Code users | [Skill](.claude/skills/vg-select-3a/SKILL.md) - scan, recommend, and produce both deliverables from the editor |
@@ -59,6 +68,8 @@ vgselect recommend --scan . --format pdf --out architecture.pdf        # archite
 vgselect scaffold --scan . --out my-agent.zip                          # LangGraph project skeleton
 vgselect wizard --out my_app.json                                      # interactive questionnaire
 vgselect fields                                                        # every profile field explained
+vgselect catalog                                                       # the model ecosystem
+vgselect recommend --scan . --catalog my_catalog.json --providers anthropic,self_hosted --regions eu
 ```
 
 Python:
@@ -69,8 +80,10 @@ from vgselect3a.scanner import scan_repository, merge_profile
 
 scan = scan_repository(".")
 profile = WorkloadProfile.from_dict(merge_profile(scan, {"latency_budget_s": 8, "accuracy_priority": 4}))
-rec = recommend(profile, scan=scan)
+rec = recommend(profile, scan=scan)               # optional: catalog=Catalog.load("my.json"), policy=SelectionPolicy(regions=["eu"])
 print(rec.headline)
+for choice in rec.selection.choices:              # model per role
+    print(choice.component_id, choice.model_id, choice.effort, choice.fallback_model_id)
 rec.to_markdown(); rec.to_json(); rec.to_svg()
 open("architecture.pdf", "wb").write(rec.to_pdf())
 open("my-agent.zip", "wb").write(rec.to_skeleton("langgraph"))
@@ -91,6 +104,18 @@ docker build -t vgselect-3a . && docker run --rm -p 8080:8080 -v $PWD:/scan:ro -
 | `service` | FastAPI, Uvicorn, Pydantic, python-multipart, reportlab | `vgselect-service`, the UI and API |
 | `llm` | anthropic, pydantic | `vgselect describe` and `/api/v1/describe` (prose to profile with Claude) |
 | `dev` | pytest, httpx plus the service stack | `pytest` |
+
+## Model ecosystem
+
+The bundled catalog has verified entries for the current Anthropic models and
+placeholder entries (marked `illustrative`) showing the shape of OpenAI,
+Google, self-hosted open-weights and Mistral models. Placeholders are excluded
+from selection until you replace their numbers and mark them verified. Point
+the service at your registry's catalog with `VGSELECT_CATALOG`, constrain the
+ecosystem per request with a policy (providers, platforms, regions), and give
+the selector measured accuracy per task family for its strongest signal. The
+generated skeleton builds each role's model through LangChain's
+`init_chat_model`, so mixed-provider plans run without code changes.
 
 ## The web UI
 
@@ -116,11 +141,14 @@ src/vgselect3a/
   rules.py          41 cited scoring rules
   recommender.py    viability, latency/cost balancing, Pareto frontier, to_pdf/to_skeleton
   estimator.py      call-tree latency/cost model per topology
-  decomposition.py  subagent plan, model tiering, guardrails
+  decomposition.py  subagent plan, guardrails
+  catalog.py        model ecosystem catalog (ModelSpec, Catalog); catalogs/default.json
+  requirements.py   per-role requirements derived from the plan
+  model_selector.py filters, scoring, cross-role constraints, fallbacks -> model per role
   render.py         Markdown / JSON / Mermaid / SVG and the shared diagram layout
   pdf_report.py     architecture document (PDF, reportlab)
   scaffold/         LangGraph project skeleton generator, one template per topology
-  cli.py            vgselect scan | recommend | scaffold | wizard | describe | examples | fields
+  cli.py            vgselect scan | recommend | scaffold | catalog | wizard | describe | examples | fields
   intake_llm.py     optional Claude-powered prose -> profile
   service/          FastAPI app, Pydantic schemas (generated from the profile), static UI
   examples/         eight canonical profiles
@@ -139,10 +167,12 @@ Dockerfile          production image (non-root, healthcheck)
 pip install -e '.[dev]' && pytest
 ```
 
-55 tests: eight canonical scenarios, monotonicity of the latency/accuracy
-balance, viability, the scanner against a fixture repository, every API
-endpoint, PDF generation, and syntax checks of the generated skeleton for all
-ten topologies. To exercise the skeletons against the real library, unzip one
+68 tests: eight canonical scenarios, monotonicity of the latency/accuracy
+balance, viability, the scanner against a fixture repository, catalog
+validation, per-role requirements, model selection under policies (providers,
+regions, data class, evidence, verifier independence, orchestrator floor),
+every API endpoint, PDF generation, and syntax checks of the generated
+skeleton for all ten topologies and for mixed-provider plans. To exercise the skeletons against the real library, unzip one
 and run its own `pytest` with `langgraph`, `langchain` and
 `langchain-anthropic` installed.
 

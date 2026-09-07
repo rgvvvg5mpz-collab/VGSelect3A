@@ -61,7 +61,15 @@ same scan, profile and download steps with a tooltip on every field.
 | GET | `/api/v1/examples` | | Eight bundled example profiles |
 | GET | `/api/v1/topologies` | | The ten topologies with summaries and trade-offs |
 | GET | `/api/v1/citations` | | Citation key to source name, for rendering rule rationales |
+| GET | `/api/v1/catalog` | | The model ecosystem catalog (models, providers, platforms, regions) |
+| POST | `/api/v1/catalog/validate` | `[ModelSpec, ...]` | Validates entries; lists illustrative ones |
 | GET | `/health` | | Status, version, scan roots, and whether git clone, describe and PDF are enabled |
+
+Every recommend, scan, PDF and skeleton request accepts an optional `policy`
+(`allowed_providers`, `blocked_providers`, `allowed_platforms`, `regions`,
+`require_verified`, `require_approved`, `prefer_provider`) and optional
+`catalog_models` (extra or overriding catalog entries for that request). See
+[MODEL_CATALOG.md](MODEL_CATALOG.md).
 
 Path scanning and git cloning are enabled per deployment; `GET /health` tells
 you which are on. Zip upload always works. The `scan` object returned by a scan
@@ -84,6 +92,7 @@ change the answer most (marked "key" in the UI):
 | `knowledge_sources`, `retrieval_depth`, `context_tokens_per_task` | Retrieval and reading load |
 | `accuracy_priority` (1-5), `verifiability`, `error_recoverability`, `single_agent_baseline` | Quality and risk |
 | `latency_budget_s`, `interaction`, `requests_per_day`, `cost_sensitivity`, `human_in_loop` | Operating constraints |
+| `data_sensitivity` | public / internal / confidential / restricted: only catalog models cleared for this class can staff a role |
 
 Optional lists `domains`, `sources`, `tools`, `subtasks`, `sections` name the
 components in the plan and the tool stubs in the skeleton (for example
@@ -111,6 +120,12 @@ components in the plan and the tool stubs in the skeleton (for example
   `augmentations` (cross-cutting recommendations with citations).
 - `mermaid`: a flowchart of the plan for docs and wikis; `svg`: the same
   diagram rendered server-side as standalone SVG.
+- `selection`: model per role: `choices[]` with the derived `requirements`,
+  `model_id`, `effort`, `fallback_model_id`, per-call latency and cost,
+  `alternatives` with scores, `rejected` with reasons, `rationale`; plus
+  `warnings`, `unfilled`, `providers_used`. `selected_estimate` re-runs the
+  topology estimate on the chosen models; `tiers` lists the reference model per
+  capability level used for the ranking.
 - `scan`: present when the recommendation came from a scan: frameworks,
   tools, sources, side effects, `current_topology`, `inferred[]` with
   confidence, and `evidence[]` with file:line.
@@ -146,13 +161,13 @@ A runnable project for the recommended topology, named `<app>-agent/`:
 | File | Contents |
 |---|---|
 | `app/graph.py` | `StateGraph` wiring for the topology: fan-out with `Send`, conditional edges for routers and evaluator loops, a subgraph per domain lead for hierarchies, handoff routing with a cap |
-| `app/agents.py` | Role agent factory on `langchain_anthropic.ChatAnthropic`; uses `langchain.agents.create_agent` (LangChain 1.x) with a fallback to `langgraph.prebuilt.create_react_agent` (LangGraph 0.2/0.3) |
-| `app/config.py` | Model per role from the plan, effort, `RECURSION_LIMIT`, `MAX_TOOL_CALLS`, `MAX_ITERATIONS`, `MAX_WORKERS`, latency budget |
+| `app/agents.py` | Provider-agnostic role agent factory on `langchain.chat_models.init_chat_model` (Anthropic, OpenAI, Azure OpenAI, Google, Bedrock, Mistral, self-hosted OpenAI-compatible, ...); uses `langchain.agents.create_agent` (LangChain 1.x) with a fallback to `langgraph.prebuilt.create_react_agent` |
+| `app/config.py` | Model, provider, fallback and effort per role from the catalog selection; `RECURSION_LIMIT`, `MAX_TOOL_CALLS`, `MAX_ITERATIONS`, `MAX_WORKERS`, latency budget |
 | `app/tools.py` | `@tool` stubs named after the tools in your profile or scan; an approval hook when irreversible tools exist |
 | `app/state.py` | `TypedDict` state with reducers for parallel results |
 | `main.py`, `tests/test_graph.py` | Run one request; smoke test that the graph compiles without an API key |
 | `README.md`, `ARCHITECTURE.md`, `vgselect_profile.json` | How to run and what to fill in; the full recommendation; the profile it came from |
-| `requirements.txt`, `.env.example`, `.gitignore` | Dependencies and configuration |
+| `requirements.txt`, `.env.example`, `.gitignore` | Only the integration packages and credentials the chosen providers need |
 
 ```bash
 curl -s "$VGSELECT_URL/api/v1/recommend/skeleton" -H 'content-type: application/json' \
@@ -214,6 +229,8 @@ vgselect recommend --example deep_research --format mermaid
 vgselect recommend --scan . --format pdf --out architecture.pdf
 vgselect scaffold --scan . --out my-agent.zip
 vgselect wizard --out my_app.json                 # interactive questionnaire
+vgselect catalog --catalog my_catalog.json        # list/validate the model ecosystem
+vgselect recommend --scan . --providers anthropic,self_hosted --regions eu --allow-unverified
 ```
 
 Generate a typed client from the spec: `openapi-generator-cli generate -i $VG/openapi.json -g python` (or `typescript-fetch`).
@@ -265,7 +282,13 @@ frontier and the plan, and writes the architecture PDF and the skeleton zip.
   LangGraph 1.x; it falls back to the older prebuilt agent on LangGraph 0.2/0.3.
   Other frameworks are not generated yet; the `framework` parameter exists so
   more can be added (`src/vgselect3a/scaffold/`).
-- **Which model IDs does the plan assume?** `claude-opus-5` for
-  orchestration/synthesis, `claude-sonnet-5` for workers, `claude-haiku-4-5`
-  for routers and bulk reading. Substitute your approved equivalents in
-  `app/config.py` of the skeleton.
+- **Which models does the plan assume?** Whatever the catalog and policy
+  allow. With the bundled catalog and default policy that is Claude Opus 5 for
+  orchestration/synthesis, Sonnet 5 for workers and Haiku 4.5 for routers,
+  because only the Anthropic entries are verified. Register your OpenAI,
+  Google, self-hosted or other models in the catalog (see MODEL_CATALOG.md)
+  and the selector will use them where they fit.
+- **A role is "unfilled".** No catalog model passed the hard filters (typically
+  data class, approval, region or capability). The table lists the rejection
+  reasons; clear a model for that data class, approve it, or lower the role's
+  ambition by changing the topology or budget.

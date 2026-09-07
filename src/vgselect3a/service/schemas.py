@@ -43,9 +43,22 @@ def _profile_model() -> type[BaseModel]:
 WorkloadProfileIn = _profile_model()
 
 
+class SelectionPolicyIn(BaseModel):
+    """Constraints on which catalog models may staff a role."""
+    allowed_providers: list[str] | None = Field(None, description="Only these providers (e.g. anthropic, openai, google, self_hosted).")
+    blocked_providers: list[str] = Field(default_factory=list)
+    allowed_platforms: list[str] | None = Field(None, description="Only models available on these platforms (anthropic_api, bedrock, vertex, foundry, openai_api, azure_openai, google_api, self_hosted).")
+    regions: list[str] | None = Field(None, description="Model must be served in at least one of these regions.")
+    require_verified: bool = Field(True, description="Exclude illustrative (placeholder) catalog entries.")
+    require_approved: bool = Field(True, description="Exclude entries not approved by the platform team.")
+    prefer_provider: str | None = Field(None, description="Small bonus for this provider (consistency).")
+
+
 class RecommendRequest(BaseModel):
     profile: WorkloadProfileIn = Field(..., description="Workload profile. Omitted fields take engine defaults.")  # type: ignore[valid-type]
     include_markdown: bool = Field(True, description="Include the full Markdown report in the response.")
+    policy: SelectionPolicyIn | None = Field(None, description="Model selection policy; default policy uses the whole catalog, verified and approved entries only.")
+    catalog_models: list[dict[str, Any]] | None = Field(None, description="Extra or overriding model catalog entries (ModelSpec objects) merged over the server's catalog for this request.")
 
 
 class DeliverableRequest(RecommendRequest):
@@ -54,6 +67,8 @@ class DeliverableRequest(RecommendRequest):
 
 
 class ScanRequest(BaseModel):
+    policy: SelectionPolicyIn | None = None
+    catalog_models: list[dict[str, Any]] | None = None
     path: str | None = Field(None, description="Server-side directory to scan. Must be under one of VGSELECT_SCAN_ROOTS.")
     git_url: str | None = Field(None, description="Git URL to clone (shallow) and scan. Requires VGSELECT_ALLOW_GIT_CLONE=1.")
     overrides: WorkloadProfileIn | None = Field(None, description="Profile fields that override scan inferences.")  # type: ignore[valid-type]
@@ -62,6 +77,7 @@ class ScanRequest(BaseModel):
 
 
 class DescribeRequest(BaseModel):
+    policy: SelectionPolicyIn | None = None
     text: str = Field(..., min_length=10, description="Prose description of the application.")
     model: str = Field("claude-opus-5", description="Claude model used to infer the profile.")
     overrides: WorkloadProfileIn | None = None  # type: ignore[valid-type]
@@ -111,6 +127,9 @@ class ComponentOut(BaseModel):
     parallel_group: str | None
     notes: list[str]
     model_id: str
+    chosen_model: str | None = None
+    provider: str | None = None
+    fallback_model: str | None = None
 
 
 class EdgeOut(BaseModel):
@@ -148,6 +167,9 @@ class RecommendationOut(BaseModel):
     mermaid: str
     svg: str = Field("", description="Standalone SVG rendering of the plan (no external dependencies).")
     scan: dict[str, Any] | None = None
+    selection: dict[str, Any] | None = Field(None, description="Model selection per role: requirements, chosen model, effort, fallback, alternatives, rejections, warnings.")
+    selected_estimate: dict[str, Any] | None = Field(None, description="Topology estimate re-run on the chosen models.")
+    tiers: dict[str, str] | None = Field(None, description="Reference model per capability level used for the ranking estimates.")
     report_markdown: str | None = None
 
 
@@ -165,3 +187,5 @@ class HealthOut(BaseModel):
     git_clone_enabled: bool
     describe_enabled: bool
     pdf_enabled: bool = True
+    catalog: str = ""
+    catalog_models: int = 0

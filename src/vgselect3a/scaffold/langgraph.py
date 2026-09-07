@@ -53,8 +53,8 @@ def generate(rec: "Recommendation") -> dict[str, str]:
     files["README.md"] = _readme(rec, topo, tools)
     files["ARCHITECTURE.md"] = rec.to_markdown()
     files["vgselect_profile.json"] = p.to_json()
-    files["requirements.txt"] = "langgraph>=0.2\nlangchain>=0.3\nlangchain-core>=0.3\nlangchain-anthropic>=0.3\npython-dotenv>=1.0\npytest>=8\n"
-    files[".env.example"] = "ANTHROPIC_API_KEY=sk-ant-...\n"
+    files["requirements.txt"] = _requirements_txt(rec)
+    files[".env.example"] = _env_example(rec)
     files[".gitignore"] = ".env\n__pycache__/\n*.pyc\n.venv/\n"
     files["app/__init__.py"] = ""
     files["app/config.py"] = _config(rec, comps)
@@ -85,7 +85,7 @@ def _readme(rec, topo, tools) -> str:
     |---|---|
     | `app/graph.py` | The LangGraph `StateGraph` wiring the recommended topology |
     | `app/agents.py` | Factory for role agents (model per tier, system prompt, tools) |
-    | `app/config.py` | Model IDs per role, effort, termination limits, budgets |
+    | `app/config.py` | Model and provider per role (from the catalog selection), fallback, effort, termination limits, budgets |
     | `app/tools.py` | Tool stubs{(' for: ' + ', '.join(tools)) if tools else ''} - fill in the bodies |
     | `app/state.py` | Graph state (`TypedDict`) |
     | `main.py` | Runs one request end to end |
@@ -112,15 +112,70 @@ def _readme(rec, topo, tools) -> str:
     ## Guardrails already wired
 
     - Recursion/turn limits on every loop (`RECURSION_LIMIT`, `MAX_ITERATIONS`).
-    - Model per role: Opus-tier for orchestration/synthesis, Sonnet/Haiku-tier for workers and routers.
+    - Model per role chosen from the ecosystem catalog against each role's requirements (capability, latency share, context, tools, data class); fallback on another provider where available. Providers in this skeleton: {', '.join(_lc_providers(rec))}.
     - A verification step before the final answer where the plan calls for it.
     {'- Approval gate hook for irreversible tools (`app/tools.py: requires_approval`).' if p.tool_side_effects == 'irreversible' else ''}
     """)
 
 
+PROVIDER_PACKAGES = {
+    "anthropic": "langchain-anthropic>=0.3", "openai": "langchain-openai>=0.3", "azure_openai": "langchain-openai>=0.3",
+    "google_genai": "langchain-google-genai>=2.0", "google_vertexai": "langchain-google-vertexai>=2.0",
+    "bedrock": "langchain-aws>=0.2", "bedrock_converse": "langchain-aws>=0.2", "mistralai": "langchain-mistralai>=0.2",
+    "cohere": "langchain-cohere>=0.3", "deepseek": "langchain-deepseek>=0.1", "xai": "langchain-xai>=0.1",
+    "groq": "langchain-groq>=0.2", "ollama": "langchain-ollama>=0.2",
+}
+PROVIDER_ENV = {
+    "anthropic": "ANTHROPIC_API_KEY=sk-ant-...", "openai": "OPENAI_API_KEY=sk-...\n# OPENAI_BASE_URL=https://your-openai-compatible-endpoint/v1   # self-hosted models",
+    "azure_openai": "AZURE_OPENAI_API_KEY=...\nAZURE_OPENAI_ENDPOINT=https://...", "google_genai": "GOOGLE_API_KEY=...",
+    "google_vertexai": "GOOGLE_CLOUD_PROJECT=...\nGOOGLE_CLOUD_LOCATION=global", "bedrock": "AWS_REGION=us-east-1  # plus AWS credentials",
+    "bedrock_converse": "AWS_REGION=us-east-1  # plus AWS credentials", "mistralai": "MISTRAL_API_KEY=...", "cohere": "COHERE_API_KEY=...",
+    "deepseek": "DEEPSEEK_API_KEY=...", "xai": "XAI_API_KEY=...", "groq": "GROQ_API_KEY=...", "ollama": "OLLAMA_HOST=http://localhost:11434",
+}
+
+
+def _lc_providers(rec) -> list[str]:
+    provs = []
+    for c in rec.plan.components:
+        lp = _lc_provider_for(rec, c)
+        if lp and lp not in provs:
+            provs.append(lp)
+    return provs or ["anthropic"]
+
+
+def _lc_provider_for(rec, c) -> str | None:
+    if c.tier == "code":
+        return None
+    sel = rec.selection.choice(c.id) if rec.selection else None
+    if sel and sel.model_id:
+        from ..catalog import Catalog
+        spec = Catalog.default().get(sel.model_id)
+        cat = getattr(rec, "_catalog", None)
+        if cat is not None:
+            spec = cat.get(sel.model_id) or spec
+        if spec and spec.langchain_provider:
+            return spec.langchain_provider
+    return "anthropic"
+
+
+def _requirements_txt(rec) -> str:
+    pk = ["langgraph>=0.2", "langchain>=0.3", "langchain-core>=0.3"]
+    for lp in _lc_providers(rec):
+        pkg = PROVIDER_PACKAGES.get(lp)
+        if pkg and pkg not in pk:
+            pk.append(pkg)
+    return "\n".join(pk + ["python-dotenv>=1.0", "pytest>=8"]) + "\n"
+
+
+def _env_example(rec) -> str:
+    return "\n".join(PROVIDER_ENV.get(lp, f"# credentials for {lp}") for lp in _lc_providers(rec)) + "\n"
+
+
 def _config(rec, comps) -> str:
     p = rec.profile
-    roles = "\n".join(f'    "{ident(c.id)}": Role(name={c.name!r}, model={c.model_id!r}, effort={c.effort!r}, tier={c.tier!r}),' for c in comps)
+    roles = "\n".join(
+        f'    "{ident(c.id)}": Role(name={c.name!r}, model={c.model_id!r}, provider={_lc_provider_for(rec, c)!r}, effort={c.effort!r}, tier={c.tier!r}, fallback={c.fallback_model!r}),'
+        for c in comps if c.tier != "code")
     return textwrap.dedent(f'''\
     """Models, effort and limits per role. Generated from the VG Select: 3A plan."""
 
@@ -130,12 +185,14 @@ def _config(rec, comps) -> str:
     @dataclass(frozen=True)
     class Role:
         name: str
-        model: str
+        model: str          # model id in your ecosystem catalog
+        provider: str       # value for langchain.chat_models.init_chat_model(model_provider=...)
         effort: str
         tier: str
+        fallback: str | None = None   # different provider where possible, for outages/refusals
 
 
-    # Model IDs are current-generation defaults; substitute your approved equivalents.
+    # Chosen by VG Select: 3A from the model catalog and policy; see ARCHITECTURE.md "Model selection per role".
     ROLES: dict[str, Role] = {{
     {roles}
     }}
@@ -147,9 +204,9 @@ def _config(rec, comps) -> str:
     MAX_WORKERS = {worker_count(p) if rec.primary.topology.id in ('orchestrator_workers', 'hierarchical') else max(2, min(p.parallel_subtasks, 20))}
     LATENCY_BUDGET_S = {p.latency_budget_s}
 
-    # Thinking / effort: langchain-anthropic passes provider params through model_kwargs.
-    # Adaptive thinking is the default on current Claude models; tune effort per role, e.g.
-    #   ChatAnthropic(model=..., model_kwargs={{"output_config": {{"effort": "high"}}}})
+    # Effort / reasoning controls are provider-specific and passed through provider kwargs
+    # (e.g. Anthropic: model_kwargs={{"output_config": {{"effort": "high"}}}}; OpenAI reasoning models: reasoning_effort=...).
+    # Adaptive thinking is the default on current Claude models.
     DEFAULT_MAX_TOKENS = 4096
     ''')
 
@@ -187,10 +244,12 @@ def _tools_py(tools, p) -> str:
 
 def _agents_py() -> str:
     return textwrap.dedent('''\
-        """Role agent factory. Uses langchain's create_agent (LangChain 1.x) with a fallback to
+        """Role agent factory. Provider-agnostic: models come from the catalog choice in config.ROLES and are
+        built with langchain's init_chat_model, so Anthropic, OpenAI, Google, Bedrock, Mistral or a self-hosted
+        OpenAI-compatible endpoint all work. Uses langchain's create_agent (LangChain 1.x) with a fallback to
         langgraph.prebuilt.create_react_agent (LangGraph 0.2/0.3)."""
 
-        from langchain_anthropic import ChatAnthropic
+        from langchain.chat_models import init_chat_model
 
         from .config import DEFAULT_MAX_TOKENS, ROLES
 
@@ -206,9 +265,12 @@ def _agents_py() -> str:
                 return _create_react_agent(model, tools, prompt=system_prompt)
 
 
-        def chat_model(role_id: str, **kwargs) -> ChatAnthropic:
+        def chat_model(role_id: str, **kwargs):
+            """Chat model for a role; pass use_fallback=True to build the fallback model instead."""
             role = ROLES[role_id]
-            return ChatAnthropic(model=role.model, max_tokens=kwargs.pop("max_tokens", DEFAULT_MAX_TOKENS), **kwargs)
+            use_fallback = kwargs.pop("use_fallback", False)
+            model_id = role.fallback if use_fallback and role.fallback else role.model
+            return init_chat_model(model_id, model_provider=role.provider, max_tokens=kwargs.pop("max_tokens", DEFAULT_MAX_TOKENS), **kwargs)
 
 
         def role_agent(role_id: str, system_prompt: str, tools=None):

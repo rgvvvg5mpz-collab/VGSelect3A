@@ -5,12 +5,14 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
+from .catalog import Catalog, ModelSpec
 from .decomposition import Plan, build_plan
 from .estimator import Estimate, estimate
+from .model_selector import Selection, SelectionPolicy, select_models
 from .profile import WorkloadProfile
 from .rules import Signal, evaluate_rules
 from .scanner import ScanResult
-from .topologies import TOPOLOGIES, Topology
+from .topologies import MODEL_TIERS, TOPOLOGIES, ModelTier, Topology
 
 LATENCY_RULES = {"R23", "R24", "R25"}
 COST_RULES = {"R26", "R27"}
@@ -73,6 +75,9 @@ class Recommendation:
     most_accurate: Candidate | None
     headline: str
     scan: ScanResult | None = None
+    selection: Selection | None = None
+    selected_estimate: Estimate | None = None
+    tiers: dict[str, ModelTier] = field(default_factory=lambda: dict(MODEL_TIERS))
 
     @property
     def primary(self) -> Candidate:
@@ -134,15 +139,58 @@ def _cost_adjustment(p: WorkloadProfile, est: Estimate, cheapest: float) -> floa
     return round(-(p.cost_sensitivity / 3.0) * 0.6 * math.log2(rel), 2)
 
 
-def recommend(p: WorkloadProfile, scan: ScanResult | None = None) -> Recommendation:
+def _spec_to_tier(tier: str, m: ModelSpec) -> ModelTier:
+    return ModelTier(tier, m.id, m.input_price, m.output_price, m.ttft_s, m.tokens_per_s, m.notes or MODEL_TIERS[tier].role)
+
+
+def tiers_from_catalog(p: WorkloadProfile, catalog: Catalog, policy: SelectionPolicy) -> dict[str, ModelTier]:
+    """Reference model per capability level (5/4/3 -> opus/sonnet/haiku) that the
+    ecosystem and policy actually allow, so every topology is estimated on models
+    you could deploy. Cheapest eligible model per level; a missing level borrows
+    the nearest level above (then below)."""
+    def eligible(m: ModelSpec) -> bool:
+        if policy.require_approved and not m.approved:
+            return False
+        if policy.allowed_providers and m.provider not in policy.allowed_providers:
+            return False
+        if m.provider in policy.blocked_providers:
+            return False
+        if policy.allowed_platforms and not set(m.platforms) & set(policy.allowed_platforms):
+            return False
+        if policy.regions and not set(m.regions) & set(policy.regions):
+            return False
+        if policy.require_verified and m.illustrative:
+            return False
+        return p.data_sensitivity in m.data_classes
+    ok = [m for m in catalog.models if eligible(m)]
+    by_level: dict[int, list[ModelSpec]] = {}
+    for m in ok:
+        by_level.setdefault(m.reasoning_tier, []).append(m)
+    out: dict[str, ModelTier] = {}
+    for tier, level in (("opus", 5), ("sonnet", 4), ("haiku", 3)):
+        pick = None
+        for lv in (level, level + 1, level - 1, level + 2, level - 2):
+            if by_level.get(lv):
+                pick = min(by_level[lv], key=lambda m: m.input_price + m.output_price)
+                break
+        out[tier] = _spec_to_tier(tier, pick) if pick else MODEL_TIERS[tier]
+    return out
+
+
+def recommend(p: WorkloadProfile, scan: ScanResult | None = None, catalog: Catalog | None = None,
+              policy: SelectionPolicy | None = None) -> Recommendation:
     """Rank topologies for a profile. Pass the ScanResult the profile was derived
-    from so the report can show the current-vs-recommended gap."""
+    from so the report can show the current-vs-recommended gap. `catalog` and
+    `policy` describe the model ecosystem; the bundled catalog is used otherwise."""
+    catalog = catalog or Catalog.default()
+    policy = policy or SelectionPolicy()
+    tiers = tiers_from_catalog(p, catalog, policy)
     signals = evaluate_rules(p)
     by_topo: dict[str, list[Signal]] = {tid: [] for tid in TOPOLOGIES}
     for s in signals:
         by_topo[s.topology_id].append(s)
 
-    estimates = {tid: estimate(p, tid) for tid in TOPOLOGIES}
+    estimates = {tid: estimate(p, tid, tiers) for tid in TOPOLOGIES}
     cheapest = min(e.cost_usd for e in estimates.values())
 
     cands: list[Candidate] = []
@@ -171,7 +219,20 @@ def recommend(p: WorkloadProfile, scan: ScanResult | None = None) -> Recommendat
     fastest = min(in_budget, key=lambda c: c.estimate.latency_s) if in_budget else None
     accurate = max((c for c in cands if c.viable), key=lambda c: (c.quality_proxy, -c.estimate.latency_s))
 
-    rec = Recommendation(p, cands, plan, frontier, fastest, accurate, _headline(p, cands[0], fastest, accurate), scan)
+    selection = select_models(plan, p, catalog, policy)
+    for c in plan.components:
+        ch = selection.choice(c.id)
+        if ch and ch.model_id:
+            spec = catalog.get(ch.model_id)
+            c.chosen_model, c.provider, c.fallback_model, c.effort = ch.model_id, spec.provider if spec else None, ch.fallback_model_id, ch.effort
+    sel_tiers = dict(tiers)
+    for c in plan.components:
+        spec = catalog.get(c.chosen_model) if c.chosen_model else None
+        if spec and c.tier in sel_tiers and sel_tiers[c.tier].model_id != spec.id and not getattr(sel_tiers[c.tier], "_selected", False):
+            sel_tiers[c.tier] = _spec_to_tier(c.tier, spec)
+            object.__setattr__(sel_tiers[c.tier], "_selected", True) if False else None
+    selected_estimate = estimate(p, cands[0].topology.id, sel_tiers)
+    rec = Recommendation(p, cands, plan, frontier, fastest, accurate, _headline(p, cands[0], fastest, accurate), scan, selection, selected_estimate, tiers)
     if scan is not None and scan.current_topology not in ("none", cands[0].topology.id):
         cur = next((c for c in cands if c.topology.id == scan.current_topology), None)
         if cur is not None:
