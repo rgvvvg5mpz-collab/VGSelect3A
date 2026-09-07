@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VG Select: 3A — Methodology</title>
+<style>
+  body{font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1c2128;max-width:960px;margin:0 auto;padding:32px 24px;background:#fff}
+  h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:36px 0 10px;border-bottom:1px solid #e1e5ea;padding-bottom:6px}h3{font-size:16px;margin:22px 0 6px;color:#96151D}h4{font-size:15px;margin:18px 0 4px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#f1f3f6;padding:1px 5px;border-radius:4px}
+  pre{background:#0f1a33;color:#e6ecff;padding:14px;border-radius:8px;overflow:auto;font-size:13px;line-height:1.45}pre code{background:none;color:inherit;padding:0}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #e1e5ea;vertical-align:top}th{color:#5b6470;font-size:13px;background:#faf9f7}
+  .wrap{overflow-x:auto}
+  a{color:#96151D}
+  ul li,ol li{margin:4px 0}
+  hr{border:0;border-top:1px solid #e1e5ea;margin:28px 0}
+  blockquote{border-left:4px solid #96151D;background:#f8eced;padding:10px 14px;border-radius:6px;margin:14px 0}
+  .sub{color:#5b6470;margin-bottom:24px}
+</style>
+</head>
+<body>
+<h1 id="vg-select-3a-methodology">VG Select: 3A — Methodology</h1>
+<p>How VG Select: 3A (Automated Agentic Architecture) turns a code repository and a workload description into an architecture recommendation, and what the numbers mean. The evidence behind each rule is in <a href="industry_guidance.html">industry_guidance.html</a>.</p>
+<h2 id="1-problem-statement">1. Problem statement</h2>
+<p>Teams building agentic LLM applications face one recurring design decision: how much structure to add. A single model call is fastest and cheapest; a single agent with tools handles multi-step work; workflows (chains, routers, fan-out, voting, evaluator loops) add predictability and accuracy at the cost of latency; multi-agent systems (orchestrator + subagents, hierarchies, handoffs) add breadth and parallelism at roughly 15x the tokens of a chat interaction and with documented coordination failure modes.</p>
+<p>Published guidance converges on "start simple, add structure only where measured need exists", but leaves the mapping from workload properties to topology implicit. 3A makes that mapping explicit, repeatable and auditable.</p>
+<h2 id="2-pipeline">2. Pipeline</h2>
+<pre><code>repository ──scan──▶ inferred profile ─┐
+                                        ├─merge─▶ WorkloadProfile ─▶ rules ─▶ viability ─▶ estimates ─▶ balance ─▶ rank
+prose/description ──Claude intake──────┤                                                                   │
+manual profile / examples ─────────────┘                                                    decomposition plan + guardrails
+                                                                                                           │
+                                                                              per-role requirements ─▶ model selection (catalog + policy)
+                                                                                                           │
+                                                          ┌────────────────────────────────────────────────┤
+                                                          ▼                                                ▼
+                                             architecture document (PDF)                    agent skeleton (LangGraph zip, provider-aware)
+                                             + Markdown / JSON / SVG / UI</code></pre>
+<h3 id="2-1-inputs-the-workload-profile">2.1 Inputs: the workload profile</h3>
+<p>Twenty-six fields in six groups (task shape, tools, knowledge, quality, operating constraints, metadata). Each field has a definition, type, range or enum, and default, held in one place (<code>profile.py</code>) from which the CLI, the JSON schema for the Claude intake, the Pydantic models for the API and the UI form are all generated. See <code>vgselect fields</code>.</p>
+<h3 id="2-2-repository-scan-inference">2.2 Repository scan (inference)</h3>
+<p>The scanner (<code>scanner.py</code>) walks the tree (skipping VCS, dependency and build directories; at most 20,000 files, 1 MB each) and applies regular-expression tables over source and dependency files only. Prose (<code>.md</code>, <code>.txt</code>) is never evidence. It extracts:</p>
+<div class="wrap"><table><tr><th>Category</th><th>Signals</th><th>Inferred fields</th></tr>
+<tr><td>Frameworks</td><td>SDK imports and dependency declarations (Anthropic, OpenAI, LangChain/LangGraph, CrewAI, AutoGen, ADK, MCP, ...)</td><td>context for the report</td></tr>
+<tr><td>Tools</td><td>decorators (<code>@tool</code>, <code>@beta_tool</code>, <code>@mcp.tool</code>), tool schemas, Zod tools, OpenAI function specs, OpenAPI documents in the repo</td><td><code>tool_count</code>, <code>tool_calls_per_task</code> (rough), <code>tool_overlap</code> (shared name stems)</td></tr>
+<tr><td>Retrieval</td><td>vector DB clients, embeddings, retrievers, web search, SQL, graph DBs</td><td><code>knowledge_sources</code>, <code>retrieval_depth</code>, <code>context_tokens_per_task</code> (rough)</td></tr>
+<tr><td>Side effects</td><td>email/SMS, payments, external POST/DELETE, chat posting, DB writes, file writes, shell, infra, ticketing</td><td><code>tool_side_effects</code>, <code>error_recoverability</code>, <code>accuracy_priority</code></td></tr>
+<tr><td>Agent patterns</td><td>manual tool loops, tool runners, graphs, supervisors, subagents, handoffs, routers, fan-out, evaluators, chains</td><td><code>current_topology</code>, <code>steps_predictable</code>, <code>task_complexity</code>, <code>parallel_subtasks</code>, <code>scope_breadth</code></td></tr>
+<tr><td>Serving</td><td>HTTP APIs, streaming, batch/cron, chat UIs, CLIs</td><td><code>latency_budget_s</code>, <code>interaction</code></td></tr>
+<tr><td>Quality</td><td>tests, eval harnesses, structured outputs, caching, approval flows, memory, compaction</td><td><code>verifiability</code>, <code>human_in_loop</code></td></tr>
+</table></div>
+<p>Every inference carries a confidence (0-1) and a reason, and every category keeps file:line evidence. Fields the code cannot reveal (latency budget, accuracy priority, cost sensitivity, volume) are left to the user; user values always override inferences. The scan also identifies the topology the code implements today, so the report can show the gap.</p>
+<h3 id="2-3-rules-structural-fit">2.3 Rules (structural fit)</h3>
+<p>Forty-one rules (<code>rules.py</code>) each read the profile and add or subtract fit points for one or more topologies, with a rationale and a citation key. They are grouped as the guidance suggests:</p>
+<ol><li>Simplicity first (trivial/simple tasks -&gt; single call or single agent; multi-agent penalised below complex).</li><li>Workflow vs. agent (predictable steps -&gt; chain/sectioning; unpredictable -&gt; agent; open-ended -&gt; orchestrator).</li><li>Parallelism and breadth (independent sub-tasks -&gt; sectioning or orchestrator; many domains -&gt; router/handoffs/hierarchy).</li><li>Knowledge and context (single lookup -&gt; RAG in code; multi-hop -&gt; agentic retrieval; exhaustive or context overflow -&gt; subagents).</li><li>Accuracy and verification (strong verifiability + high stakes -&gt; evaluator loop; bounded high-stakes answers -&gt; voting).</li><li>Latency budget and cost/volume.</li><li>Tool surface (overlap, count, sequential chains).</li><li>Interaction shape (long-running, conversational, document, code change).</li><li>Measured evidence (single-agent baseline above ~45% -&gt; penalise multi-agent; low baseline on decomposable task -&gt; favour centralised multi-agent).</li><li>Sequential dependency and error amplification (centralised 4.4x vs decentralised 7.8x vs independent 17x).</li><li>Retrieval latency (interactive budgets force single-pass/adaptive RAG).</li></ol>
+<p>Weights are small integers chosen so that one strong signal (about +3) equals the typical latency penalty of missing a budget by 50%. They are deliberately coarse: the intent is a defensible ranking with visible reasons, not a regression.</p>
+<h3 id="2-4-viability-hard-constraints">2.4 Viability (hard constraints)</h3>
+<p>Independent of score, a topology is marked non-viable when it cannot do the job: a single call cannot make tool calls or follow-up retrievals; a fixed chain cannot follow an open-ended path; sectioning needs something to fan out; handoffs and hierarchy need more than one domain. Non-viable candidates are shown, struck through, at the bottom.</p>
+<h3 id="2-5-estimates-latency-cost-tokens">2.5 Estimates (latency, cost, tokens)</h3>
+<p>For every topology the estimator (<code>estimator.py</code>) builds a call tree from the profile:</p>
+<ul><li>a <b>single call</b> is one request reading up to the task's context tokens;</li><li>an <b>agent loop</b> is <code>ceil(tool_calls / batch)</code> tool rounds (batch 4 for independent tools, 2 mixed, 1 sequential) with context growing as results accumulate, plus a final answer;</li><li><b>chains</b> are 2-4 sequential stages; <b>routers</b> add a small-model classification hop; <b>sectioning</b> and <b>voting</b> run branches in parallel (waves of at most 10) then aggregate; the <b>evaluator loop</b> runs 2-3 generate/evaluate iterations; <b>orchestrator-workers</b> is plan + one wave of N workers (each a Sonnet-tier agent loop over its share of tools and reading) + synthesis; <b>hierarchical</b> adds a lead layer; <b>handoffs</b> add a transfer hop.</li></ul>
+<p>Latency is the critical path: sequential segments add, parallel segments count their slowest branch. Each call costs time-to-first-token plus output tokens divided by tokens-per-second for its model tier, plus tool latency per round. Cost sums every call at list prices without caching. The token multiplier is total tokens divided by one plain call. Model tier per role is chosen by capability and only lowered when the latency budget forces it.</p>
+<p>Serving assumptions (<code>MODEL_TIERS</code>) are published rates and rough throughput figures; replace them with measurements. The outputs are order-of-magnitude and exist to rank options, which is why the report prints its assumptions.</p>
+<h3 id="2-6-balancing-latency-and-accuracy">2.6 Balancing latency and accuracy</h3>
+<pre><code>score = fit + latency_adj + cost_adj
+
+latency_adj: ratio = est_latency / budget
+             +1.0 at ratio &lt;= 0.5, falling to 0 at ratio 1.0,
+             -1.5 .. -3.5 for ratio 1..2, then -3.5 - log2(ratio) (capped)
+             negative values are scaled by 1 + 0.3 * (3 - accuracy_priority),
+             clamped to [0.4, 1.6]: high accuracy priority tolerates lateness
+
+cost_adj   = -(cost_sensitivity / 3) * 0.6 * log2(cost / cheapest_viable_cost)</code></pre>
+<p>So the same workload gets a faster answer when speed matters and a more thorough one when correctness matters, and the trade is visible in the table. The report also prints the Pareto frontier over (latency, structural fit) and names the fastest viable option within budget and the most accurate option.</p>
+<h3 id="2-7-decomposition-plan">2.7 Decomposition plan</h3>
+<p>For the winning topology the planner (<code>decomposition.py</code>) produces components with role, model tier, effort level, tools and parallel group:</p>
+<ul><li>worker count follows Anthropic's research-system heuristic (1 agent for fact-finding, 2-4 for comparisons, 10+ for complex research), raised by context pressure (one worker per ~100k tokens of reading) and capped at 20;</li><li>workers are named after the profile's sources, domains, sections or sub-tasks when given;</li><li>orchestrators run on the Opus tier at high/xhigh effort (max when accuracy priority is 5); reading-heavy workers on Sonnet or Haiku at low/medium;</li><li>a verifier is added for multi-agent plans when verifiability exists and accuracy priority is high; a gate for irreversible tools;</li><li>briefing rules restate the delegation contract (objective, output format, tools/sources, boundaries, effort).</li></ul>
+<p>Cross-cutting recommendations are emitted independently of topology: evals first (~20 queries), termination limits, verification at the orchestrator, prompt caching, streaming, structured outputs, parallel tool use, programmatic tool calling, tool search, context editing/compaction/memory, model tiering, adaptive RAG, batch API. Each carries a citation.</p>
+<h3 id="2-7a-model-selection-per-role">2.7a Model selection per role</h3>
+<p>Each component of the plan gets a requirements block derived from the profile and its role (capability level, latency share, context, tools, structured output, stakes, volume, data class, task family, independence, cache group), and the selector matches it against the model ecosystem catalog under the policy: hard filters, capability floor with measured-evidence override, quality/latency/cost scoring, orchestrator-not-weaker-than-workers, verifier independence, one model per loop, fallback on another provider, and unfilled-role feedback. The topology ranking is estimated on reference models per capability level from the same catalog and policy, and the primary is re-estimated on the chosen models. Full description: <a href="MODEL_CATALOG.html">MODEL_CATALOG.html</a>.</p>
+<h3 id="2-8-outputs">2.8 Outputs</h3>
+<ul><li><b>Architecture document (PDF)</b>: the deliverable for a design review. Summary, why (cited) with counter-signals, scan findings and gap, options compared, frontier and runners-up, plan with diagram, briefing rules, cross-cutting recommendations, assumptions, the profile used, sources. Generated with reportlab (<code>pdf_report.py</code>) from the same objects as the Markdown report, so the two never disagree; the diagram uses the same layout function as the SVG.</li><li><b>Agent skeleton (zip)</b>: a runnable LangGraph project for the recommended topology (<code>scaffold/langgraph.py</code>, one template per topology; see 2.9).</li><li>Markdown report, JSON (full structure, including every signal and scan evidence), Mermaid and SVG diagrams; the same content in the web UI, which adds a latency-versus-fit chart and per-row rule expansions.</li></ul>
+<h3 id="2-9-skeleton-generation">2.9 Skeleton generation</h3>
+<p>The generator fills a topology template with the plan and profile: one role entry per component (model ID, effort, tier), tool stubs named after the profile's or scan's tools, termination limits derived from the profile (<code>RECURSION_LIMIT</code> from tool calls per task, <code>MAX_ITERATIONS</code> from accuracy priority, <code>MAX_WORKERS</code> from the worker-count heuristic), and an approval hook when irreversible tools exist. How each topology maps to LangGraph:</p>
+<div class="wrap"><table><tr><th>Topology</th><th>Graph construct</th></tr>
+<tr><td>Single call</td><td><code>retrieve</code> (code) -&gt; <code>answer</code> nodes</td></tr>
+<tr><td>Single agent</td><td>one <code>create_agent</code> / <code>create_react_agent</code> node with all tools</td></tr>
+<tr><td>Prompt chain</td><td>one node per stage, code gates as plain nodes, linear edges</td></tr>
+<tr><td>Router</td><td>small-model structured-output classifier, <code>add_conditional_edges</code> to one handler per domain</td></tr>
+<tr><td>Parallel sectioning</td><td><code>split</code> -&gt; <code>Send</code> fan-out to <code>section</code> -&gt; <code>merge</code>, results via an <code>operator.add</code> reducer</td></tr>
+<tr><td>Parallel voting</td><td><code>Send</code> fan-out to N <code>vote</code> nodes -&gt; majority in code (discrete answers) or a judge call</td></tr>
+<tr><td>Evaluator-optimizer</td><td><code>generate</code> -&gt; <code>evaluate</code> (structured verdict) -&gt; conditional edge back or <code>finish</code>, capped by <code>MAX_ITERATIONS</code></td></tr>
+<tr><td>Orchestrator + workers</td><td><code>plan</code> (structured briefs) -&gt; <code>Send</code> fan-out to <code>worker</code> -&gt; <code>synthesise</code> -&gt; optional <code>verify</code></td></tr>
+<tr><td>Hierarchical</td><td><code>top_plan</code> -&gt; <code>Send</code> per domain into a compiled lead subgraph (plan -&gt; workers -&gt; synth) -&gt; <code>top_synth</code></td></tr>
+<tr><td>Handoffs</td><td>one node per specialist, each returning a structured answer/handoff decision; conditional routing with <code>MAX_HANDOFFS</code></td></tr>
+</table></div>
+<p>The generated code is a starting point: graph structure, limits and model tiering are decided by the recommendation; prompts, tool bodies and acceptance criteria are marked TODO. It targets LangChain 1.x / LangGraph 1.x with a fallback import for LangGraph 0.2/0.3.</p>
+<h2 id="3-validation">3. Validation</h2>
+<ul><li>Eight canonical scenarios (FAQ bot, moderation classifier, support agent, coding agent, deep research, extraction pipeline, PR review, enterprise analyst) are bundled and tested for the expected topology.</li><li>Property tests check monotonicity: tightening the budget moves the answer toward faster topologies; raising accuracy priority reduces the latency penalty; parallel research is faster under an orchestrator than under a single agent; a measured baseline above 45% penalises multi-agent.</li><li>A fixture repository exercises the scanner end to end (tools, retrieval, payments side effect, tool overlap, FastAPI surface) and every API endpoint, including the PDF and skeleton endpoints and the scan round-trip into the PDF.</li><li>Catalog validation, requirement derivation and model selection are tested under policies (providers, regions, data class, unverified entries, measured evidence lifting a smaller model, verifier independence, the orchestrator floor).</li><li>PDF generation is tested for several scenarios and for a scan-based recommendation; the generated skeleton is syntax-checked for all ten topologies and for mixed-provider plans (68 tests in total). Separately, every skeleton was unzipped and its own smoke test run against LangGraph 1.2 / LangChain 1.4: all ten compile.</li></ul>
+<h2 id="4-limitations-and-how-to-calibrate">4. Limitations and how to calibrate</h2>
+<ul><li>Estimates are heuristic. Calibrate <code>MODEL_TIERS</code> and estimator constants from your traces, then re-run the examples.</li><li>The scanner is pattern-based. It cannot count tool calls per request or tokens per request; both are rough inferences to be replaced by measured values (<code>tool_calls_per_task</code>, <code>context_tokens_per_task</code>).</li><li>Rules encode published guidance as of September 2026. When you learn something from your own evals, add a rule with its evidence rather than editing weights ad hoc.</li><li>Model selection is only as good as the catalog: capability tiers and serving figures for non-Anthropic models must come from your registry and evals (the bundled placeholders are excluded until verified), and measured <code>evidence</code> per task family is the signal that changes decisions most.</li></ul>
+<h2 id="5-extending">5. Extending</h2>
+<ul><li>New topology: add to <code>TOPOLOGIES</code>, an estimator branch, a plan branch, viability rules, and at least one scoring rule.</li><li>New rule: a function decorated with <code>@rule</code> returning <code>Signal</code>s; add its citation to <code>industry_guidance.html</code>.</li><li>New scanner pattern: extend the tables at the top of <code>scanner.py</code>; add a fixture and a test.</li><li>New skeleton framework: add a module under <code>scaffold/</code> exposing <code>generate(rec) -&gt; {path: content}</code> and register it in <code>scaffold/__init__.py</code>; add it to the <code>framework</code> literal in <code>service/schemas.py</code> and to the CLI choices. Test that every topology's output compiles.</li></ul>
+</body>
+</html>

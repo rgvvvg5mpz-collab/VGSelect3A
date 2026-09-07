@@ -25,7 +25,7 @@ CITATIONS = {
     "GOOGLE_ADK": "Google ADK, Multi-agent systems",
     "MS_AF": "Microsoft Azure / Agent Framework, AI agent design patterns",
     "SCALING": "Google/MIT, Towards a Science of Scaling Agent Systems",
-    "RAG": "Agentic vs classic RAG guidance (see docs/industry_guidance.md)",
+    "RAG": "Agentic vs classic RAG guidance (see docs/industry_guidance.html)",
 }
 
 

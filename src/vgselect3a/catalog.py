@@ -6,7 +6,7 @@ API request). Entries describe governance (provider, platforms, regions,
 approval, data classes), capability (reasoning tier, tool use, structured
 output, context, modalities, effort control), performance (TTFT, tokens/s,
 rate limits), cost, and measured evidence per task family. See
-docs/MODEL_CATALOG.md for the schema and how to maintain it.
+docs/MODEL_CATALOG.html for the schema and how to maintain it.
 """
 
 from __future__ import annotations

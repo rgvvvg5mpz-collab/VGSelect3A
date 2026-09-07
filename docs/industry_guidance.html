@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Industry guidance behind the rule engine</title>
+<style>
+  body{font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1c2128;max-width:960px;margin:0 auto;padding:32px 24px;background:#fff}
+  h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:36px 0 10px;border-bottom:1px solid #e1e5ea;padding-bottom:6px}h3{font-size:16px;margin:22px 0 6px;color:#96151D}h4{font-size:15px;margin:18px 0 4px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#f1f3f6;padding:1px 5px;border-radius:4px}
+  pre{background:#0f1a33;color:#e6ecff;padding:14px;border-radius:8px;overflow:auto;font-size:13px;line-height:1.45}pre code{background:none;color:inherit;padding:0}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #e1e5ea;vertical-align:top}th{color:#5b6470;font-size:13px;background:#faf9f7}
+  .wrap{overflow-x:auto}
+  a{color:#96151D}
+  ul li,ol li{margin:4px 0}
+  hr{border:0;border-top:1px solid #e1e5ea;margin:28px 0}
+  blockquote{border-left:4px solid #96151D;background:#f8eced;padding:10px 14px;border-radius:6px;margin:14px 0}
+  .sub{color:#5b6470;margin-bottom:24px}
+</style>
+</head>
+<body>
+<h1 id="industry-guidance-behind-the-rule-engine">Industry guidance behind the rule engine</h1>
+<p>This document is the evidence base for <code>vgselect3a</code>. Each rule in <code>src/vgselect3a/rules.py</code> carries a citation key; the keys resolve here. Sources were fetched on 2026-09-07. Quotes are short and attributed; see the URLs for full context.</p>
+<div class="wrap"><table><tr><th>Key</th><th>Source</th></tr>
+<tr><td>ANTHROPIC_BEA</td><td>Anthropic, <i>Building effective agents</i> - https://www.anthropic.com/engineering/building-effective-agents</td></tr>
+<tr><td>ANTHROPIC_MAR</td><td>Anthropic, <i>How we built our multi-agent research system</i> - https://www.anthropic.com/engineering/multi-agent-research-system</td></tr>
+<tr><td>ANTHROPIC_CTX</td><td>Anthropic, <i>Effective context engineering for AI agents</i> - https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents ; <i>Writing effective tools for agents</i> - https://www.anthropic.com/engineering/writing-tools-for-agents</td></tr>
+<tr><td>ANTHROPIC_MA</td><td>Anthropic Managed Agents multiagent guidance (bundled Claude API skill) and Claude Code subagent docs - https://code.claude.com/docs/en/sub-agents</td></tr>
+<tr><td>OPENAI_PG</td><td>OpenAI, <i>A practical guide to building agents</i> - https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf ; Agents SDK multi-agent docs - https://openai.github.io/openai-agents-python/multi_agent/</td></tr>
+<tr><td>GOOGLE_ADK</td><td>Google ADK workflow patterns - https://adk.dev/workflows/patterns/ ; https://developers.googleblog.com/developers-guide-to-multi-agent-patterns-in-adk/</td></tr>
+<tr><td>LANGGRAPH</td><td>LangChain/LangGraph multi-agent docs - https://docs.langchain.com/oss/python/langchain/multi-agent ; https://github.com/langchain-ai/langgraph-supervisor-py</td></tr>
+<tr><td>MS_AF</td><td>Microsoft Azure Architecture Center, <i>AI agent design patterns</i> - https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns ; Agent Framework orchestrations - https://learn.microsoft.com/en-us/agent-framework/workflows/orchestrations/overview</td></tr>
+<tr><td>MAST</td><td>Cemri et al., <i>Why Do Multi-Agent LLM Systems Fail?</i> - https://arxiv.org/abs/2503.13657</td></tr>
+<tr><td>SCALING</td><td>Google/MIT, <i>Towards a Science of Scaling Agent Systems</i> (Dec 2025) - https://arxiv.org/abs/2512.08296</td></tr>
+<tr><td>COGNITION</td><td>Cognition, <i>Don't Build Multi-Agents</i> - https://cognition.com/blog/dont-build-multi-agents</td></tr>
+<tr><td>RAG</td><td><i>Agentic RAG vs classic RAG</i> (Towards Data Science) ; Mastra, <i>Agentic RAG</i> ; LatentRAG https://arxiv.org/html/2605.06285 ; Agentic RAG survey https://arxiv.org/html/2501.09136</td></tr>
+</table></div>
+<hr>
+<h2 id="1-source-by-source-findings">1. Source-by-source findings</h2>
+<h3 id="1-1-anthropic-building-effective-agents-anthropic-bea">1.1 Anthropic, "Building effective agents" (ANTHROPIC_BEA)</h3>
+<p>Core distinction: <b>workflows</b> orchestrate LLMs and tools through predefined code paths; <b>agents</b> let the LLM dynamically direct its own process and tool usage.</p>
+<p>Patterns and when to use them:</p>
+<ul><li><b>Augmented LLM</b> (retrieval + tools + memory) is the base unit. For many applications optimising a single call with retrieval and in-context examples is enough.</li><li><b>Prompt chaining</b>: fixed sequence of calls with programmatic gates. Use when the task decomposes cleanly into fixed sub-tasks; it trades latency for higher per-step accuracy.</li><li><b>Routing</b>: classify, then dispatch to a specialised path. Use when there are distinct categories better handled separately and classification is accurate. Includes routing easy queries to a small model.</li><li><b>Parallelization</b>: <i>sectioning</i> (independent sub-tasks concurrently) and <i>voting</i> (same task several times for confidence).</li><li><b>Orchestrator-workers</b>: a central LLM dynamically breaks down the task, delegates, and synthesises. Use for complex tasks where the sub-tasks cannot be predicted in advance. This is what distinguishes it from parallelization.</li><li><b>Evaluator-optimizer</b>: generator + evaluator loop. Use when there are clear evaluation criteria and iteration provides measurable value.</li><li><b>Autonomous agent</b>: tool loop with environmental feedback, for open-ended problems where the number of steps cannot be predicted. Costs: higher latency and cost, compounding errors.</li></ul>
+<p>Meta-rule: find the simplest solution possible and add complexity only when it demonstrably improves outcomes. Agentic systems trade latency and cost for task performance.</p>
+<h3 id="1-2-anthropic-how-we-built-our-multi-agent-research-system-anthropic-mar">1.2 Anthropic, "How we built our multi-agent research system" (ANTHROPIC_MAR)</h3>
+<p>Architecture: Opus lead agent plans, spawns Sonnet subagents in parallel with isolated context, synthesises; a citation agent post-processes.</p>
+<p>Numbers:</p>
+<ul><li>Multi-agent (Opus lead + Sonnet workers) beat single-agent Opus by 90.2% on the internal research eval.</li><li>Token usage alone explains ~80% of performance variance; tool-call count and model choice explain most of the rest.</li><li>Agents use ~4x the tokens of chat; multi-agent systems ~15x.</li><li>Upgrading the model was a larger gain than doubling the token budget.</li><li>Running 3-5 subagents in parallel (each using 3+ tools in parallel) cut research time by up to 90% on complex queries.</li></ul>
+<p>When it is worth it: heavy parallelisation, information exceeding one context window, many complex tools, and task value high enough to pay for it. When it is not: domains where all agents must share context or have many inter-dependencies; most coding tasks have fewer truly parallel pieces than research.</p>
+<p>Effort-scaling heuristic (encoded in <code>worker_count</code>):</p>
+<ul><li>Simple fact-finding: 1 agent, 3-10 tool calls.</li><li>Direct comparisons: 2-4 subagents, 10-15 calls each.</li><li>Complex research: 10+ subagents with clearly divided responsibilities.</li></ul>
+<p>Delegation contract: each subagent brief needs an objective, an output format, tool/source guidance, and clear boundaries; otherwise agents duplicate work, leave gaps, or over-spawn (e.g. 50 subagents for a simple query). Start evals with ~20 representative queries; use an LLM judge with a rubric; trace everything because runs are non-deterministic.</p>
+<h3 id="1-3-anthropic-context-engineering-and-tools-anthropic-ctx">1.3 Anthropic, context engineering and tools (ANTHROPIC_CTX)</h3>
+<p>Context is a finite attention budget subject to "context rot". Long-horizon techniques and their fit:</p>
+<ul><li><b>Compaction</b> (summarise and re-initialise) for long back-and-forth; the lightest variant is <b>tool-result clearing</b>.</li><li><b>Structured note-taking / memory</b> for iterative work with milestones.</li><li><b>Sub-agent architectures</b> (isolated context per subagent returning a 1,000-2,000 token summary) for research/analysis where parallel exploration pays off.</li></ul>
+<p>Tools: more tools do not mean better outcomes; consolidate overlapping tools, namespace them, return semantic identifiers, paginate/truncate outputs. If a human engineer cannot say which tool applies, the agent cannot either. On retrieval: agentic (grep-style) search is slower but more accurate and transparent than embeddings; add semantic search only if you need speed.</p>
+<p>Claude Code subagent guidance: delegate when output is verbose and not needed in the main context, the work is self-contained, or there are independent investigations to run in parallel. Concrete trigger: exploring ten or more files or three or more independent pieces of work. Keep it in the main conversation when phases share significant context, when there is frequent back-and-forth, or when latency matters (subagents start cold). Never have two subagents edit the same file. Defaults: 20 concurrent subagents, 3 nesting levels.</p>
+<h3 id="1-4-openai-a-practical-guide-to-building-agents-openai-pg">1.4 OpenAI, "A practical guide to building agents" (OPENAI_PG)</h3>
+<p>Build an agent only for complex decision-making, hard-to-maintain rule sets, or heavy reliance on unstructured data; otherwise a deterministic solution may suffice. Prototype with the most capable model, then swap in smaller models where accuracy holds.</p>
+<p>Single agent first: maximise a single agent's capabilities before splitting. Split triggers:</p>
+<ul><li><b>Complex logic</b>: prompts with many conditional branches that no longer scale as templates.</li><li><b>Tool overload</b>: it is not the number of tools but their overlap. Some systems manage 15+ distinct tools; others struggle with fewer than 10 overlapping ones. Split only if improving tool clarity does not help.</li></ul>
+<p>Two multi-agent shapes: <b>manager</b> (agents as tools; one agent owns the user and the final synthesis) and <b>decentralised handoffs</b> (one-way transfer of control and conversation state; ideal for triage or when a specialist should fully take over). Human intervention on failure thresholds and on high-risk, irreversible actions (refunds, payments, cancellations).</p>
+<h3 id="1-5-google-adk-google-adk">1.5 Google ADK (GOOGLE_ADK)</h3>
+<p>Deterministic workflow agents (Sequential, Parallel, Loop) vs. LLM-driven delegation. Seven patterns: coordinator/dispatcher, sequential pipeline, parallel fan-out/gather, hierarchical task decomposition (when a task is too big for one context window), generate-and-review, iterative refinement (with <code>max_iterations</code>), human-in-the-loop for irreversible actions. Guidance: use LLM-driven delegation for context-dependent routing, deterministic workflows for predictable processes; start with a sequential chain, debug it, then add complexity.</p>
+<h3 id="1-6-langchain-langgraph-langgraph">1.6 LangChain / LangGraph (LANGGRAPH)</h3>
+<p>Reasons to go multi-agent: specialised knowledge without overwhelming one context window, independent team ownership, concurrent specialised workers. Pattern comparison from the docs (calls per request):</p>
+<div class="wrap"><table><tr><th>Scenario</th><th>Subagents (supervisor)</th><th>Handoffs</th><th>Skills</th><th>Router</th></tr>
+<tr><td>One-shot request</td><td>4</td><td>3</td><td>3</td><td>3</td></tr>
+<tr><td>Repeat request</td><td>8</td><td>5</td><td>5</td><td>6</td></tr>
+<tr><td>Multi-domain</td><td>5 (~9K tokens)</td><td>7+ (~14K+)</td><td>3 (~15K)</td><td>5 (~9K)</td></tr>
+</table></div>
+<p>Guidance: subagents for distributed development and parallelisation; handoffs for repeat requests and direct user interaction; router for clear input categories with lightweight classification; supervisor for conversation-aware orchestration; hierarchical (supervisor of supervisors) only at scale. For most handoff cases a single agent with middleware is simpler.</p>
+<h3 id="1-7-microsoft-ms-af">1.7 Microsoft (MS_AF)</h3>
+<p>Complexity ladder: direct model call -&gt; single agent with tools ("often the right default for enterprise use cases") -&gt; multi-agent orchestration, justified only by prompt complexity, tool overload, security boundaries, or parallel specialisation. "Decision-making and flow-control overhead often exceed the benefits."</p>
+<p>Patterns with avoid-when rules: <b>sequential</b> (avoid when stages are parallel or early errors propagate unchecked), <b>concurrent</b> (avoid without a conflict resolution strategy or when order matters), <b>group chat</b> (read-only deliberation, keep to three or fewer agents, needs an objective completion check), <b>handoff</b> (avoid when the right agent is identifiable from the input; use a dispatcher), <b>Magentic</b> dynamic planner (open-ended, side-effecting tools, slowest and most cost-variable; cap rounds/stalls/resets).</p>
+<h3 id="1-8-quantitative-and-critical-studies">1.8 Quantitative and critical studies</h3>
+<p><b>MAST (Cemri et al.)</b>: 1,600+ traces across 7 frameworks; failure rates 41% to 87%. Failure classes: specification/system design 43.9% (step repetition 15.7%, unaware of termination 12.4%), inter-agent misalignment 31.8% (reasoning-action mismatch 13.2%), task verification 24.5%. Fixes to roles, termination and verification gave at most +15.6%. Failures stem from organisational design and coordination, not individual agent capability.</p>
+<p><b>Towards a Science of Scaling Agent Systems (Google/MIT)</b>: 260 configurations, 5 architectures, 6 benchmarks. Gains: Finance-Agent +80.8% (centralised), BrowseComp-Plus +9.2%, Workbench +5.6%, Terminal-Bench +1.7%. Losses: PlanCraft -39% to -70%, SWE-bench Verified -2.1%. <b>Capability saturation</b>: when the single-agent baseline already exceeds ~45% accuracy, adding agents yields negative returns. Tool-heavy (16-tool) workflows suffer coordination overhead. Error amplification vs. single agent: centralised 4.4x, hybrid 5.1x, decentralised 7.8x, independent 17.2x. Token overhead vs. single agent: independent +58%, decentralised +263%, centralised +285%, hybrid +515%.</p>
+<p><b>Cognition, "Don't build multi-agents"</b>: share full context and traces; actions carry implicit decisions and parallel workers make conflicting ones. Parallel subagents are fragile for coding; prefer a single-threaded agent with a context-compression model. Claude Code uses subagents only for read-only question answering, never parallel code writing.</p>
+<h3 id="1-9-retrieval-rag">1.9 Retrieval (RAG)</h3>
+<p>Classic RAG is retrieve-once-then-generate with predictable latency; agentic RAG is a retrieve-reason-decide loop whose latency and cost become distributions with p95 tails. Rules: single-hop, single-source, latency-sensitive -&gt; classic RAG; multi-hop, cross-source, self-correcting -&gt; agentic RAG, tolerating 3x-20x latency (Search-R1 needs 16-22x the inference time of naive RAG for 27% -&gt; 43% EM on HotpotQA). Cap retrieval iterations (~4). Mixed traffic -&gt; adaptive RAG: classify, single-pass by default, escalate on failure signals (missing citations, low confidence, contradictions, repeated follow-ups). Many heterogeneous sources -&gt; single-agent router first; subagent-per-source only when per-source exploration would overflow the main context or parallel latency reduction is needed.</p>
+<hr>
+<h2 id="2-consolidated-decision-framework-what-the-engine-implements">2. Consolidated decision framework (what the engine implements)</h2>
+<h3 id="input-dimensions">Input dimensions</h3>
+<div class="wrap"><table><tr><th>Dimension</th><th>Profile field(s)</th></tr>
+<tr><td>Step predictability</td><td><code>steps_predictable</code>, <code>task_complexity</code></td></tr>
+<tr><td>Decomposability / independence</td><td><code>parallel_subtasks</code>, <code>tool_dependency</code></td></tr>
+<tr><td>Breadth</td><td><code>scope_breadth</code>, <code>knowledge_sources</code></td></tr>
+<tr><td>Context volume</td><td><code>context_tokens_per_task</code></td></tr>
+<tr><td>Tool count and overlap</td><td><code>tool_count</code>, <code>tool_overlap</code></td></tr>
+<tr><td>Retrieval need</td><td><code>retrieval_depth</code></td></tr>
+<tr><td>Single-agent baseline</td><td><code>single_agent_baseline</code></td></tr>
+<tr><td>Evaluability</td><td><code>verifiability</code></td></tr>
+<tr><td>Latency budget</td><td><code>latency_budget_s</code></td></tr>
+<tr><td>Error cost / reversibility</td><td><code>accuracy_priority</code>, <code>tool_side_effects</code>, <code>error_recoverability</code>, <code>human_in_loop</code></td></tr>
+<tr><td>Task value / cost</td><td><code>cost_sensitivity</code>, <code>requests_per_day</code></td></tr>
+<tr><td>Conversation ownership</td><td><code>interaction</code>, <code>output_type</code></td></tr>
+</table></div>
+<h3 id="rule-tiers">Rule tiers</h3>
+<ul><li><b>Tier 0 - no agent</b>: fixed path, no tools, single step -&gt; direct call.</li><li><b>Tier 1 - workflows</b> (predictable steps): prompt chain for fixed sequential stages; router for classifiable categories (and model-tier routing); sectioning for known independent sub-tasks; voting for high-stakes decisions with comparable answers; evaluator loop only with clear criteria; human gate before irreversible actions.</li><li><b>Tier 2 - single agent</b> (unpredictable path, one context suffices, ~15 distinct tools or fewer): the default. Stay here when the baseline already exceeds ~45%, when sub-tasks share mutable state, or when work is sequential. Use compaction, tool-result clearing and memory for length.</li><li><b>Tier 3 - multi-agent</b> requires a hard trigger (3+ independent pieces, context overflow, persistent tool overlap, unscalable prompt logic, security boundaries) and no blocker (shared mutable state, task value too low for ~15x tokens, real-time latency without parallel speed-up, baseline &gt; 45%). Default to centralised orchestrator-workers (lowest error amplification); size fan-out by the Anthropic heuristic; handoffs only when a specialist must own the user; hierarchy only at 10+ workers clustered into domains.</li><li><b>Tier 4 - retrieval</b>: classic RAG for single-hop; agentic retrieval capped at ~4 iterations for multi-hop; adaptive RAG for mixed traffic; subagent-per-source only for deep, parallel exploration.</li></ul>
+<h3 id="expected-effects-per-topology">Expected effects per topology</h3>
+<div class="wrap"><table><tr><th>Topology</th><th>Latency vs. one call</th><th>Tokens</th><th>Accuracy effect</th><th>Main risk</th></tr>
+<tr><td>Direct call</td><td>1x</td><td>1x</td><td>baseline</td><td>model limits</td></tr>
+<tr><td>Prompt chain</td><td>~n serial calls</td><td>~n</td><td>higher per-step accuracy</td><td>early-stage error propagation</td></tr>
+<tr><td>Routing</td><td>+1 cheap call</td><td>~1x</td><td>specialised prompts/models</td><td>misroutes</td></tr>
+<tr><td>Sectioning</td><td>~slowest branch</td><td>n branches</td><td>coverage and speed</td><td>merge conflicts</td></tr>
+<tr><td>Voting</td><td>~one branch</td><td>n</td><td>higher confidence</td><td>pure cost</td></tr>
+<tr><td>Evaluator loop</td><td>k iterations</td><td>k</td><td>only with clear criteria</td><td>unbounded loops</td></tr>
+<tr><td>Single agent</td><td>bounded by turn limit</td><td>~4x chat</td><td>best for sequential work</td><td>compounding errors</td></tr>
+<tr><td>Orchestrator-workers</td><td>faster than single agent when parallel</td><td>~15x chat (+285% vs single agent)</td><td>+90% on breadth research; negative on sequential planning</td><td>41-87% failure rates in studied frameworks; 4.4x error amplification</td></tr>
+<tr><td>Handoffs</td><td>serial + transfer calls</td><td>~1.3-2x single agent</td><td>triage / stateful flows</td><td>loops; 7.8x error amplification</td></tr>
+<tr><td>Hierarchical</td><td>extra hops each level</td><td>~25x chat</td><td>only at very large breadth</td><td>debugging, briefing loss</td></tr>
+</table></div>
+<h3 id="always-on-guardrails-the-engine-emits">Always-on guardrails the engine emits</h3>
+<ol><li>Start one level simpler than the rule suggests; promote only on measured eval failure (~20 representative queries).</li><li>Every loop, handoff chain and orchestrator has explicit termination limits.</li><li>Every multi-agent design has a verification step at the orchestrator.</li><li>Every irreversible action has a gate (human or checkpoint/rollback).</li><li>Prefer upgrading the model over adding agents or tokens.</li></ol>
+<hr>
+<h2 id="3-how-the-documented-patterns-map-to-vg-select-topologies">3. How the documented patterns map to VG Select topologies</h2>
+<p>The sources use different names for the same shapes. This table is the cross-reference used by the rules, the plan and the skeleton templates.</p>
+<div class="wrap"><table><tr><th>VG Select topology</th><th>Anthropic</th><th>OpenAI</th><th>Google ADK</th><th>LangChain / LangGraph</th><th>Microsoft</th></tr>
+<tr><td>Single call</td><td>Augmented LLM</td><td>Direct model call</td><td>LlmAgent (no tools)</td><td>Single model call</td><td>Direct model call</td></tr>
+<tr><td>Single agent</td><td>Autonomous agent</td><td>Single agent with tools</td><td>LlmAgent with tools</td><td>Agent (<code>create_agent</code>)</td><td>Single agent with tools</td></tr>
+<tr><td>Prompt chain</td><td>Prompt chaining</td><td>Code-driven orchestration</td><td>Sequential pipeline (SequentialAgent)</td><td>Custom workflow / RunnableSequence</td><td>Sequential</td></tr>
+<tr><td>Router</td><td>Routing</td><td>Deterministic dispatcher</td><td>Coordinator/Dispatcher</td><td>Router</td><td>Handoff avoided when routing is decidable up front</td></tr>
+<tr><td>Parallel sectioning</td><td>Parallelization: sectioning</td><td>Code-driven fan-out</td><td>Parallel fan-out/gather (ParallelAgent)</td><td><code>Send</code> fan-out</td><td>Concurrent</td></tr>
+<tr><td>Parallel voting</td><td>Parallelization: voting</td><td>-</td><td>-</td><td><code>Send</code> fan-out + aggregation</td><td>Concurrent (quorum / majority)</td></tr>
+<tr><td>Evaluator-optimizer</td><td>Evaluator-optimizer</td><td>-</td><td>Generate-and-review; Iterative refinement (LoopAgent)</td><td>Custom loop with conditional edge</td><td>Maker-checker</td></tr>
+<tr><td>Orchestrator + workers</td><td>Orchestrator-workers; multi-agent research system</td><td>Manager (agents as tools)</td><td>Hierarchical task decomposition (AgentTool)</td><td>Subagents / Supervisor</td><td>Magentic (dynamic planner)</td></tr>
+<tr><td>Hierarchical</td><td>10+ subagents with divided responsibilities</td><td>-</td><td>Multi-level hierarchy</td><td>Supervisor of supervisors</td><td>-</td></tr>
+<tr><td>Handoffs</td><td>-</td><td>Decentralised handoffs</td><td>LLM-driven <code>transfer_to_agent</code></td><td>Handoffs (swarm)</td><td>Handoff</td></tr>
+</table></div>
+<p>Group chat / debate (Microsoft) is not a separate topology here; its read-only-deliberation use cases are covered by parallel voting (independent perspectives merged by a judge) and the evaluator-optimizer loop.</p>
+</body>
+</html>

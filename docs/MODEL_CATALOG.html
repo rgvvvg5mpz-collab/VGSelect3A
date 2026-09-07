@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VG Select: 3A — Model Catalog and Per-Role Model Selection</title>
+<style>
+  body{font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1c2128;max-width:960px;margin:0 auto;padding:32px 24px;background:#fff}
+  h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:36px 0 10px;border-bottom:1px solid #e1e5ea;padding-bottom:6px}h3{font-size:16px;margin:22px 0 6px;color:#96151D}h4{font-size:15px;margin:18px 0 4px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#f1f3f6;padding:1px 5px;border-radius:4px}
+  pre{background:#0f1a33;color:#e6ecff;padding:14px;border-radius:8px;overflow:auto;font-size:13px;line-height:1.45}pre code{background:none;color:inherit;padding:0}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #e1e5ea;vertical-align:top}th{color:#5b6470;font-size:13px;background:#faf9f7}
+  .wrap{overflow-x:auto}
+  a{color:#96151D}
+  ul li,ol li{margin:4px 0}
+  hr{border:0;border-top:1px solid #e1e5ea;margin:28px 0}
+  blockquote{border-left:4px solid #96151D;background:#f8eced;padding:10px 14px;border-radius:6px;margin:14px 0}
+  .sub{color:#5b6470;margin-bottom:24px}
+</style>
+</head>
+<body>
+<h1 id="vg-select-3a-model-catalog-and-per-role-model-selection">VG Select: 3A — Model Catalog and Per-Role Model Selection</h1>
+<p>VG Select: 3A staffs every role in the recommended architecture (orchestrator, workers, router, evaluator, ...) with a model from your <b>ecosystem catalog</b>. The catalog is a JSON document maintained by the platform team; the selector matches each role's derived requirements against it under a <b>selection policy</b>. This document describes the schema, the selection procedure, and how to maintain the catalog.</p>
+<h2 id="1-catalog-schema">1. Catalog schema</h2>
+<p>A catalog is <code>{&quot;name&quot;: &quot;...&quot;, &quot;models&quot;: [ModelSpec, ...]}</code> (or a bare list of ModelSpec objects). The bundled default is <code>src/vgselect3a/catalogs/default.json</code>. Point the service at your own with <code>VGSELECT_CATALOG=/path/catalog.json</code>, the CLI with <code>--catalog</code>, or send extra entries per request via <code>catalog_models</code>.</p>
+<div class="wrap"><table><tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
+<tr><td><code>id</code></td><td>string</td><td>Model id as used by the provider SDK / gateway. Unique in the catalog.</td></tr>
+<tr><td><code>display_name</code>, <code>provider</code>, <code>family</code></td><td>string</td><td>Provider (<code>anthropic</code>, <code>openai</code>, <code>google</code>, <code>meta</code>, <code>mistral</code>, <code>amazon</code>, <code>microsoft</code>, <code>cohere</code>, <code>deepseek</code>, <code>xai</code>, <code>self_hosted</code>, <code>other</code>); family groups generations (used for consistency and verifier independence).</td></tr>
+<tr><td><code>platforms</code></td><td>list</td><td>Where it is reachable: <code>anthropic_api</code>, <code>bedrock</code>, <code>vertex</code>, <code>foundry</code>, <code>openai_api</code>, <code>azure_openai</code>, <code>google_api</code>, <code>self_hosted</code>, <code>other</code>.</td></tr>
+<tr><td><code>regions</code></td><td>list</td><td>Serving regions (<code>global</code>, <code>us</code>, <code>eu</code>, <code>on_prem</code>, ...).</td></tr>
+<tr><td><code>approved</code></td><td>bool</td><td>Platform-team approval. Unapproved entries are rejected (and shown as rejected) unless the policy sets <code>require_approved=false</code>.</td></tr>
+<tr><td><code>data_classes</code></td><td>list</td><td>Data classes the model is cleared for: <code>public</code>, <code>internal</code>, <code>confidential</code>, <code>restricted</code>. A role is only staffed by models cleared for the profile's <code>data_sensitivity</code>.</td></tr>
+<tr><td><code>retention</code></td><td><code>standard</code> / <code>zero</code></td><td>Data retention terms.</td></tr>
+<tr><td><code>deprecation_date</code></td><td>ISO date</td><td>Deprecated models are rejected; models within <code>deprecation_horizon_days</code> are penalised.</td></tr>
+<tr><td><code>reasoning_tier</code></td><td>1..5</td><td>Capability level: 1 trivial, 3 mid, 5 frontier. Compared with each role's required level.</td></tr>
+<tr><td><code>tool_use</code></td><td>0..3</td><td>0 none, 1 basic, 2 reliable, 3 reliable with parallel tool calls.</td></tr>
+<tr><td><code>structured_output</code>, <code>strict_schema</code></td><td>bool</td><td>JSON output; guaranteed schema conformance (required for high-stakes structured roles).</td></tr>
+<tr><td><code>context_window</code>, <code>max_output</code></td><td>int</td><td>Tokens. Roles need context for their reading share plus prompt and tool schemas.</td></tr>
+<tr><td><code>modalities</code></td><td>list</td><td><code>text</code>, <code>image</code>, <code>pdf</code>, <code>audio</code>, <code>video</code>.</td></tr>
+<tr><td><code>thinking</code>, <code>effort_control</code></td><td>bool</td><td>Reasoning mode available; effort/reasoning level controllable per request.</td></tr>
+<tr><td><code>ttft_s</code>, <code>tokens_per_s</code></td><td>float</td><td>Serving figures used for the role's latency estimate.</td></tr>
+<tr><td><code>rpm</code>, <code>tpm</code>, <code>max_concurrency</code></td><td>int</td><td>Rate limits; low concurrency rejects parallel-worker roles.</td></tr>
+<tr><td><code>batch</code>, <code>batch_discount</code></td><td>bool, float</td><td>Batch API availability and discount.</td></tr>
+<tr><td><code>input_price</code>, <code>output_price</code>, <code>cache_read_price</code></td><td>float</td><td>USD per million tokens.</td></tr>
+<tr><td><code>evidence</code></td><td>map</td><td>Measured accuracy (0..1) per task family on <b>your</b> evals: <code>general</code>, <code>classification</code>, <code>extraction</code>, <code>research</code>, <code>writing</code>, <code>coding</code>, <code>evaluation</code>, <code>conversation</code>, <code>planning</code>.</td></tr>
+<tr><td><code>langchain_provider</code></td><td>string</td><td>Value passed to <code>langchain.chat_models.init_chat_model(model_provider=...)</code> in the generated skeleton (defaulted from <code>provider</code>).</td></tr>
+<tr><td><code>illustrative</code></td><td>bool</td><td>Placeholder numbers. Excluded by default (<code>require_verified=true</code>).</td></tr>
+<tr><td><code>verified_on</code>, <code>notes</code></td><td>string</td><td>Provenance.</td></tr>
+</table></div>
+<p>The bundled Anthropic entries carry list prices and serving figures from the bundled reference. The OpenAI, Google, self-hosted and Mistral entries are <b>placeholders</b>: they show the shape of an ecosystem catalog and are marked <code>illustrative: true</code>. Replace their ids, capability, performance, prices and evidence from your model registry and vendor price lists, set <code>illustrative: false</code> and <code>verified_on</code>, and set <code>approved</code>, <code>data_classes</code> and <code>regions</code> to your governance decisions.</p>
+<p>Validate a catalog before deploying it:</p>
+<pre><code class="lang-bash">vgselect catalog --catalog my_catalog.json          # lists and validates
+curl -s $VGSELECT_URL/api/v1/catalog/validate -H &#x27;content-type: application/json&#x27; -d @models.json</code></pre>
+<h2 id="2-role-requirements-derived-not-asked">2. Role requirements (derived, not asked)</h2>
+<p>For every component of the plan, <code>requirements.py</code> derives:</p>
+<div class="wrap"><table><tr><th>Requirement</th><th>How it is derived</th></tr>
+<tr><td><code>role_type</code></td><td>orchestrator, synthesizer, responder, single agent, coder, worker, reader, router, evaluator, handler, specialist, stage</td></tr>
+<tr><td><code>reasoning_level</code> (1..5)</td><td>From task complexity and role: lead = complexity + 2 (min 3); workers = complexity-mapped, capped at 4 unless accuracy priority is 5; routers 1-2; evaluators 5 when accuracy priority ≥ 4</td></tr>
+<tr><td><code>context_tokens</code></td><td>Prompt + tool schemas + the role's share of the reading load (workers split it)</td></tr>
+<tr><td><code>output_tokens</code></td><td>From output type and complexity; short for routers and tool rounds</td></tr>
+<tr><td><code>needs_tools</code>, <code>tool_count</code>, <code>needs_parallel_tools</code>, <code>tool_rounds</code></td><td>From the profile's tool surface and the role's share of tool calls</td></tr>
+<tr><td><code>needs_structured_output</code>, <code>needs_strict_schema</code></td><td>Routers and evaluators always; extraction roles; strict when accuracy priority ≥ 4</td></tr>
+<tr><td><code>latency_share_s</code></td><td>The role's slice of the end-to-end budget by topology (e.g. router ≤ 12% capped at 1.5 s; orchestrator 30%; workers 55%; evaluator 15%)</td></tr>
+<tr><td><code>stakes</code></td><td>Accuracy priority, raised for roles that act irreversibly</td></tr>
+<tr><td><code>calls_per_day</code></td><td>Requests per day × tool rounds × iterations</td></tr>
+<tr><td><code>data_class</code></td><td>The profile's <code>data_sensitivity</code></td></tr>
+<tr><td><code>task_family</code></td><td>For evidence lookup: classification, extraction, research, writing, coding, evaluation, conversation, planning, general</td></tr>
+<tr><td><code>effort_hint</code></td><td>low for routers/readers, medium for careful workers, high/xhigh/max for leads and evaluators by stakes</td></tr>
+<tr><td><code>independent_of</code></td><td>Verifier vs lead, evaluator vs generator, judge vs voters</td></tr>
+<tr><td><code>cache_group</code></td><td>Roles sharing a loop or parallel group share one model (prompt cache, one behaviour)</td></tr>
+</table></div>
+<h2 id="3-selection-procedure">3. Selection procedure</h2>
+<ol><li><b>Hard filters</b> (a rejection reason is recorded for every model): not approved; provider/platform/region outside the policy; illustrative entry under <code>require_verified</code>; not cleared for the data class; context window or max output too small; no tool use / not reliable enough for large tool sets; no structured output or strict schema where required; missing modality; deprecated; capability tier below the requirement unless measured evidence for the task family is ≥ 80%; concurrency too low for parallel workers.</li><li><b>Score</b> each surviving model: quality (capability margin weighted by stakes, measured evidence, parallel tool use, strict schema, effort control; penalties for over-provisioning under cost pressure, illustrative entries, imminent deprecation) plus a latency adjustment against the role's share (tolerance grows with accuracy priority) plus a cost adjustment relative to the cheapest passing model, weighted by the role's daily volume and your cost sensitivity. Family consistency with the orchestrator and a preferred provider earn small bonuses.</li><li><b>Cross-role constraints</b>: the orchestrator is selected first with a floor equal to the strongest requirement among the roles it briefs, and re-selected if a staffed model ends up stronger than it; roles in one cache group share a model; verifiers and judges switch to a different family when an alternative within one score point exists, otherwise a warning suggests prompt variation and code checks.</li><li><b>Fallback</b>: the next-best passing model, preferably on another provider, for outages and refusals.</li><li><b>Feedback</b>: roles no model can staff are reported as unfilled with the first rejection reasons; roles whose best model still exceeds 1.5× their latency share get a warning to shrink the role or revisit the topology or budget.</li></ol>
+<p>The topology ranking itself uses <b>reference models per capability level</b> taken from the catalog under the same policy (cheapest eligible tier-5, tier-4 and tier-3 models), so every option is estimated on models you could deploy. After selection the primary topology is re-estimated on the chosen models (<code>selected_estimate</code>).</p>
+<h2 id="4-policy">4. Policy</h2>
+<div class="wrap"><table><tr><th>Field</th><th>Default</th><th>Meaning</th></tr>
+<tr><td><code>allowed_providers</code>, <code>blocked_providers</code></td><td>any / none</td><td>Provider allow/deny lists</td></tr>
+<tr><td><code>allowed_platforms</code></td><td>any</td><td>The model must be reachable on one of these</td></tr>
+<tr><td><code>regions</code></td><td>any</td><td>The model must be served in one of these</td></tr>
+<tr><td><code>require_verified</code></td><td>true</td><td>Exclude illustrative entries</td></tr>
+<tr><td><code>require_approved</code></td><td>true</td><td>Exclude unapproved entries</td></tr>
+<tr><td><code>prefer_provider</code></td><td>none</td><td>Small bonus for consistency</td></tr>
+<tr><td><code>family_consistency_bonus</code></td><td>0.25</td><td>Bonus for matching the orchestrator's family</td></tr>
+<tr><td><code>deprecation_horizon_days</code></td><td>180</td><td>Penalty window before a deprecation date</td></tr>
+</table></div>
+<p>CLI: <code>--catalog</code>, <code>--providers</code>, <code>--platforms</code>, <code>--regions</code>, <code>--allow-unverified</code>, <code>--prefer-provider</code>. API: <code>policy</code> object and <code>catalog_models</code> on recommend, scan, PDF and skeleton requests. UI: the "Model ecosystem" group under the profile.</p>
+<h2 id="5-what-the-outputs-show">5. What the outputs show</h2>
+<ul><li><b>Report and PDF</b>: a "Model selection per role" table (needs, chosen model, effort, fallback, estimated latency and cost per call, alternatives with scores), the rationale per role, warnings, and why unfilled roles could not be staffed.</li><li><b>Plan and diagram</b>: each component shows its chosen model and provider.</li><li><b>Skeleton</b>: <code>app/config.py</code> carries model, provider, fallback and effort per role; <code>app/agents.py</code> builds models with <code>init_chat_model</code>, so Anthropic, OpenAI, Azure OpenAI, Google (AI Studio or Vertex), Bedrock, Mistral, Cohere, DeepSeek, xAI, Groq, Ollama or a self-hosted OpenAI-compatible endpoint all work; <code>requirements.txt</code> and <code>.env.example</code> list only the integration packages and credentials the chosen providers need.</li></ul>
+<h2 id="6-maintaining-the-catalog">6. Maintaining the catalog</h2>
+<ul><li>Keep one catalog per environment (dev, prod, region) in version control; the platform team owns <code>approved</code>, <code>data_classes</code>, <code>regions</code>.</li><li>Refresh prices and serving figures on a schedule from vendor price lists and your gateway's telemetry; set <code>verified_on</code>.</li><li>Add <code>evidence</code> from your eval suites per task family; it is the strongest signal the selector has and can lift a cheaper, smaller model into a role.</li><li>Add <code>deprecation_date</code> as soon as a vendor announces it; the selector warns six months ahead.</li><li>Run <code>pytest</code> after editing the bundled default; the tests assert the shape of the verified entries.</li></ul>
+</body>
+</html>

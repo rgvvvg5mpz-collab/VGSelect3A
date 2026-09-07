@@ -47,13 +47,13 @@ manual profile / bundled example ──────┘              │
 ```
 
 1. **Scan** ([scanner.py](src/vgselect3a/scanner.py)): pattern tables over source and dependency files infer 17 profile fields with a confidence and file:line evidence, and identify the topology the code implements today. Prose is never evidence.
-2. **Rules** ([rules.py](src/vgselect3a/rules.py)): 41 rules from Anthropic, OpenAI, Google, Microsoft, LangChain, MAST and the agent-scaling study add or subtract fit per topology; each carries a citation resolved in [docs/industry_guidance.md](docs/industry_guidance.md).
+2. **Rules** ([rules.py](src/vgselect3a/rules.py)): 41 rules from Anthropic, OpenAI, Google, Microsoft, LangChain, MAST and the agent-scaling study add or subtract fit per topology; each carries a citation resolved in [docs/industry_guidance.html](docs/industry_guidance.html).
 3. **Viability and estimates** ([recommender.py](src/vgselect3a/recommender.py), [estimator.py](src/vgselect3a/estimator.py)): options that cannot do the job rank last; a call tree per topology gives critical-path latency and list-price cost on reference models the catalog and policy allow.
 4. **Balance**: score = fit + latency adjustment + cost adjustment. Higher accuracy priority tolerates lateness; higher cost sensitivity penalises expensive designs. The Pareto frontier and the fastest and most accurate options are reported.
 5. **Plan and model selection** ([decomposition.py](src/vgselect3a/decomposition.py), [requirements.py](src/vgselect3a/requirements.py), [model_selector.py](src/vgselect3a/model_selector.py)): roles are sized by published heuristics; each role's requirements (capability level, latency share, context, tools, structured output, stakes, volume, data class) are matched against the catalog: hard filters, capability floor that measured evidence can override, quality/latency/cost scoring, orchestrator never weaker than its workers, independent verifiers, one model per loop, fallback on another provider, and unfilled-role feedback.
 6. **Deliverables** ([pdf_report.py](src/vgselect3a/pdf_report.py), [scaffold/](src/vgselect3a/scaffold/)): the PDF and the skeleton are generated from the same objects as the report.
 
-Full write-up: [docs/METHODOLOGY.md](docs/METHODOLOGY.md) and [docs/MODEL_CATALOG.md](docs/MODEL_CATALOG.md).
+Full write-up: [docs/METHODOLOGY.html](docs/METHODOLOGY.html) and [docs/MODEL_CATALOG.html](docs/MODEL_CATALOG.html).
 
 ## Documents
 
@@ -62,9 +62,9 @@ Full write-up: [docs/METHODOLOGY.md](docs/METHODOLOGY.md) and [docs/MODEL_CATALO
 | Executives | [Executive brief](docs/EXECUTIVE_BRIEF.html) - what it is and why it helps the enterprise (one page, print-ready) |
 | Engineers deploying the service | [Deployment guide](docs/DEPLOYMENT.html) - install, Docker, configuration, security model, operations |
 | Engineers consuming the service, CLI or skill | [Consumer guide](docs/CONSUMER_GUIDE.html) - endpoints, profile fields, policy, reading results, PDF and skeleton, CI use |
-| Architects and reviewers | [Methodology](docs/METHODOLOGY.md) - how the recommendation, estimates, plan, model selection and skeleton are computed |
-| Platform teams | [Model catalog](docs/MODEL_CATALOG.md) - catalog schema, per-role requirements, the selection procedure, policy, maintenance |
-| Everyone | [Industry guidance](docs/industry_guidance.md) - the evidence behind every rule and how vendor patterns map to topologies |
+| Architects and reviewers | [Methodology](docs/METHODOLOGY.html) - how the recommendation, estimates, plan, model selection and skeleton are computed |
+| Platform teams | [Model catalog](docs/MODEL_CATALOG.html) - catalog schema, per-role requirements, the selection procedure, policy, maintenance |
+| Everyone | [Industry guidance](docs/industry_guidance.html) - the evidence behind every rule and how vendor patterns map to topologies |
 | API consumers | [OpenAPI spec](openapi/vgselect-3a.openapi.json) - also live at `/openapi.json`, Swagger at `/docs` |
 | Claude Code users | [Skill](.claude/skills/vg-select-3a/SKILL.md) - scan, recommend, and produce both deliverables from the editor |
 | Maintainers | [Changelog](CHANGELOG.md) |

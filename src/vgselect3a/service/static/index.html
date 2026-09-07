@@ -529,7 +529,7 @@ function helpCard(){
   <li><b>Estimates.</b> A call tree per architecture gives critical-path latency and list-price cost. Order-of-magnitude, assumptions shown.</li>
   <li><b>Balance.</b> Score = fit + latency adjustment + cost adjustment. Higher accuracy priority tolerates lateness; higher cost sensitivity penalises expensive designs.</li>
   <li><b>Plan.</b> The winner becomes components (orchestrator, workers, routers, evaluators), model per role, parallel groups, briefing rules, and next steps.</li></ol>
-  <p class="muted">Full write-up: docs/METHODOLOGY.md. Evidence: docs/industry_guidance.md.</p></div>`;
+  <p class="muted">Full write-up: docs/METHODOLOGY.html. Evidence: docs/industry_guidance.html.</p></div>`;
 }
 async function deliverable(url, filename, msg){
   const b=$('#dl-pdf'), k=$('#dl-skel'); [b,k].forEach(x=>x.disabled=true); toast(msg);

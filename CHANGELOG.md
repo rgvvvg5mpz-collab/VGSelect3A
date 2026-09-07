@@ -9,7 +9,7 @@
 - Topology ranking estimates now use reference models per capability level from the catalog under the policy; the primary is re-estimated on the chosen models.
 - Report, PDF and UI gain a "Model selection per role" section; the skeleton becomes provider-aware (`init_chat_model`, per-provider packages and credentials, fallback per role).
 - `GET /api/v1/catalog`, `POST /api/v1/catalog/validate`, `vgselect catalog`.
-- docs/MODEL_CATALOG.md.
+- docs/MODEL_CATALOG.html.
 
 ## 0.2.0 - 2026-09-07
 

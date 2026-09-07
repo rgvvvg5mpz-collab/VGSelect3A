@@ -4,7 +4,7 @@ The descriptive text here follows the vocabulary of Anthropic's "Building
 effective agents" (prompt chaining, routing, parallelization, orchestrator-
 workers, evaluator-optimizer), OpenAI's "A practical guide to building agents"
 (single agent, manager, decentralized handoffs), and LangGraph / Google ADK
-(supervisor, hierarchical). See docs/industry_guidance.md.
+(supervisor, hierarchical). See docs/industry_guidance.html.
 """
 
 from __future__ import annotations

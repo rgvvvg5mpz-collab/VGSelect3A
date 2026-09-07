@@ -1,7 +1,7 @@
 """Scoring rules: each rule looks at the profile and adds/subtracts fit for one
 or more topologies, recording a rationale and a citation key.
 
-Citation keys map to docs/industry_guidance.md:
+Citation keys map to docs/industry_guidance.html:
   ANTHROPIC_BEA   Anthropic, "Building effective agents"
   ANTHROPIC_MAR   Anthropic, "How we built our multi-agent research system"
   ANTHROPIC_CTX   Anthropic, "Effective context engineering for AI agents"

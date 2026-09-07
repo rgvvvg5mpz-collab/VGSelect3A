@@ -335,7 +335,7 @@ def build_pdf(rec: "Recommendation") -> bytes:
     used = sorted({s_.citation for c in rec.candidates for s_ in c.signals} | {a.citation for a in rec.plan.augmentations})
     for k in used:
         S.append(bl(f"<b>{_esc(k)}</b>: {_esc(CITATIONS.get(k, k))}"))
-    S.append(Paragraph("Full evidence and the consolidated decision framework: docs/industry_guidance.md and docs/METHODOLOGY.md in the VG Select: 3A repository.", small))
+    S.append(Paragraph("Full evidence and the consolidated decision framework: docs/industry_guidance.html and docs/METHODOLOGY.html in the VG Select: 3A repository.", small))
 
     doc.build(S, onFirstPage=on_page, onLaterPages=on_page)
     return buf.getvalue()
