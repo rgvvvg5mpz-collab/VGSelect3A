@@ -42,6 +42,7 @@ def inline(text: str) -> str:
             s = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", s)
             s = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"<i>\1</i>", s)
             s = s.replace(" -> ", " &rarr; ")
+            s = re.sub(r'(?<!href=")(?<!">)(https?://[^\s<"]+?)(?=[\s<;),]|$)', lambda m: f'<a href="{m.group(1)}">{m.group(1)}</a>', s)
             out.append(s)
     return "".join(out)
 
