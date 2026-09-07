@@ -1,0 +1,3 @@
+description: 300 hand-labelled calls; grades summary faithfulness, intent recall and compliance-flag precision
+providers: [anthropic:messages:claude-opus-5]
+tests: tests.csv

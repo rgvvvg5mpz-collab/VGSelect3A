@@ -1,0 +1,41 @@
+{
+  "name": "account_inquiry",
+  "description": "In-app assistant answering questions about account balances, cost basis, contributions and balance changes from deterministic books-and-records APIs, with FAQ explanations.",
+  "task_complexity": "simple",
+  "steps_predictable": false,
+  "scope_breadth": 1,
+  "parallel_subtasks": 1,
+  "output_type": "short_answer",
+  "tool_count": 7,
+  "tool_calls_per_task": 2,
+  "tool_dependency": "independent",
+  "tool_side_effects": "read_only",
+  "tool_overlap": true,
+  "tool_latency_s": 0.3,
+  "knowledge_sources": 2,
+  "retrieval_depth": "multi_hop",
+  "context_tokens_per_task": 6000,
+  "accuracy_priority": 5,
+  "single_agent_baseline": 0.88,
+  "verifiability": "strong",
+  "error_recoverability": "easy",
+  "latency_budget_s": 5.0,
+  "interaction": "multi_turn",
+  "requests_per_day": 200000,
+  "cost_sensitivity": 5,
+  "human_in_loop": false,
+  "data_sensitivity": "restricted",
+  "tools": [
+    "explain_balance_change",
+    "faq_lookup",
+    "get_balances",
+    "get_contributions_ytd",
+    "get_cost_basis",
+    "get_positions",
+    "get_transactions"
+  ],
+  "sources": [
+    "pgvector",
+    "sql"
+  ]
+}

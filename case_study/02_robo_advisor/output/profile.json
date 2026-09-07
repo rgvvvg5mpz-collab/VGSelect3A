@@ -1,0 +1,51 @@
+{
+  "name": "robo_advisor",
+  "description": "Conversational robo-advisor answering planning, tax, risk and product questions within the firm's methodology and policy, using the client's real portfolio through deterministic APIs and three knowledge bases; compliance-reviewed before answering.",
+  "task_complexity": "complex",
+  "steps_predictable": false,
+  "scope_breadth": 4,
+  "parallel_subtasks": 2,
+  "output_type": "short_answer",
+  "tool_count": 10,
+  "tool_calls_per_task": 5,
+  "tool_dependency": "independent",
+  "tool_side_effects": "irreversible",
+  "tool_overlap": true,
+  "tool_latency_s": 0.4,
+  "knowledge_sources": 1,
+  "retrieval_depth": "multi_hop",
+  "context_tokens_per_task": 45000,
+  "accuracy_priority": 5,
+  "single_agent_baseline": 0.61,
+  "verifiability": "partial",
+  "error_recoverability": "moderate",
+  "latency_budget_s": 15.0,
+  "interaction": "multi_turn",
+  "requests_per_day": 8000,
+  "cost_sensitivity": 3,
+  "human_in_loop": true,
+  "data_sensitivity": "confidential",
+  "tools": [
+    "contribution_limits",
+    "create_proposal",
+    "get_portfolio",
+    "market_data",
+    "risk_score",
+    "search_methodology",
+    "search_policy",
+    "search_products",
+    "suitability_check",
+    "tax_lots"
+  ],
+  "sources": [
+    "methodology KB",
+    "policy KB",
+    "product KB"
+  ],
+  "domains": [
+    "financial planning",
+    "tax",
+    "risk",
+    "products"
+  ]
+}

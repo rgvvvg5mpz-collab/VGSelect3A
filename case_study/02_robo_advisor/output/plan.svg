@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="830" height="298" viewBox="0 0 830 298" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="12">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5b6470"/></marker></defs>
+<rect width="830" height="298" fill="#ffffff"/>
+<line x1="100" y1="104" x2="100" y2="176" stroke="#5b6470" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="100" y="137" fill="#5b6470" font-size="10" text-anchor="middle">financial planning</text>
+<line x1="100" y1="104" x2="298" y2="176" stroke="#5b6470" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="199" y="137" fill="#5b6470" font-size="10" text-anchor="middle">tax</text>
+<line x1="100" y1="104" x2="496" y2="176" stroke="#5b6470" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="298" y="137" fill="#5b6470" font-size="10" text-anchor="middle">risk</text>
+<line x1="100" y1="104" x2="694" y2="176" stroke="#5b6470" stroke-width="1.4" marker-end="url(#arr)"/>
+<text x="397" y="137" fill="#5b6470" font-size="10" text-anchor="middle">products</text>
+<rect x="30" y="54" width="176" height="50" rx="8" fill="#6f9bff" stroke="#0f1a33" stroke-opacity="0.15"/>
+<text x="118.0" y="75" fill="#0f1a33" text-anchor="middle" font-weight="600">Router</text>
+<text x="118.0" y="92" fill="#0f1a33" fill-opacity="0.85" text-anchor="middle" font-size="10">claude-haiku-4-5 · effort n/a</text>
+<rect x="30" y="176" width="176" height="50" rx="8" fill="#0f1a33" stroke="#0f1a33" stroke-opacity="0.15"/>
+<text x="118.0" y="197" fill="#ffffff" text-anchor="middle" font-weight="600">financial planning specia…</text>
+<text x="118.0" y="214" fill="#ffffff" fill-opacity="0.85" text-anchor="middle" font-size="10">acme-onprem-70b · effort n/a</text>
+<rect x="228" y="176" width="176" height="50" rx="8" fill="#0f1a33" stroke="#0f1a33" stroke-opacity="0.15"/>
+<text x="316.0" y="197" fill="#ffffff" text-anchor="middle" font-weight="600">tax specialist</text>
+<text x="316.0" y="214" fill="#ffffff" fill-opacity="0.85" text-anchor="middle" font-size="10">acme-onprem-70b · effort n/a</text>
+<rect x="426" y="176" width="176" height="50" rx="8" fill="#0f1a33" stroke="#0f1a33" stroke-opacity="0.15"/>
+<text x="514.0" y="197" fill="#ffffff" text-anchor="middle" font-weight="600">risk specialist</text>
+<text x="514.0" y="214" fill="#ffffff" fill-opacity="0.85" text-anchor="middle" font-size="10">acme-onprem-70b · effort n/a</text>
+<rect x="624" y="176" width="176" height="50" rx="8" fill="#0f1a33" stroke="#0f1a33" stroke-opacity="0.15"/>
+<text x="712.0" y="197" fill="#ffffff" text-anchor="middle" font-weight="600">products specialist</text>
+<text x="712.0" y="214" fill="#ffffff" fill-opacity="0.85" text-anchor="middle" font-size="10">acme-onprem-70b · effort n/a</text>
+<rect x="30" y="10" width="12" height="12" rx="3" fill="#0f1a33" stroke="#0f1a33" stroke-opacity="0.2"/>
+<text x="46" y="20" fill="#5b6470" font-size="10">opus</text>
+<rect x="92" y="10" width="12" height="12" rx="3" fill="#1f5eff" stroke="#0f1a33" stroke-opacity="0.2"/>
+<text x="108" y="20" fill="#5b6470" font-size="10">sonnet</text>
+<rect x="154" y="10" width="12" height="12" rx="3" fill="#6f9bff" stroke="#0f1a33" stroke-opacity="0.2"/>
+<text x="170" y="20" fill="#5b6470" font-size="10">haiku</text>
+<rect x="216" y="10" width="12" height="12" rx="3" fill="#e9edf3" stroke="#0f1a33" stroke-opacity="0.2"/>
+<text x="232" y="20" fill="#5b6470" font-size="10">code</text>
+</svg>

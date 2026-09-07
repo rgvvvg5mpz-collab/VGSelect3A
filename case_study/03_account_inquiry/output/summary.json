@@ -1,0 +1,56 @@
+{
+  "case": "03_account_inquiry",
+  "name": "account_inquiry",
+  "current_topology": "single_agent",
+  "recommended": "single_agent",
+  "recommended_name": "Single agent with tools",
+  "score": 2.14,
+  "latency_s": 6.6,
+  "budget_s": 5.0,
+  "verdict": "exceeds",
+  "cost_usd": 0.0034,
+  "tokens_x": 1.4,
+  "selected_latency_s": 6.6,
+  "selected_cost_usd": 0.0034,
+  "current_score": 2.14,
+  "current_latency_s": 6.6,
+  "fastest_viable": null,
+  "most_accurate": "Single agent with tools",
+  "models": [
+    [
+      "agent",
+      "acme-onprem-70b",
+      "n/a",
+      null
+    ]
+  ],
+  "unfilled": [],
+  "warnings": [],
+  "providers": [
+    "self_hosted"
+  ],
+  "top_reasons": [
+    "Simple task with a few tools: a single agent loop is enough.",
+    "Unpredictable path: the model must choose steps at run time, which is the definition of an agent.",
+    "Multi-hop retrieval: the model must decide follow-up queries from earlier results (agentic retrieval).",
+    "A 88% single-agent baseline is the regime where one agent plus a better model/effort/tools wins."
+  ],
+  "scan_tools": [
+    "explain_balance_change",
+    "faq_lookup",
+    "get_balances",
+    "get_contributions_ytd",
+    "get_cost_basis",
+    "get_positions",
+    "get_transactions"
+  ],
+  "scan_sources": [
+    "pgvector",
+    "sql"
+  ],
+  "scan_side_effects": [],
+  "scan_frameworks": [
+    "anthropic-sdk"
+  ],
+  "files": 7
+}

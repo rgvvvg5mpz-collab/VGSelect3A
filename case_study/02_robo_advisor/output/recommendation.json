@@ -1,0 +1,1371 @@
+{
+  "profile": {
+    "name": "robo_advisor",
+    "description": "Conversational robo-advisor answering planning, tax, risk and product questions within the firm's methodology and policy, using the client's real portfolio through deterministic APIs and three knowledge bases; compliance-reviewed before answering.",
+    "task_complexity": "complex",
+    "steps_predictable": false,
+    "scope_breadth": 4,
+    "parallel_subtasks": 2,
+    "output_type": "short_answer",
+    "tool_count": 10,
+    "tool_calls_per_task": 5,
+    "tool_dependency": "independent",
+    "tool_side_effects": "irreversible",
+    "tool_overlap": true,
+    "tool_latency_s": 0.4,
+    "knowledge_sources": 1,
+    "retrieval_depth": "multi_hop",
+    "context_tokens_per_task": 45000,
+    "accuracy_priority": 5,
+    "single_agent_baseline": 0.61,
+    "verifiability": "partial",
+    "error_recoverability": "moderate",
+    "latency_budget_s": 15.0,
+    "interaction": "multi_turn",
+    "requests_per_day": 8000,
+    "cost_sensitivity": 3,
+    "human_in_loop": true,
+    "data_sensitivity": "confidential",
+    "tools": [
+      "contribution_limits",
+      "create_proposal",
+      "get_portfolio",
+      "market_data",
+      "risk_score",
+      "search_methodology",
+      "search_policy",
+      "search_products",
+      "suitability_check",
+      "tax_lots"
+    ],
+    "sources": [
+      "methodology KB",
+      "policy KB",
+      "product KB"
+    ],
+    "domains": [
+      "financial planning",
+      "tax",
+      "risk",
+      "products"
+    ]
+  },
+  "headline": "Recommended: **Router / classifier dispatch** (score +1.1; est. p50 latency ~27s vs budget 15s, ~2x tokens of one call). It exceeds the latency budget and no viable topology fits it: relax the budget, cut tool calls/reading per request, use a smaller model, or move work off the request path. The repository currently implements **Evaluator-optimizer loop** (score -5.7, ~82s); the recommendation changes the topology.",
+  "primary": "router",
+  "candidates": [
+    {
+      "topology": "router",
+      "name": "Router / classifier dispatch",
+      "family": "workflow",
+      "score": 1.05,
+      "fit": 4.2,
+      "quality_proxy": 4.2,
+      "latency_adj": -1.23,
+      "cost_adj": -1.92,
+      "latency_verdict": "exceeds",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 26.8,
+        "cost_usd": 0.4141,
+        "llm_calls": 4,
+        "total_tokens": 80660,
+        "token_multiplier": 1.7,
+        "assumptions": [
+          "Small-model router (~20 output tokens) then one specialist handler."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R08",
+          "topology_id": "router",
+          "delta": 2.7,
+          "rationale": "4 distinct domains: route each request to a specialist prompt/agent instead of one prompt carrying every domain's instructions and tools.",
+          "citation": "OPENAI_PG"
+        },
+        {
+          "rule_id": "R28",
+          "topology_id": "router",
+          "delta": 1.5,
+          "rationale": "Routing to specialists gives each a small, non-overlapping tool set.",
+          "citation": "OPENAI_PG"
+        }
+      ]
+    },
+    {
+      "topology": "parallel_sectioning",
+      "name": "Parallel sectioning (code-defined fan-out)",
+      "family": "workflow",
+      "score": -0.13,
+      "fit": 0.72,
+      "quality_proxy": 0.72,
+      "latency_adj": -0.85,
+      "cost_adj": -0.0,
+      "latency_verdict": "exceeds",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 19.7,
+        "cost_usd": 0.0453,
+        "llm_calls": 5,
+        "total_tokens": 63140,
+        "token_multiplier": 1.3,
+        "assumptions": [
+          "2 code-defined branches run concurrently, then one aggregation call."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R06b",
+          "topology_id": "parallel_sectioning",
+          "delta": 0.7200000000000001,
+          "rationale": "Some of the fan-out can still be code-defined if a stable first split exists.",
+          "citation": "ANTHROPIC_BEA"
+        }
+      ]
+    },
+    {
+      "topology": "orchestrator_workers",
+      "name": "Orchestrator + worker subagents",
+      "family": "multi_agent",
+      "score": -1.27,
+      "fit": 1.5,
+      "quality_proxy": 3.0,
+      "latency_adj": -2.05,
+      "cost_adj": -0.72,
+      "latency_verdict": "far over",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 46.1,
+        "cost_usd": 0.1045,
+        "llm_calls": 10,
+        "total_tokens": 83990,
+        "token_multiplier": 1.7,
+        "assumptions": [
+          "4 Sonnet-tier workers in 1 wave(s) of <= 10, each with ~3 tool calls; Opus-tier lead plans and synthesises."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R04b",
+          "topology_id": "orchestrator_workers",
+          "delta": 1.5,
+          "rationale": "Complex and unpredictable: a lead agent that plans and delegates handles sub-tasks that cannot be enumerated ahead of time.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R06b",
+          "topology_id": "orchestrator_workers",
+          "delta": 1.8,
+          "rationale": "~2 independent sub-tasks discovered at run time: orchestrator spawns parallel subagents, each in its own context.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R09",
+          "topology_id": "orchestrator_workers",
+          "delta": 2.2,
+          "rationale": "Several domains inside one request: a lead delegates to domain specialists with narrow prompts and tool sets.",
+          "citation": "ANTHROPIC_MA"
+        },
+        {
+          "rule_id": "R24",
+          "topology_id": "orchestrator_workers",
+          "delta": -1.5,
+          "rationale": "Tight budget: extra serial hops (planning, synthesis, critique) are expensive in wall-clock time.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R28",
+          "topology_id": "orchestrator_workers",
+          "delta": 0.5,
+          "rationale": "Workers with narrow tool sets also remove overlap, at higher cost than routing.",
+          "citation": "ANTHROPIC_MA"
+        },
+        {
+          "rule_id": "R37",
+          "topology_id": "orchestrator_workers",
+          "delta": -3.0,
+          "rationale": "Single-agent baseline is 61%: above ~45% the scaling study found negative returns from adding agents (capability saturation). Improve the model/prompt/tools instead.",
+          "citation": "SCALING"
+        }
+      ]
+    },
+    {
+      "topology": "single_agent",
+      "name": "Single agent with tools",
+      "family": "single",
+      "score": -1.6,
+      "fit": 1.5,
+      "quality_proxy": 1.5,
+      "latency_adj": -1.19,
+      "cost_adj": -1.91,
+      "latency_verdict": "exceeds",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 26.0,
+        "cost_usd": 0.411,
+        "llm_calls": 3,
+        "total_tokens": 77640,
+        "token_multiplier": 1.6,
+        "assumptions": [
+          "2 sequential tool round(s) for 5 tool calls (batching by dependency=independent)."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R04",
+          "topology_id": "single_agent",
+          "delta": 2.0,
+          "rationale": "Unpredictable path: the model must choose steps at run time, which is the definition of an agent.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R06c",
+          "topology_id": "single_agent",
+          "delta": -1.0,
+          "rationale": "A single agent serialises independent work, so latency grows with the number of sub-tasks.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R08",
+          "topology_id": "single_agent",
+          "delta": -2.0,
+          "rationale": "One agent with many domains' tools and instructions becomes hard to prompt and evaluate; split when it needs more than ~10-15 well-defined tools or overlapping instructions.",
+          "citation": "OPENAI_PG"
+        },
+        {
+          "rule_id": "R14",
+          "topology_id": "single_agent",
+          "delta": 2.0,
+          "rationale": "Multi-hop retrieval: the model must decide follow-up queries from earlier results (agentic retrieval).",
+          "citation": "ANTHROPIC_CTX"
+        },
+        {
+          "rule_id": "R28",
+          "topology_id": "single_agent",
+          "delta": -1.5,
+          "rationale": "Overlapping tools are OpenAI's split trigger (systems fail with <10 overlapping tools yet manage 15+ distinct ones): first consolidate/rename tools; if that fails, give each specialist a disjoint tool set.",
+          "citation": "OPENAI_PG"
+        },
+        {
+          "rule_id": "R37",
+          "topology_id": "single_agent",
+          "delta": 2.0,
+          "rationale": "A 61% single-agent baseline is the regime where one agent plus a better model/effort/tools wins.",
+          "citation": "SCALING"
+        }
+      ]
+    },
+    {
+      "topology": "handoff_network",
+      "name": "Specialist handoffs (decentralised)",
+      "family": "multi_agent",
+      "score": -3.88,
+      "fit": 0.0,
+      "quality_proxy": 0.0,
+      "latency_adj": -1.93,
+      "cost_adj": -1.95,
+      "latency_verdict": "far over",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 37.9,
+        "cost_usd": 0.4308,
+        "llm_calls": 5,
+        "total_tokens": 79630,
+        "token_multiplier": 1.6,
+        "assumptions": [
+          "One handoff per request assumed (specialist A -> B); each handoff re-briefs the next agent."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R10",
+          "topology_id": "handoff_network",
+          "delta": 2.0,
+          "rationale": "Multi-turn conversation crossing specialist domains: decentralised handoffs let the right specialist own the user at each moment.",
+          "citation": "OPENAI_PG"
+        },
+        {
+          "rule_id": "R37",
+          "topology_id": "handoff_network",
+          "delta": -2.0,
+          "rationale": "Single-agent baseline is 61%: above ~45% the scaling study found negative returns from adding agents (capability saturation). Improve the model/prompt/tools instead.",
+          "citation": "SCALING"
+        }
+      ]
+    },
+    {
+      "topology": "parallel_voting",
+      "name": "Parallel voting / ensemble",
+      "family": "workflow",
+      "score": -4.59,
+      "fit": 0,
+      "quality_proxy": 0,
+      "latency_adj": -1.28,
+      "cost_adj": -3.31,
+      "latency_verdict": "exceeds",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 27.8,
+        "cost_usd": 2.0675,
+        "llm_calls": 15,
+        "total_tokens": 388700,
+        "token_multiplier": 8.0,
+        "assumptions": [
+          "5 parallel claude-opus-5 samples; majority vote in code (no judge call)."
+        ]
+      },
+      "signals": []
+    },
+    {
+      "topology": "prompt_chain",
+      "name": "Prompt chain (sequential workflow)",
+      "family": "workflow",
+      "score": -4.62,
+      "fit": -2.0,
+      "quality_proxy": -2.0,
+      "latency_adj": -1.97,
+      "cost_adj": -0.65,
+      "latency_verdict": "far over",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 40.2,
+        "cost_usd": 0.0965,
+        "llm_calls": 6,
+        "total_tokens": 71565,
+        "token_multiplier": 1.5,
+        "assumptions": [
+          "4 sequential stages with programmatic gates between them."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R04",
+          "topology_id": "prompt_chain",
+          "delta": -2.0,
+          "rationale": "A fixed chain cannot handle a path that varies per request.",
+          "citation": "ANTHROPIC_BEA"
+        }
+      ]
+    },
+    {
+      "topology": "evaluator_optimizer",
+      "name": "Evaluator-optimizer loop",
+      "family": "workflow",
+      "score": -5.72,
+      "fit": -1.0,
+      "quality_proxy": 0,
+      "latency_adj": -2.38,
+      "cost_adj": -2.34,
+      "latency_verdict": "far over",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 81.5,
+        "cost_usd": 0.6726,
+        "llm_calls": 10,
+        "total_tokens": 120240,
+        "token_multiplier": 2.5,
+        "assumptions": [
+          "3 generate/evaluate iterations (worst case); most requests exit after the first accepted evaluation."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R24",
+          "topology_id": "evaluator_optimizer",
+          "delta": -1.0,
+          "rationale": "Tight budget: extra serial hops (planning, synthesis, critique) are expensive in wall-clock time.",
+          "citation": "ANTHROPIC_MAR"
+        }
+      ]
+    },
+    {
+      "topology": "hierarchical",
+      "name": "Hierarchical teams (orchestrator -> leads -> workers)",
+      "family": "multi_agent",
+      "score": -11.21,
+      "fit": -7.0,
+      "quality_proxy": -4.0,
+      "latency_adj": -2.32,
+      "cost_adj": -1.89,
+      "latency_verdict": "far over",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 74.5,
+        "cost_usd": 0.4039,
+        "llm_calls": 26,
+        "total_tokens": 148190,
+        "token_multiplier": 3.1,
+        "assumptions": [
+          "4 leads x 2 workers; two delegation levels add two extra plan/synthesis hops."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R24",
+          "topology_id": "hierarchical",
+          "delta": -3.0,
+          "rationale": "Tight budget: extra serial hops (planning, synthesis, critique) are expensive in wall-clock time.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R37",
+          "topology_id": "hierarchical",
+          "delta": -4.0,
+          "rationale": "Single-agent baseline is 61%: above ~45% the scaling study found negative returns from adding agents (capability saturation). Improve the model/prompt/tools instead.",
+          "citation": "SCALING"
+        }
+      ]
+    },
+    {
+      "topology": "single_call",
+      "name": "Single model call",
+      "family": "single",
+      "score": -5.05,
+      "fit": -4.0,
+      "quality_proxy": -4.0,
+      "latency_adj": 0.43,
+      "cost_adj": -1.48,
+      "latency_verdict": "fits",
+      "viable": false,
+      "infeasible_reason": "needs tool calls; a single call cannot act",
+      "estimate": {
+        "latency_s": 8.6,
+        "cost_usd": 0.2497,
+        "llm_calls": 1,
+        "total_tokens": 48390,
+        "token_multiplier": 1.0,
+        "assumptions": [
+          "One claude-opus-5 call; retrieval (if any) done in code before the call."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R14",
+          "topology_id": "single_call",
+          "delta": -2.0,
+          "rationale": "Follow-up queries cannot be fixed in advance.",
+          "citation": "ANTHROPIC_CTX"
+        },
+        {
+          "rule_id": "R32",
+          "topology_id": "single_call",
+          "delta": -2.0,
+          "rationale": "Tools imply at least one loop iteration.",
+          "citation": "ANTHROPIC_BEA"
+        }
+      ]
+    }
+  ],
+  "frontier": [
+    "parallel_sectioning",
+    "single_agent",
+    "router"
+  ],
+  "fastest_viable": null,
+  "most_accurate": "router",
+  "plan": {
+    "topology": "router",
+    "components": [
+      {
+        "id": "router",
+        "name": "Router",
+        "role": "Classifies the request into one category (small model, structured output).",
+        "tier": "haiku",
+        "effort": "n/a",
+        "tools": "",
+        "parallel_group": null,
+        "notes": [],
+        "chosen_model": "claude-haiku-4-5",
+        "provider": "anthropic",
+        "fallback_model": "claude-sonnet-5",
+        "model_id": "claude-haiku-4-5"
+      },
+      {
+        "id": "handler_1",
+        "name": "financial planning specialist",
+        "role": "Handles 'financial planning' requests with only that domain's instructions and tools.",
+        "tier": "opus",
+        "effort": "n/a",
+        "tools": "contribution_limits, create_proposal, get_portfolio, market_data, risk_score, search_methodology, search_policy, search_products, suitability_check, tax_lots",
+        "parallel_group": null,
+        "notes": [],
+        "chosen_model": "acme-onprem-70b",
+        "provider": "self_hosted",
+        "fallback_model": "claude-sonnet-5",
+        "model_id": "acme-onprem-70b"
+      },
+      {
+        "id": "handler_2",
+        "name": "tax specialist",
+        "role": "Handles 'tax' requests with only that domain's instructions and tools.",
+        "tier": "opus",
+        "effort": "n/a",
+        "tools": "contribution_limits, create_proposal, get_portfolio, market_data, risk_score, search_methodology, search_policy, search_products, suitability_check, tax_lots",
+        "parallel_group": null,
+        "notes": [],
+        "chosen_model": "acme-onprem-70b",
+        "provider": "self_hosted",
+        "fallback_model": "claude-sonnet-5",
+        "model_id": "acme-onprem-70b"
+      },
+      {
+        "id": "handler_3",
+        "name": "risk specialist",
+        "role": "Handles 'risk' requests with only that domain's instructions and tools.",
+        "tier": "opus",
+        "effort": "n/a",
+        "tools": "contribution_limits, create_proposal, get_portfolio, market_data, risk_score, search_methodology, search_policy, search_products, suitability_check, tax_lots",
+        "parallel_group": null,
+        "notes": [],
+        "chosen_model": "acme-onprem-70b",
+        "provider": "self_hosted",
+        "fallback_model": "claude-sonnet-5",
+        "model_id": "acme-onprem-70b"
+      },
+      {
+        "id": "handler_4",
+        "name": "products specialist",
+        "role": "Handles 'products' requests with only that domain's instructions and tools.",
+        "tier": "opus",
+        "effort": "n/a",
+        "tools": "contribution_limits, create_proposal, get_portfolio, market_data, risk_score, search_methodology, search_policy, search_products, suitability_check, tax_lots",
+        "parallel_group": null,
+        "notes": [],
+        "chosen_model": "acme-onprem-70b",
+        "provider": "self_hosted",
+        "fallback_model": "claude-sonnet-5",
+        "model_id": "acme-onprem-70b"
+      }
+    ],
+    "edges": [
+      {
+        "src": "router",
+        "dst": "handler_1",
+        "label": "financial planning"
+      },
+      {
+        "src": "router",
+        "dst": "handler_2",
+        "label": "tax"
+      },
+      {
+        "src": "router",
+        "dst": "handler_3",
+        "label": "risk"
+      },
+      {
+        "src": "router",
+        "dst": "handler_4",
+        "label": "products"
+      }
+    ],
+    "augmentations": [
+      {
+        "id": "evals",
+        "title": "Build a ~20-query eval before adding any structure",
+        "why": "Every source agrees: measure a single agent/call first, then add topology only where the eval shows it failing. Above a ~45% single-agent baseline, adding agents tended to hurt in the scaling study. Keep the eval to compare latency and accuracy across topologies.",
+        "citation": "SCALING"
+      },
+      {
+        "id": "caching",
+        "title": "Prompt caching on the stable prefix (system prompt, tool schemas, reference docs)",
+        "why": "Multi-turn and multi-call topologies re-send the same prefix on every call; caching cuts cost up to ~90% and time-to-first-token.",
+        "citation": "ANTHROPIC_CTX"
+      },
+      {
+        "id": "structured_outputs",
+        "title": "Structured outputs (JSON schema) for routers, extractors and votes",
+        "why": "Removes parsing failures and makes code-side gates and majority votes trivial.",
+        "citation": "ANTHROPIC_BEA"
+      },
+      {
+        "id": "parallel_tools",
+        "title": "Parallel tool use inside each agent turn",
+        "why": "Independent tool calls issued in one assistant turn cut rounds by 2-4x; return all results in one message.",
+        "citation": "ANTHROPIC_CTX"
+      },
+      {
+        "id": "context_editing",
+        "title": "Context editing (clear stale tool results/thinking)",
+        "why": "Keeps long loops lean without summarisation losses.",
+        "citation": "ANTHROPIC_CTX"
+      },
+      {
+        "id": "memory",
+        "title": "Memory across sessions (file/DB-backed)",
+        "why": "State that must outlive one conversation should be written to memory, not carried in context.",
+        "citation": "ANTHROPIC_CTX"
+      },
+      {
+        "id": "gate",
+        "title": "Dedicated, gated tools for irreversible actions with human approval",
+        "why": "Promote side-effecting actions to typed tools so the harness can intercept, confirm, audit and roll back; never let them run through a generic shell tool.",
+        "citation": "ANTHROPIC_BEA"
+      },
+      {
+        "id": "tiering",
+        "title": "Model tiering: large model for planning/synthesis, smaller models for reading/routing",
+        "why": "Reading-heavy workers and routers need many input tokens and little judgment; run them on Sonnet/Haiku and keep Opus for the lead.",
+        "citation": "ANTHROPIC_MA"
+      },
+      {
+        "id": "agentic_rag",
+        "title": "Agentic retrieval capped at ~4 iterations: start broad, then narrow",
+        "why": "Multi-hop retrieval buys accuracy (27% -> 43% EM on HotpotQA) at 3-20x latency; cap the loop and prefer short broad queries first, narrowing progressively.",
+        "citation": "RAG"
+      }
+    ],
+    "briefing_rules": []
+  },
+  "mermaid": "flowchart TD\n    router[\"Router<br/><i>claude-haiku-4-5</i>\"]\n    handler_1[\"financial planning specialist<br/><i>acme-onprem-70b</i>\"]\n    handler_2[\"tax specialist<br/><i>acme-onprem-70b</i>\"]\n    handler_3[\"risk specialist<br/><i>acme-onprem-70b</i>\"]\n    handler_4[\"products specialist<br/><i>acme-onprem-70b</i>\"]\n    router -->|financial planning| handler_1\n    router -->|tax| handler_2\n    router -->|risk| handler_3\n    router -->|products| handler_4",
+  "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"830\" height=\"298\" viewBox=\"0 0 830 298\" font-family=\"-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif\" font-size=\"12\">\n<defs><marker id=\"arr\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M0 0L10 5L0 10z\" fill=\"#5b6470\"/></marker></defs>\n<rect width=\"830\" height=\"298\" fill=\"#ffffff\"/>\n<line x1=\"100\" y1=\"104\" x2=\"100\" y2=\"176\" stroke=\"#5b6470\" stroke-width=\"1.4\" marker-end=\"url(#arr)\"/>\n<text x=\"100\" y=\"137\" fill=\"#5b6470\" font-size=\"10\" text-anchor=\"middle\">financial planning</text>\n<line x1=\"100\" y1=\"104\" x2=\"298\" y2=\"176\" stroke=\"#5b6470\" stroke-width=\"1.4\" marker-end=\"url(#arr)\"/>\n<text x=\"199\" y=\"137\" fill=\"#5b6470\" font-size=\"10\" text-anchor=\"middle\">tax</text>\n<line x1=\"100\" y1=\"104\" x2=\"496\" y2=\"176\" stroke=\"#5b6470\" stroke-width=\"1.4\" marker-end=\"url(#arr)\"/>\n<text x=\"298\" y=\"137\" fill=\"#5b6470\" font-size=\"10\" text-anchor=\"middle\">risk</text>\n<line x1=\"100\" y1=\"104\" x2=\"694\" y2=\"176\" stroke=\"#5b6470\" stroke-width=\"1.4\" marker-end=\"url(#arr)\"/>\n<text x=\"397\" y=\"137\" fill=\"#5b6470\" font-size=\"10\" text-anchor=\"middle\">products</text>\n<rect x=\"30\" y=\"54\" width=\"176\" height=\"50\" rx=\"8\" fill=\"#6f9bff\" stroke=\"#0f1a33\" stroke-opacity=\"0.15\"/>\n<text x=\"118.0\" y=\"75\" fill=\"#0f1a33\" text-anchor=\"middle\" font-weight=\"600\">Router</text>\n<text x=\"118.0\" y=\"92\" fill=\"#0f1a33\" fill-opacity=\"0.85\" text-anchor=\"middle\" font-size=\"10\">claude-haiku-4-5 \u00b7 effort n/a</text>\n<rect x=\"30\" y=\"176\" width=\"176\" height=\"50\" rx=\"8\" fill=\"#0f1a33\" stroke=\"#0f1a33\" stroke-opacity=\"0.15\"/>\n<text x=\"118.0\" y=\"197\" fill=\"#ffffff\" text-anchor=\"middle\" font-weight=\"600\">financial planning specia\u2026</text>\n<text x=\"118.0\" y=\"214\" fill=\"#ffffff\" fill-opacity=\"0.85\" text-anchor=\"middle\" font-size=\"10\">acme-onprem-70b \u00b7 effort n/a</text>\n<rect x=\"228\" y=\"176\" width=\"176\" height=\"50\" rx=\"8\" fill=\"#0f1a33\" stroke=\"#0f1a33\" stroke-opacity=\"0.15\"/>\n<text x=\"316.0\" y=\"197\" fill=\"#ffffff\" text-anchor=\"middle\" font-weight=\"600\">tax specialist</text>\n<text x=\"316.0\" y=\"214\" fill=\"#ffffff\" fill-opacity=\"0.85\" text-anchor=\"middle\" font-size=\"10\">acme-onprem-70b \u00b7 effort n/a</text>\n<rect x=\"426\" y=\"176\" width=\"176\" height=\"50\" rx=\"8\" fill=\"#0f1a33\" stroke=\"#0f1a33\" stroke-opacity=\"0.15\"/>\n<text x=\"514.0\" y=\"197\" fill=\"#ffffff\" text-anchor=\"middle\" font-weight=\"600\">risk specialist</text>\n<text x=\"514.0\" y=\"214\" fill=\"#ffffff\" fill-opacity=\"0.85\" text-anchor=\"middle\" font-size=\"10\">acme-onprem-70b \u00b7 effort n/a</text>\n<rect x=\"624\" y=\"176\" width=\"176\" height=\"50\" rx=\"8\" fill=\"#0f1a33\" stroke=\"#0f1a33\" stroke-opacity=\"0.15\"/>\n<text x=\"712.0\" y=\"197\" fill=\"#ffffff\" text-anchor=\"middle\" font-weight=\"600\">products specialist</text>\n<text x=\"712.0\" y=\"214\" fill=\"#ffffff\" fill-opacity=\"0.85\" text-anchor=\"middle\" font-size=\"10\">acme-onprem-70b \u00b7 effort n/a</text>\n<rect x=\"30\" y=\"10\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#0f1a33\" stroke=\"#0f1a33\" stroke-opacity=\"0.2\"/>\n<text x=\"46\" y=\"20\" fill=\"#5b6470\" font-size=\"10\">opus</text>\n<rect x=\"92\" y=\"10\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#1f5eff\" stroke=\"#0f1a33\" stroke-opacity=\"0.2\"/>\n<text x=\"108\" y=\"20\" fill=\"#5b6470\" font-size=\"10\">sonnet</text>\n<rect x=\"154\" y=\"10\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#6f9bff\" stroke=\"#0f1a33\" stroke-opacity=\"0.2\"/>\n<text x=\"170\" y=\"20\" fill=\"#5b6470\" font-size=\"10\">haiku</text>\n<rect x=\"216\" y=\"10\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#e9edf3\" stroke=\"#0f1a33\" stroke-opacity=\"0.2\"/>\n<text x=\"232\" y=\"20\" fill=\"#5b6470\" font-size=\"10\">code</text>\n</svg>",
+  "scan": {
+    "root": "/Users/saxena/Desktop/ClaudeCode_GIT/AgentTopologyBuilder/case_study/02_robo_advisor",
+    "files_scanned": 7,
+    "languages": {
+      "python": 2
+    },
+    "frameworks": [
+      "anthropic-sdk",
+      "langgraph"
+    ],
+    "tools": [
+      "contribution_limits",
+      "create_proposal",
+      "get_portfolio",
+      "market_data",
+      "risk_score",
+      "search_methodology",
+      "search_policy",
+      "search_products",
+      "suitability_check",
+      "tax_lots"
+    ],
+    "knowledge_sources": [
+      "elasticsearch"
+    ],
+    "side_effects": [
+      "external-post (irreversible)"
+    ],
+    "current_topology": "evaluator_optimizer",
+    "current_topology_reason": "Generator with an evaluator/critic and iteration cap.",
+    "evidence": [
+      {
+        "category": "frameworks",
+        "label": "anthropic-sdk",
+        "path": "app/advisor.py",
+        "line": 2,
+        "snippet": "import anthropic"
+      },
+      {
+        "category": "frameworks",
+        "label": "anthropic-sdk",
+        "path": "app/advisor.py",
+        "line": 10,
+        "snippet": "client = anthropic.Anthropic()"
+      },
+      {
+        "category": "frameworks",
+        "label": "langgraph",
+        "path": "app/advisor.py",
+        "line": 4,
+        "snippet": "from langgraph.checkpoint.memory import MemorySaver"
+      },
+      {
+        "category": "agent_patterns",
+        "label": "tool runner",
+        "path": "app/advisor.py",
+        "line": 23,
+        "snippet": "runner = client.beta.messages.tool_runner("
+      },
+      {
+        "category": "agent_patterns",
+        "label": "tool runner",
+        "path": "app/advisor.py",
+        "line": 27,
+        "snippet": "draft = runner.until_done()"
+      },
+      {
+        "category": "agent_patterns",
+        "label": "evaluator loop",
+        "path": "app/advisor.py",
+        "line": 1,
+        "snippet": "\"\"\"Single-prompt advisor with a compliance reviewer pass.\"\"\""
+      },
+      {
+        "category": "agent_patterns",
+        "label": "evaluator loop",
+        "path": "app/advisor.py",
+        "line": 14,
+        "snippet": "REVIEWER = \"\"\"You are the compliance reviewer. Check the draft answer against policy and the suitability result."
+      },
+      {
+        "category": "serving",
+        "label": "http-api",
+        "path": "app/advisor.py",
+        "line": 9,
+        "snippet": "app = FastAPI()"
+      },
+      {
+        "category": "quality",
+        "label": "human-approval",
+        "path": "app/advisor.py",
+        "line": 34,
+        "snippet": "requires_confirmation = verdict.startswith(\"flag\")"
+      },
+      {
+        "category": "quality",
+        "label": "memory",
+        "path": "app/advisor.py",
+        "line": 4,
+        "snippet": "from langgraph.checkpoint.memory import MemorySaver"
+      },
+      {
+        "category": "frameworks",
+        "label": "anthropic-sdk",
+        "path": "app/tools.py",
+        "line": 3,
+        "snippet": "from anthropic import beta_tool"
+      },
+      {
+        "category": "tools",
+        "label": "python decorator tool",
+        "path": "app/tools.py",
+        "line": 9,
+        "snippet": "get_portfolio"
+      },
+      {
+        "category": "tools",
+        "label": "python decorator tool",
+        "path": "app/tools.py",
+        "line": 15,
+        "snippet": "risk_score"
+      },
+      {
+        "category": "tools",
+        "label": "python decorator tool",
+        "path": "app/tools.py",
+        "line": 21,
+        "snippet": "tax_lots"
+      },
+      {
+        "category": "tools",
+        "label": "python decorator tool",
+        "path": "app/tools.py",
+        "line": 27,
+        "snippet": "contribution_limits"
+      },
+      {
+        "category": "tools",
+        "label": "python decorator tool",
+        "path": "app/tools.py",
+        "line": 33,
+        "snippet": "suitability_check"
+      },
+      {
+        "category": "retrieval",
+        "label": "elasticsearch",
+        "path": "app/tools.py",
+        "line": 4,
+        "snippet": "from opensearchpy import OpenSearch"
+      },
+      {
+        "category": "retrieval",
+        "label": "elasticsearch",
+        "path": "app/tools.py",
+        "line": 6,
+        "snippet": "kb = OpenSearch(hosts=[\"https://kb.internal:9200\"])"
+      },
+      {
+        "category": "side_effects",
+        "label": "external-post (irreversible)",
+        "path": "app/tools.py",
+        "line": 36,
+        "snippet": "return requests.post(\"https://rules.internal/suitability\", json={\"client_id\": client_id, \"proposal\": proposal}, timeout=5).text"
+      },
+      {
+        "category": "side_effects",
+        "label": "external-post (irreversible)",
+        "path": "app/tools.py",
+        "line": 66,
+        "snippet": "return requests.post(\"https://proposals.internal/draft\", json={\"client_id\": client_id, \"summary\": summary}, timeout=5).text"
+      }
+    ],
+    "inferred": [
+      {
+        "field": "tool_count",
+        "value": 10,
+        "confidence": 0.8,
+        "reason": "10 tool definitions found (decorators, schemas, MCP tools, OpenAPI operations)."
+      },
+      {
+        "field": "tool_calls_per_task",
+        "value": 6,
+        "confidence": 0.3,
+        "reason": "Rough: 10 tools and 0 tool-handling call sites; verify against traces."
+      },
+      {
+        "field": "tool_dependency",
+        "value": "sequential",
+        "confidence": 0.4,
+        "reason": "No concurrency primitives around tool calls."
+      },
+      {
+        "field": "tool_side_effects",
+        "value": "irreversible",
+        "confidence": 0.7,
+        "reason": "Side-effecting integrations: external-post (irreversible)"
+      },
+      {
+        "field": "knowledge_sources",
+        "value": 1,
+        "confidence": 0.6,
+        "reason": "Retrieval integrations: elasticsearch"
+      },
+      {
+        "field": "retrieval_depth",
+        "value": "multi_hop",
+        "confidence": 0.5,
+        "reason": "Derived from sources (1) and whether a loop can issue follow-up queries."
+      },
+      {
+        "field": "context_tokens_per_task",
+        "value": 23000,
+        "confidence": 0.3,
+        "reason": "Rough function of sources and tools; replace with measured input tokens per request."
+      },
+      {
+        "field": "scope_breadth",
+        "value": 1,
+        "confidence": 0.4,
+        "reason": "0 file(s) define system prompts/instructions; routing/handoffs raise this."
+      },
+      {
+        "field": "parallel_subtasks",
+        "value": 1,
+        "confidence": 0.4,
+        "reason": "Single tool loop."
+      },
+      {
+        "field": "steps_predictable",
+        "value": false,
+        "confidence": 0.6,
+        "reason": "The model chooses steps at run time."
+      },
+      {
+        "field": "task_complexity",
+        "value": "complex",
+        "confidence": 0.4,
+        "reason": "Tool loop with 10 tools."
+      },
+      {
+        "field": "latency_budget_s",
+        "value": 8.0,
+        "confidence": 0.4,
+        "reason": "Request/response serving implies an interactive budget."
+      },
+      {
+        "field": "interaction",
+        "value": "multi_turn",
+        "confidence": 0.4,
+        "reason": "Serving surface and memory usage."
+      },
+      {
+        "field": "verifiability",
+        "value": "none",
+        "confidence": 0.3,
+        "reason": "No tests, evals or schemas found."
+      },
+      {
+        "field": "human_in_loop",
+        "value": true,
+        "confidence": 0.6,
+        "reason": "Approval/confirmation logic present."
+      },
+      {
+        "field": "error_recoverability",
+        "value": "hard",
+        "confidence": 0.5,
+        "reason": "Irreversible integrations present."
+      },
+      {
+        "field": "accuracy_priority",
+        "value": 4,
+        "confidence": 0.4,
+        "reason": "Irreversible actions raise the cost of errors."
+      },
+      {
+        "field": "tool_overlap",
+        "value": true,
+        "confidence": 0.5,
+        "reason": "Similarly named tools: search_methodology, search_policy, search_products"
+      }
+    ],
+    "warnings": [],
+    "inferred_profile": {
+      "tool_count": 10,
+      "tool_calls_per_task": 6,
+      "tool_dependency": "sequential",
+      "tool_side_effects": "irreversible",
+      "knowledge_sources": 1,
+      "retrieval_depth": "multi_hop",
+      "context_tokens_per_task": 23000,
+      "scope_breadth": 1,
+      "parallel_subtasks": 1,
+      "steps_predictable": false,
+      "task_complexity": "complex",
+      "latency_budget_s": 8.0,
+      "interaction": "multi_turn",
+      "verifiability": "none",
+      "human_in_loop": true,
+      "error_recoverability": "hard",
+      "accuracy_priority": 4,
+      "tool_overlap": true
+    }
+  },
+  "selection": {
+    "policy": {
+      "allowed_providers": null,
+      "blocked_providers": [],
+      "allowed_platforms": null,
+      "regions": null,
+      "require_verified": true,
+      "require_approved": true,
+      "prefer_provider": null,
+      "family_consistency_bonus": 0.25,
+      "deprecation_horizon_days": 180,
+      "max_alternatives": 4
+    },
+    "catalog": "case-study-ecosystem",
+    "choices": [
+      {
+        "component_id": "router",
+        "role_type": "router",
+        "requirements": {
+          "component_id": "router",
+          "role_type": "router",
+          "reasoning_level": 2,
+          "context_tokens": 4500,
+          "output_tokens": 30,
+          "needs_tools": false,
+          "tool_count": 0,
+          "needs_parallel_tools": false,
+          "needs_structured_output": true,
+          "needs_strict_schema": true,
+          "latency_share_s": 1.5,
+          "tool_rounds": 0,
+          "stakes": 4,
+          "calls_per_day": 8000.0,
+          "data_class": "confidential",
+          "modalities": [
+            "text"
+          ],
+          "task_family": "classification",
+          "effort_hint": "low",
+          "independent_of": null,
+          "cache_group": null,
+          "notes": [
+            "Must answer in well under a second; structured output; smallest capable model."
+          ]
+        },
+        "model_id": "claude-haiku-4-5",
+        "effort": "n/a",
+        "fallback_model_id": "claude-sonnet-5",
+        "score": 2.26,
+        "est_latency_s": 0.8,
+        "est_cost_per_call": 0.00465,
+        "est_cost_per_day": 37.2,
+        "rationale": [
+          "Tier 3 vs required 2; est. 0.8s of a 1.5s share; $0.0046 per call.",
+          "measured classification accuracy 93%"
+        ],
+        "alternatives": [
+          {
+            "model_id": "claude-sonnet-5",
+            "score": 1.208,
+            "quality": 1.5,
+            "latency_adj": 0.098,
+            "cost_adj": -0.39,
+            "est_latency_s": 1.4,
+            "est_cost_per_call": 0.0093,
+            "notes": []
+          },
+          {
+            "model_id": "claude-opus-5",
+            "score": 0.376,
+            "quality": 1.7,
+            "latency_adj": -0.418,
+            "cost_adj": -0.906,
+            "est_latency_s": 2.0,
+            "est_cost_per_call": 0.02325,
+            "notes": []
+          }
+        ],
+        "rejected": [
+          {
+            "model_id": "acme-onprem-70b",
+            "reason": "no strict schema enforcement (high-stakes structured output)"
+          },
+          {
+            "model_id": "acme-onprem-8b",
+            "reason": "no strict schema enforcement (high-stakes structured output)"
+          },
+          {
+            "model_id": "cloud-frontier-x",
+            "reason": "not approved by the platform team"
+          }
+        ]
+      },
+      {
+        "component_id": "handler_1",
+        "role_type": "handler",
+        "requirements": {
+          "component_id": "handler_1",
+          "role_type": "handler",
+          "reasoning_level": 5,
+          "context_tokens": 49500,
+          "output_tokens": 390,
+          "needs_tools": true,
+          "tool_count": 10,
+          "needs_parallel_tools": true,
+          "needs_structured_output": false,
+          "needs_strict_schema": false,
+          "latency_share_s": 12.75,
+          "tool_rounds": 2,
+          "stakes": 5,
+          "calls_per_day": 24000.0,
+          "data_class": "confidential",
+          "modalities": [
+            "text"
+          ],
+          "task_family": "conversation",
+          "effort_hint": "xhigh",
+          "independent_of": null,
+          "cache_group": null,
+          "notes": []
+        },
+        "model_id": "acme-onprem-70b",
+        "effort": "n/a",
+        "fallback_model_id": "claude-sonnet-5",
+        "score": 1.818,
+        "est_latency_s": 10.0,
+        "est_cost_per_call": 0.03764,
+        "est_cost_per_day": 903.36,
+        "rationale": [
+          "Tier 4 vs required 5; est. 10.0s of a 12.8s share; $0.0376 per call.",
+          "measured conversation accuracy 90%",
+          "Fallback claude-sonnet-5 is on a different provider for outage/refusal resilience."
+        ],
+        "alternatives": [
+          {
+            "model_id": "claude-sonnet-5",
+            "score": 0.555,
+            "quality": 1.81,
+            "latency_adj": 0.065,
+            "cost_adj": -1.32,
+            "est_latency_s": 11.9,
+            "est_cost_per_call": 0.3039,
+            "notes": [
+              "measured conversation accuracy 88%"
+            ]
+          },
+          {
+            "model_id": "claude-opus-5",
+            "score": -1.089,
+            "quality": 1.25,
+            "latency_adj": -0.44,
+            "cost_adj": -1.899,
+            "est_latency_s": 17.8,
+            "est_cost_per_call": 0.75975,
+            "notes": []
+          }
+        ],
+        "rejected": [
+          {
+            "model_id": "claude-haiku-4-5",
+            "reason": "capability tier 3 below required 5"
+          },
+          {
+            "model_id": "acme-onprem-8b",
+            "reason": "context window 32,000 < required 49,500"
+          },
+          {
+            "model_id": "cloud-frontier-x",
+            "reason": "not approved by the platform team"
+          }
+        ]
+      },
+      {
+        "component_id": "handler_2",
+        "role_type": "handler",
+        "requirements": {
+          "component_id": "handler_2",
+          "role_type": "handler",
+          "reasoning_level": 5,
+          "context_tokens": 49500,
+          "output_tokens": 390,
+          "needs_tools": true,
+          "tool_count": 10,
+          "needs_parallel_tools": true,
+          "needs_structured_output": false,
+          "needs_strict_schema": false,
+          "latency_share_s": 12.75,
+          "tool_rounds": 2,
+          "stakes": 5,
+          "calls_per_day": 24000.0,
+          "data_class": "confidential",
+          "modalities": [
+            "text"
+          ],
+          "task_family": "conversation",
+          "effort_hint": "xhigh",
+          "independent_of": null,
+          "cache_group": null,
+          "notes": []
+        },
+        "model_id": "acme-onprem-70b",
+        "effort": "n/a",
+        "fallback_model_id": "claude-sonnet-5",
+        "score": 1.818,
+        "est_latency_s": 10.0,
+        "est_cost_per_call": 0.03764,
+        "est_cost_per_day": 903.36,
+        "rationale": [
+          "Tier 4 vs required 5; est. 10.0s of a 12.8s share; $0.0376 per call.",
+          "measured conversation accuracy 90%",
+          "Fallback claude-sonnet-5 is on a different provider for outage/refusal resilience."
+        ],
+        "alternatives": [
+          {
+            "model_id": "claude-sonnet-5",
+            "score": 0.555,
+            "quality": 1.81,
+            "latency_adj": 0.065,
+            "cost_adj": -1.32,
+            "est_latency_s": 11.9,
+            "est_cost_per_call": 0.3039,
+            "notes": [
+              "measured conversation accuracy 88%"
+            ]
+          },
+          {
+            "model_id": "claude-opus-5",
+            "score": -1.089,
+            "quality": 1.25,
+            "latency_adj": -0.44,
+            "cost_adj": -1.899,
+            "est_latency_s": 17.8,
+            "est_cost_per_call": 0.75975,
+            "notes": []
+          }
+        ],
+        "rejected": [
+          {
+            "model_id": "claude-haiku-4-5",
+            "reason": "capability tier 3 below required 5"
+          },
+          {
+            "model_id": "acme-onprem-8b",
+            "reason": "context window 32,000 < required 49,500"
+          },
+          {
+            "model_id": "cloud-frontier-x",
+            "reason": "not approved by the platform team"
+          }
+        ]
+      },
+      {
+        "component_id": "handler_3",
+        "role_type": "handler",
+        "requirements": {
+          "component_id": "handler_3",
+          "role_type": "handler",
+          "reasoning_level": 5,
+          "context_tokens": 49500,
+          "output_tokens": 390,
+          "needs_tools": true,
+          "tool_count": 10,
+          "needs_parallel_tools": true,
+          "needs_structured_output": false,
+          "needs_strict_schema": false,
+          "latency_share_s": 12.75,
+          "tool_rounds": 2,
+          "stakes": 5,
+          "calls_per_day": 24000.0,
+          "data_class": "confidential",
+          "modalities": [
+            "text"
+          ],
+          "task_family": "conversation",
+          "effort_hint": "xhigh",
+          "independent_of": null,
+          "cache_group": null,
+          "notes": []
+        },
+        "model_id": "acme-onprem-70b",
+        "effort": "n/a",
+        "fallback_model_id": "claude-sonnet-5",
+        "score": 1.818,
+        "est_latency_s": 10.0,
+        "est_cost_per_call": 0.03764,
+        "est_cost_per_day": 903.36,
+        "rationale": [
+          "Tier 4 vs required 5; est. 10.0s of a 12.8s share; $0.0376 per call.",
+          "measured conversation accuracy 90%",
+          "Fallback claude-sonnet-5 is on a different provider for outage/refusal resilience."
+        ],
+        "alternatives": [
+          {
+            "model_id": "claude-sonnet-5",
+            "score": 0.555,
+            "quality": 1.81,
+            "latency_adj": 0.065,
+            "cost_adj": -1.32,
+            "est_latency_s": 11.9,
+            "est_cost_per_call": 0.3039,
+            "notes": [
+              "measured conversation accuracy 88%"
+            ]
+          },
+          {
+            "model_id": "claude-opus-5",
+            "score": -1.089,
+            "quality": 1.25,
+            "latency_adj": -0.44,
+            "cost_adj": -1.899,
+            "est_latency_s": 17.8,
+            "est_cost_per_call": 0.75975,
+            "notes": []
+          }
+        ],
+        "rejected": [
+          {
+            "model_id": "claude-haiku-4-5",
+            "reason": "capability tier 3 below required 5"
+          },
+          {
+            "model_id": "acme-onprem-8b",
+            "reason": "context window 32,000 < required 49,500"
+          },
+          {
+            "model_id": "cloud-frontier-x",
+            "reason": "not approved by the platform team"
+          }
+        ]
+      },
+      {
+        "component_id": "handler_4",
+        "role_type": "handler",
+        "requirements": {
+          "component_id": "handler_4",
+          "role_type": "handler",
+          "reasoning_level": 5,
+          "context_tokens": 49500,
+          "output_tokens": 390,
+          "needs_tools": true,
+          "tool_count": 10,
+          "needs_parallel_tools": true,
+          "needs_structured_output": false,
+          "needs_strict_schema": false,
+          "latency_share_s": 12.75,
+          "tool_rounds": 2,
+          "stakes": 5,
+          "calls_per_day": 24000.0,
+          "data_class": "confidential",
+          "modalities": [
+            "text"
+          ],
+          "task_family": "conversation",
+          "effort_hint": "xhigh",
+          "independent_of": null,
+          "cache_group": null,
+          "notes": []
+        },
+        "model_id": "acme-onprem-70b",
+        "effort": "n/a",
+        "fallback_model_id": "claude-sonnet-5",
+        "score": 1.818,
+        "est_latency_s": 10.0,
+        "est_cost_per_call": 0.03764,
+        "est_cost_per_day": 903.36,
+        "rationale": [
+          "Tier 4 vs required 5; est. 10.0s of a 12.8s share; $0.0376 per call.",
+          "measured conversation accuracy 90%",
+          "Fallback claude-sonnet-5 is on a different provider for outage/refusal resilience."
+        ],
+        "alternatives": [
+          {
+            "model_id": "claude-sonnet-5",
+            "score": 0.555,
+            "quality": 1.81,
+            "latency_adj": 0.065,
+            "cost_adj": -1.32,
+            "est_latency_s": 11.9,
+            "est_cost_per_call": 0.3039,
+            "notes": [
+              "measured conversation accuracy 88%"
+            ]
+          },
+          {
+            "model_id": "claude-opus-5",
+            "score": -1.089,
+            "quality": 1.25,
+            "latency_adj": -0.44,
+            "cost_adj": -1.899,
+            "est_latency_s": 17.8,
+            "est_cost_per_call": 0.75975,
+            "notes": []
+          }
+        ],
+        "rejected": [
+          {
+            "model_id": "claude-haiku-4-5",
+            "reason": "capability tier 3 below required 5"
+          },
+          {
+            "model_id": "acme-onprem-8b",
+            "reason": "context window 32,000 < required 49,500"
+          },
+          {
+            "model_id": "cloud-frontier-x",
+            "reason": "not approved by the platform team"
+          }
+        ]
+      }
+    ],
+    "warnings": [],
+    "unfilled": [],
+    "providers_used": [
+      "anthropic",
+      "self_hosted"
+    ],
+    "families_used": [
+      "acme-open",
+      "claude-4"
+    ],
+    "est_cost_per_day": 3650.64
+  },
+  "selected_estimate": {
+    "latency_s": 15.7,
+    "cost_usd": 0.0231,
+    "token_multiplier": 1.7,
+    "tiers_used": {
+      "opus": "acme-onprem-70b",
+      "sonnet": "acme-onprem-70b",
+      "haiku": "claude-haiku-4-5"
+    }
+  },
+  "tiers": {
+    "opus": "claude-opus-5",
+    "sonnet": "acme-onprem-70b",
+    "haiku": "claude-haiku-4-5"
+  }
+}

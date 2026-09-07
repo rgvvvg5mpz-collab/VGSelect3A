@@ -1,0 +1,51 @@
+{
+  "case": "01_call_summarization",
+  "name": "call_summarization",
+  "current_topology": "single_call",
+  "recommended": "prompt_chain",
+  "recommended_name": "Prompt chain (sequential workflow)",
+  "score": 3.25,
+  "latency_s": 25.8,
+  "budget_s": 60.0,
+  "verdict": "fits",
+  "cost_usd": 0.0448,
+  "tokens_x": 1.8,
+  "selected_latency_s": 25.1,
+  "selected_cost_usd": 0.0595,
+  "current_score": 0.24,
+  "current_latency_s": 8.8,
+  "fastest_viable": "Single model call",
+  "most_accurate": "Parallel voting / ensemble",
+  "models": [
+    [
+      "extract",
+      "claude-sonnet-5",
+      "high",
+      "claude-haiku-4-5"
+    ],
+    [
+      "finalize",
+      "claude-sonnet-5",
+      "high",
+      "claude-haiku-4-5"
+    ]
+  ],
+  "unfilled": [],
+  "warnings": [],
+  "providers": [
+    "anthropic"
+  ],
+  "top_reasons": [
+    "Steps are predictable: a code-defined chain with gates beats an agent deciding the path (more predictable, cheaper, easier to test)."
+  ],
+  "scan_tools": [],
+  "scan_sources": [],
+  "scan_side_effects": [
+    "external-post (irreversible)",
+    "ticket/crm (irreversible)"
+  ],
+  "scan_frameworks": [
+    "anthropic-sdk"
+  ],
+  "files": 8
+}

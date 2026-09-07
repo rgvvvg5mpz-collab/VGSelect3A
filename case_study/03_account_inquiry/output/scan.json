@@ -1,0 +1,250 @@
+{
+  "root": "/Users/saxena/Desktop/ClaudeCode_GIT/AgentTopologyBuilder/case_study/03_account_inquiry",
+  "files_scanned": 7,
+  "languages": {
+    "python": 3
+  },
+  "frameworks": [
+    "anthropic-sdk"
+  ],
+  "tools": [
+    "explain_balance_change",
+    "faq_lookup",
+    "get_balances",
+    "get_contributions_ytd",
+    "get_cost_basis",
+    "get_positions",
+    "get_transactions"
+  ],
+  "knowledge_sources": [
+    "pgvector",
+    "sql"
+  ],
+  "side_effects": [],
+  "current_topology": "single_agent",
+  "current_topology_reason": "A tool-use loop (or tool definitions) with no delegation.",
+  "evidence": [
+    {
+      "category": "frameworks",
+      "label": "anthropic-sdk",
+      "path": "app/assistant.py",
+      "line": 2,
+      "snippet": "import anthropic"
+    },
+    {
+      "category": "frameworks",
+      "label": "anthropic-sdk",
+      "path": "app/assistant.py",
+      "line": 10,
+      "snippet": "client = anthropic.Anthropic()"
+    },
+    {
+      "category": "agent_patterns",
+      "label": "tool runner",
+      "path": "app/assistant.py",
+      "line": 24,
+      "snippet": "runner = client.beta.messages.tool_runner("
+    },
+    {
+      "category": "agent_patterns",
+      "label": "tool runner",
+      "path": "app/assistant.py",
+      "line": 28,
+      "snippet": "final = runner.until_done()"
+    },
+    {
+      "category": "serving",
+      "label": "http-api",
+      "path": "app/assistant.py",
+      "line": 9,
+      "snippet": "app = FastAPI()"
+    },
+    {
+      "category": "serving",
+      "label": "websocket/streaming",
+      "path": "app/assistant.py",
+      "line": 1,
+      "snippet": "\"\"\"Account assistant: one tool-use loop behind a websocket, with Redis-backed memory.\"\"\""
+    },
+    {
+      "category": "frameworks",
+      "label": "anthropic-sdk",
+      "path": "app/tools.py",
+      "line": 3,
+      "snippet": "from anthropic import beta_tool"
+    },
+    {
+      "category": "tools",
+      "label": "python decorator tool",
+      "path": "app/tools.py",
+      "line": 7,
+      "snippet": "get_balances"
+    },
+    {
+      "category": "tools",
+      "label": "python decorator tool",
+      "path": "app/tools.py",
+      "line": 13,
+      "snippet": "get_positions"
+    },
+    {
+      "category": "tools",
+      "label": "python decorator tool",
+      "path": "app/tools.py",
+      "line": 19,
+      "snippet": "get_cost_basis"
+    },
+    {
+      "category": "tools",
+      "label": "python decorator tool",
+      "path": "app/tools.py",
+      "line": 25,
+      "snippet": "get_transactions"
+    },
+    {
+      "category": "tools",
+      "label": "python decorator tool",
+      "path": "app/tools.py",
+      "line": 31,
+      "snippet": "get_contributions_ytd"
+    },
+    {
+      "category": "retrieval",
+      "label": "pgvector",
+      "path": "app/tools.py",
+      "line": 4,
+      "snippet": "from pgvector.psycopg import register_vector"
+    },
+    {
+      "category": "retrieval",
+      "label": "pgvector",
+      "path": "app/tools.py",
+      "line": 45,
+      "snippet": "\"\"\"Semantic search over the approved FAQ / explanations knowledge base (pgvector).\"\"\""
+    },
+    {
+      "category": "retrieval",
+      "label": "sql",
+      "path": "app/tools.py",
+      "line": 4,
+      "snippet": "from pgvector.psycopg import register_vector"
+    },
+    {
+      "category": "quality",
+      "label": "tests",
+      "path": "tests/test_numbers_match.py",
+      "line": 1,
+      "snippet": "def test_answers_only_use_tool_numbers():"
+    }
+  ],
+  "inferred": [
+    {
+      "field": "tool_count",
+      "value": 7,
+      "confidence": 0.8,
+      "reason": "7 tool definitions found (decorators, schemas, MCP tools, OpenAPI operations)."
+    },
+    {
+      "field": "tool_calls_per_task",
+      "value": 4,
+      "confidence": 0.3,
+      "reason": "Rough: 7 tools and 0 tool-handling call sites; verify against traces."
+    },
+    {
+      "field": "tool_dependency",
+      "value": "sequential",
+      "confidence": 0.4,
+      "reason": "No concurrency primitives around tool calls."
+    },
+    {
+      "field": "tool_side_effects",
+      "value": "read_only",
+      "confidence": 0.6,
+      "reason": "No write/side-effect integrations detected."
+    },
+    {
+      "field": "knowledge_sources",
+      "value": 2,
+      "confidence": 0.6,
+      "reason": "Retrieval integrations: pgvector, sql"
+    },
+    {
+      "field": "retrieval_depth",
+      "value": "multi_hop",
+      "confidence": 0.5,
+      "reason": "Derived from sources (2) and whether a loop can issue follow-up queries."
+    },
+    {
+      "field": "context_tokens_per_task",
+      "value": 24500,
+      "confidence": 0.3,
+      "reason": "Rough function of sources and tools; replace with measured input tokens per request."
+    },
+    {
+      "field": "scope_breadth",
+      "value": 1,
+      "confidence": 0.4,
+      "reason": "1 file(s) define system prompts/instructions; routing/handoffs raise this."
+    },
+    {
+      "field": "parallel_subtasks",
+      "value": 1,
+      "confidence": 0.4,
+      "reason": "Single tool loop."
+    },
+    {
+      "field": "steps_predictable",
+      "value": false,
+      "confidence": 0.6,
+      "reason": "The model chooses steps at run time."
+    },
+    {
+      "field": "task_complexity",
+      "value": "moderate",
+      "confidence": 0.4,
+      "reason": "Tool loop with 7 tools."
+    },
+    {
+      "field": "latency_budget_s",
+      "value": 10.0,
+      "confidence": 0.4,
+      "reason": "Request/response serving implies an interactive budget."
+    },
+    {
+      "field": "interaction",
+      "value": "single_turn",
+      "confidence": 0.4,
+      "reason": "Serving surface and memory usage."
+    },
+    {
+      "field": "verifiability",
+      "value": "partial",
+      "confidence": 0.5,
+      "reason": "Tests or schema validation present."
+    },
+    {
+      "field": "tool_overlap",
+      "value": true,
+      "confidence": 0.5,
+      "reason": "Similarly named tools: get_balances, get_contributions_ytd, get_cost_basis, get_positions, get_transactions"
+    }
+  ],
+  "warnings": [],
+  "inferred_profile": {
+    "tool_count": 7,
+    "tool_calls_per_task": 4,
+    "tool_dependency": "sequential",
+    "tool_side_effects": "read_only",
+    "knowledge_sources": 2,
+    "retrieval_depth": "multi_hop",
+    "context_tokens_per_task": 24500,
+    "scope_breadth": 1,
+    "parallel_subtasks": 1,
+    "steps_predictable": false,
+    "task_complexity": "moderate",
+    "latency_budget_s": 10.0,
+    "interaction": "single_turn",
+    "verifiability": "partial",
+    "tool_overlap": true
+  }
+}

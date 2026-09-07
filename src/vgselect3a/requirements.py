@@ -86,7 +86,7 @@ def _task_family(p: WorkloadProfile, role: str) -> str:
         return "planning"
     if p.output_type == "code_change":
         return "coding"
-    if p.complexity_score <= 1 and p.output_type in ("short_answer", "structured_data") and role in ("responder", "stage", "worker", "single_agent"):
+    if p.complexity_score <= 1 and p.output_type in ("short_answer", "structured_data") and role in ("responder", "stage", "worker"):
         return "classification"
     if p.output_type == "structured_data":
         return "extraction"

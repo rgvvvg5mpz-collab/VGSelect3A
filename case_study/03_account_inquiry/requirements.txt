@@ -1,0 +1,6 @@
+anthropic>=1.0
+fastapi
+redis
+pgvector
+requests
+pytest

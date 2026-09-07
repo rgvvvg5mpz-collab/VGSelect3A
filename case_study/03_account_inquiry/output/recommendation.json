@@ -1,0 +1,1006 @@
+{
+  "profile": {
+    "name": "account_inquiry",
+    "description": "In-app assistant answering questions about account balances, cost basis, contributions and balance changes from deterministic books-and-records APIs, with FAQ explanations.",
+    "task_complexity": "simple",
+    "steps_predictable": false,
+    "scope_breadth": 1,
+    "parallel_subtasks": 1,
+    "output_type": "short_answer",
+    "tool_count": 7,
+    "tool_calls_per_task": 2,
+    "tool_dependency": "independent",
+    "tool_side_effects": "read_only",
+    "tool_overlap": true,
+    "tool_latency_s": 0.3,
+    "knowledge_sources": 2,
+    "retrieval_depth": "multi_hop",
+    "context_tokens_per_task": 6000,
+    "accuracy_priority": 5,
+    "single_agent_baseline": 0.88,
+    "verifiability": "strong",
+    "error_recoverability": "easy",
+    "latency_budget_s": 5.0,
+    "interaction": "multi_turn",
+    "requests_per_day": 200000,
+    "cost_sensitivity": 5,
+    "human_in_loop": false,
+    "data_sensitivity": "restricted",
+    "tools": [
+      "explain_balance_change",
+      "faq_lookup",
+      "get_balances",
+      "get_contributions_ytd",
+      "get_cost_basis",
+      "get_positions",
+      "get_transactions"
+    ],
+    "sources": [
+      "pgvector",
+      "sql"
+    ]
+  },
+  "headline": "Recommended: **Single agent with tools** (score +2.1; est. p50 latency ~7s vs budget 5s, ~1x tokens of one call). It exceeds the latency budget and no viable topology fits it: relax the budget, cut tool calls/reading per request, use a smaller model, or move work off the request path. This matches the topology the repository already implements; focus on the cross-cutting recommendations.",
+  "primary": "single_agent",
+  "candidates": [
+    {
+      "topology": "single_agent",
+      "name": "Single agent with tools",
+      "family": "single",
+      "score": 2.14,
+      "fit": 3.5,
+      "quality_proxy": 5.0,
+      "latency_adj": -0.86,
+      "cost_adj": -0.5,
+      "latency_verdict": "exceeds",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 6.6,
+        "cost_usd": 0.0034,
+        "llm_calls": 2,
+        "total_tokens": 12480,
+        "token_multiplier": 1.4,
+        "assumptions": [
+          "1 sequential tool round(s) for 2 tool calls (batching by dependency=independent)."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R01b",
+          "topology_id": "single_agent",
+          "delta": 2.0,
+          "rationale": "Simple task with a few tools: a single agent loop is enough.",
+          "citation": "OPENAI_PG"
+        },
+        {
+          "rule_id": "R04",
+          "topology_id": "single_agent",
+          "delta": 2.0,
+          "rationale": "Unpredictable path: the model must choose steps at run time, which is the definition of an agent.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R14",
+          "topology_id": "single_agent",
+          "delta": 2.0,
+          "rationale": "Multi-hop retrieval: the model must decide follow-up queries from earlier results (agentic retrieval).",
+          "citation": "ANTHROPIC_CTX"
+        },
+        {
+          "rule_id": "R23",
+          "topology_id": "single_agent",
+          "delta": -1.5,
+          "rationale": "Serial round trips do not fit an interactive budget.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R28",
+          "topology_id": "single_agent",
+          "delta": -1.5,
+          "rationale": "Overlapping tools are OpenAI's split trigger (systems fail with <10 overlapping tools yet manage 15+ distinct ones): first consolidate/rename tools; if that fails, give each specialist a disjoint tool set.",
+          "citation": "OPENAI_PG"
+        },
+        {
+          "rule_id": "R37",
+          "topology_id": "single_agent",
+          "delta": 2.0,
+          "rationale": "A 88% single-agent baseline is the regime where one agent plus a better model/effort/tools wins.",
+          "citation": "SCALING"
+        },
+        {
+          "rule_id": "R41",
+          "topology_id": "single_agent",
+          "delta": -1.5,
+          "rationale": "Agentic retrieval loops run 3-20x the latency of single-pass RAG; an interactive budget forces single-pass retrieval with escalation only on failure signals (adaptive RAG).",
+          "citation": "RAG"
+        }
+      ]
+    },
+    {
+      "topology": "router",
+      "name": "Router / classifier dispatch",
+      "family": "workflow",
+      "score": 1.25,
+      "fit": 3.0,
+      "quality_proxy": 1.5,
+      "latency_adj": -0.98,
+      "cost_adj": -0.77,
+      "latency_verdict": "exceeds",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 7.4,
+        "cost_usd": 0.0041,
+        "llm_calls": 3,
+        "total_tokens": 15500,
+        "token_multiplier": 1.7,
+        "assumptions": [
+          "Small-model router (~20 output tokens) then one specialist handler."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R12",
+          "topology_id": "router",
+          "delta": -1.0,
+          "rationale": "Single domain: nothing to route between (unless routing by difficulty for cost).",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R23",
+          "topology_id": "router",
+          "delta": 0.5,
+          "rationale": "A fast router (small model) adds well under a second and can send easy requests to a faster path.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R26",
+          "topology_id": "router",
+          "delta": 1.0,
+          "rationale": "Routing easy requests to a small model is the cheapest accuracy-preserving lever.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R28",
+          "topology_id": "router",
+          "delta": 1.5,
+          "rationale": "Routing to specialists gives each a small, non-overlapping tool set.",
+          "citation": "OPENAI_PG"
+        },
+        {
+          "rule_id": "R41",
+          "topology_id": "router",
+          "delta": 1.0,
+          "rationale": "Adaptive RAG: classify the query, single-pass by default, escalate to the multi-hop path only when needed.",
+          "citation": "RAG"
+        }
+      ]
+    },
+    {
+      "topology": "parallel_voting",
+      "name": "Parallel voting / ensemble",
+      "family": "workflow",
+      "score": -2.87,
+      "fit": 1.0,
+      "quality_proxy": 2.5,
+      "latency_adj": -1.03,
+      "cost_adj": -2.84,
+      "latency_verdict": "exceeds",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 7.7,
+        "cost_usd": 0.0172,
+        "llm_calls": 10,
+        "total_tokens": 62900,
+        "token_multiplier": 6.9,
+        "assumptions": [
+          "5 parallel acme-onprem-70b samples; majority vote in code (no judge call)."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R20",
+          "topology_id": "parallel_voting",
+          "delta": 2.5,
+          "rationale": "High-stakes bounded decision: several independent votes/judges raise confidence at parallel (not serial) latency cost.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R26",
+          "topology_id": "parallel_voting",
+          "delta": -1.5,
+          "rationale": "Cost-sensitive: token multipliers of 3-25x over a single call must be justified by task value.",
+          "citation": "ANTHROPIC_MAR"
+        }
+      ]
+    },
+    {
+      "topology": "evaluator_optimizer",
+      "name": "Evaluator-optimizer loop",
+      "family": "workflow",
+      "score": -6.09,
+      "fit": -1.5,
+      "quality_proxy": 2.5,
+      "latency_adj": -2.45,
+      "cost_adj": -2.14,
+      "latency_verdict": "far over",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 31.0,
+        "cost_usd": 0.0106,
+        "llm_calls": 9,
+        "total_tokens": 38160,
+        "token_multiplier": 4.2,
+        "assumptions": [
+          "3 generate/evaluate iterations (worst case); most requests exit after the first accepted evaluation."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R18",
+          "topology_id": "evaluator_optimizer",
+          "delta": 2.5,
+          "rationale": "High accuracy priority and an objective check: generate -> evaluate -> refine converts test/rubric feedback into measurable gains.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R23",
+          "topology_id": "evaluator_optimizer",
+          "delta": -3.0,
+          "rationale": "Serial round trips do not fit an interactive budget.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R26",
+          "topology_id": "evaluator_optimizer",
+          "delta": -1.0,
+          "rationale": "Cost-sensitive: token multipliers of 3-25x over a single call must be justified by task value.",
+          "citation": "ANTHROPIC_MAR"
+        }
+      ]
+    },
+    {
+      "topology": "prompt_chain",
+      "name": "Prompt chain (sequential workflow)",
+      "family": "workflow",
+      "score": -6.69,
+      "fit": -3.5,
+      "quality_proxy": -2.0,
+      "latency_adj": -2.16,
+      "cost_adj": -1.03,
+      "latency_verdict": "far over",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 18.5,
+        "cost_usd": 0.0049,
+        "llm_calls": 3,
+        "total_tokens": 16500,
+        "token_multiplier": 1.8,
+        "assumptions": [
+          "2 sequential stages with programmatic gates between them."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R04",
+          "topology_id": "prompt_chain",
+          "delta": -2.0,
+          "rationale": "A fixed chain cannot handle a path that varies per request.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R23",
+          "topology_id": "prompt_chain",
+          "delta": -1.5,
+          "rationale": "Serial round trips do not fit an interactive budget.",
+          "citation": "ANTHROPIC_BEA"
+        }
+      ]
+    },
+    {
+      "topology": "orchestrator_workers",
+      "name": "Orchestrator + worker subagents",
+      "family": "multi_agent",
+      "score": -16.86,
+      "fit": -12.5,
+      "quality_proxy": -5.5,
+      "latency_adj": -2.44,
+      "cost_adj": -1.92,
+      "latency_verdict": "far over",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 30.4,
+        "cost_usd": 0.0091,
+        "llm_calls": 6,
+        "total_tokens": 29080,
+        "token_multiplier": 3.2,
+        "assumptions": [
+          "2 Sonnet-tier workers in 1 wave(s) of <= 10, each with ~3 tool calls; Opus-tier lead plans and synthesises."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R02",
+          "topology_id": "orchestrator_workers",
+          "delta": -3.0,
+          "rationale": "Multi-agent coordination is not justified below complex/open-ended tasks; it costs ~15x tokens and adds failure modes.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R23",
+          "topology_id": "orchestrator_workers",
+          "delta": -4.0,
+          "rationale": "Serial round trips do not fit an interactive budget.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R26",
+          "topology_id": "orchestrator_workers",
+          "delta": -2.0,
+          "rationale": "Cost-sensitive: token multipliers of 3-25x over a single call must be justified by task value.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R27",
+          "topology_id": "orchestrator_workers",
+          "delta": -1.0,
+          "rationale": "At very high volume, multi-agent token multipliers dominate spend; reserve multi-agent for high-value requests behind a router.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R28",
+          "topology_id": "orchestrator_workers",
+          "delta": 0.5,
+          "rationale": "Workers with narrow tool sets also remove overlap, at higher cost than routing.",
+          "citation": "ANTHROPIC_MA"
+        },
+        {
+          "rule_id": "R37",
+          "topology_id": "orchestrator_workers",
+          "delta": -3.0,
+          "rationale": "Single-agent baseline is 88%: above ~45% the scaling study found negative returns from adding agents (capability saturation). Improve the model/prompt/tools instead.",
+          "citation": "SCALING"
+        }
+      ]
+    },
+    {
+      "topology": "single_call",
+      "name": "Single model call",
+      "family": "single",
+      "score": -1.0,
+      "fit": -2.0,
+      "quality_proxy": -4.0,
+      "latency_adj": 1.0,
+      "cost_adj": -0.0,
+      "latency_verdict": "fits",
+      "viable": false,
+      "infeasible_reason": "needs tool calls; a single call cannot act",
+      "estimate": {
+        "latency_s": 2.5,
+        "cost_usd": 0.0024,
+        "llm_calls": 1,
+        "total_tokens": 9180,
+        "token_multiplier": 1.0,
+        "assumptions": [
+          "One acme-onprem-70b call; retrieval (if any) done in code before the call."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R14",
+          "topology_id": "single_call",
+          "delta": -2.0,
+          "rationale": "Follow-up queries cannot be fixed in advance.",
+          "citation": "ANTHROPIC_CTX"
+        },
+        {
+          "rule_id": "R23",
+          "topology_id": "single_call",
+          "delta": 2.0,
+          "rationale": "Sub-5s budget: only a single call (streamed, small model where possible) fits reliably.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R32",
+          "topology_id": "single_call",
+          "delta": -2.0,
+          "rationale": "Tools imply at least one loop iteration.",
+          "citation": "ANTHROPIC_BEA"
+        }
+      ]
+    },
+    {
+      "topology": "parallel_sectioning",
+      "name": "Parallel sectioning (code-defined fan-out)",
+      "family": "workflow",
+      "score": -3.32,
+      "fit": 0,
+      "quality_proxy": 0,
+      "latency_adj": -1.86,
+      "cost_adj": -1.46,
+      "latency_verdict": "far over",
+      "viable": false,
+      "infeasible_reason": "nothing to fan out",
+      "estimate": {
+        "latency_s": 11.0,
+        "cost_usd": 0.0066,
+        "llm_calls": 5,
+        "total_tokens": 23480,
+        "token_multiplier": 2.6,
+        "assumptions": [
+          "2 code-defined branches run concurrently, then one aggregation call."
+        ]
+      },
+      "signals": []
+    },
+    {
+      "topology": "handoff_network",
+      "name": "Specialist handoffs (decentralised)",
+      "family": "multi_agent",
+      "score": -10.3,
+      "fit": -7.0,
+      "quality_proxy": -5.0,
+      "latency_adj": -1.88,
+      "cost_adj": -1.42,
+      "latency_verdict": "far over",
+      "viable": false,
+      "infeasible_reason": "no second specialist to hand off to",
+      "estimate": {
+        "latency_s": 11.5,
+        "cost_usd": 0.0064,
+        "llm_calls": 5,
+        "total_tokens": 24160,
+        "token_multiplier": 2.6,
+        "assumptions": [
+          "One handoff per request assumed (specialist A -> B); each handoff re-briefs the next agent."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R12",
+          "topology_id": "handoff_network",
+          "delta": -2.0,
+          "rationale": "Single domain: nothing to hand off between.",
+          "citation": "OPENAI_PG"
+        },
+        {
+          "rule_id": "R23",
+          "topology_id": "handoff_network",
+          "delta": -2.0,
+          "rationale": "Serial round trips do not fit an interactive budget.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R34",
+          "topology_id": "handoff_network",
+          "delta": -1.0,
+          "rationale": "Conversational but single-domain: one agent owning the conversation is simpler.",
+          "citation": "COGNITION"
+        },
+        {
+          "rule_id": "R37",
+          "topology_id": "handoff_network",
+          "delta": -2.0,
+          "rationale": "Single-agent baseline is 88%: above ~45% the scaling study found negative returns from adding agents (capability saturation). Improve the model/prompt/tools instead.",
+          "citation": "SCALING"
+        }
+      ]
+    },
+    {
+      "topology": "hierarchical",
+      "name": "Hierarchical teams (orchestrator -> leads -> workers)",
+      "family": "multi_agent",
+      "score": -25.73,
+      "fit": -20.0,
+      "quality_proxy": -10.0,
+      "latency_adj": -2.69,
+      "cost_adj": -3.04,
+      "latency_verdict": "far over",
+      "viable": false,
+      "infeasible_reason": "no domains or sub-task volume to justify two levels",
+      "estimate": {
+        "latency_s": 47.0,
+        "cost_usd": 0.0197,
+        "llm_calls": 14,
+        "total_tokens": 61180,
+        "token_multiplier": 6.7,
+        "assumptions": [
+          "2 leads x 2 workers; two delegation levels add two extra plan/synthesis hops."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R02",
+          "topology_id": "hierarchical",
+          "delta": -3.0,
+          "rationale": "Multi-agent coordination is not justified below complex/open-ended tasks; it costs ~15x tokens and adds failure modes.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R12",
+          "topology_id": "hierarchical",
+          "delta": -3.0,
+          "rationale": "Single domain: no reason for a second delegation level.",
+          "citation": "COGNITION"
+        },
+        {
+          "rule_id": "R23",
+          "topology_id": "hierarchical",
+          "delta": -5.0,
+          "rationale": "Serial round trips do not fit an interactive budget.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R26",
+          "topology_id": "hierarchical",
+          "delta": -3.0,
+          "rationale": "Cost-sensitive: token multipliers of 3-25x over a single call must be justified by task value.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R27",
+          "topology_id": "hierarchical",
+          "delta": -2.0,
+          "rationale": "At very high volume, multi-agent token multipliers dominate spend; reserve multi-agent for high-value requests behind a router.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R37",
+          "topology_id": "hierarchical",
+          "delta": -4.0,
+          "rationale": "Single-agent baseline is 88%: above ~45% the scaling study found negative returns from adding agents (capability saturation). Improve the model/prompt/tools instead.",
+          "citation": "SCALING"
+        }
+      ]
+    }
+  ],
+  "frontier": [
+    "single_agent"
+  ],
+  "fastest_viable": null,
+  "most_accurate": "single_agent",
+  "plan": {
+    "topology": "single_agent",
+    "components": [
+      {
+        "id": "agent",
+        "name": "Agent",
+        "role": "Plans and executes the whole task in one tool-use loop.",
+        "tier": "sonnet",
+        "effort": "n/a",
+        "tools": "explain_balance_change, faq_lookup, get_balances, get_contributions_ytd, get_cost_basis, get_positions, get_transactions",
+        "parallel_group": null,
+        "notes": [],
+        "chosen_model": "acme-onprem-70b",
+        "provider": "self_hosted",
+        "fallback_model": null,
+        "model_id": "acme-onprem-70b"
+      }
+    ],
+    "edges": [],
+    "augmentations": [
+      {
+        "id": "evals",
+        "title": "Build a ~20-query eval before adding any structure",
+        "why": "Every source agrees: measure a single agent/call first, then add topology only where the eval shows it failing. Above a ~45% single-agent baseline, adding agents tended to hurt in the scaling study. Keep the eval to compare latency and accuracy across topologies.",
+        "citation": "SCALING"
+      },
+      {
+        "id": "termination",
+        "title": "Explicit termination limits on every loop",
+        "why": "Max turns/tool calls per agent, max evaluator iterations, max handoffs, max concurrent subagents. 'Unaware of termination' and 'step repetition' account for ~28% of multi-agent failures in MAST.",
+        "citation": "MAST"
+      },
+      {
+        "id": "streaming",
+        "title": "Stream responses",
+        "why": "Perceived latency drops to time-to-first-token; long outputs must stream to avoid timeouts.",
+        "citation": "ANTHROPIC_CTX"
+      },
+      {
+        "id": "caching",
+        "title": "Prompt caching on the stable prefix (system prompt, tool schemas, reference docs)",
+        "why": "Multi-turn and multi-call topologies re-send the same prefix on every call; caching cuts cost up to ~90% and time-to-first-token.",
+        "citation": "ANTHROPIC_CTX"
+      },
+      {
+        "id": "parallel_tools",
+        "title": "Parallel tool use inside each agent turn",
+        "why": "Independent tool calls issued in one assistant turn cut rounds by 2-4x; return all results in one message.",
+        "citation": "ANTHROPIC_CTX"
+      },
+      {
+        "id": "context_editing",
+        "title": "Context editing (clear stale tool results/thinking)",
+        "why": "Keeps long loops lean without summarisation losses.",
+        "citation": "ANTHROPIC_CTX"
+      },
+      {
+        "id": "memory",
+        "title": "Memory across sessions (file/DB-backed)",
+        "why": "State that must outlive one conversation should be written to memory, not carried in context.",
+        "citation": "ANTHROPIC_CTX"
+      },
+      {
+        "id": "agentic_rag",
+        "title": "Agentic retrieval capped at ~4 iterations: start broad, then narrow",
+        "why": "Multi-hop retrieval buys accuracy (27% -> 43% EM on HotpotQA) at 3-20x latency; cap the loop and prefer short broad queries first, narrowing progressively.",
+        "citation": "RAG"
+      },
+      {
+        "id": "adaptive_rag",
+        "title": "Adaptive RAG: single-pass by default, escalate on failure signals",
+        "why": "Route simple queries to one retrieval; escalate to the multi-hop loop only on missing citations, low retrieval confidence, contradictions or repeated follow-ups.",
+        "citation": "RAG"
+      },
+      {
+        "id": "difficulty_router",
+        "title": "Consider a difficulty router in front",
+        "why": "Send easy requests to a small model and hard ones to the full path; the largest cost lever after caching.",
+        "citation": "ANTHROPIC_BEA"
+      }
+    ],
+    "briefing_rules": []
+  },
+  "mermaid": "flowchart TD\n    agent[\"Agent<br/><i>acme-onprem-70b</i>\"]",
+  "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"236\" height=\"176\" viewBox=\"0 0 236 176\" font-family=\"-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif\" font-size=\"12\">\n<defs><marker id=\"arr\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M0 0L10 5L0 10z\" fill=\"#5b6470\"/></marker></defs>\n<rect width=\"236\" height=\"176\" fill=\"#ffffff\"/>\n<rect x=\"30\" y=\"54\" width=\"176\" height=\"50\" rx=\"8\" fill=\"#1f5eff\" stroke=\"#0f1a33\" stroke-opacity=\"0.15\"/>\n<text x=\"118.0\" y=\"75\" fill=\"#ffffff\" text-anchor=\"middle\" font-weight=\"600\">Agent</text>\n<text x=\"118.0\" y=\"92\" fill=\"#ffffff\" fill-opacity=\"0.85\" text-anchor=\"middle\" font-size=\"10\">acme-onprem-70b \u00b7 effort n/a</text>\n<rect x=\"30\" y=\"10\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#0f1a33\" stroke=\"#0f1a33\" stroke-opacity=\"0.2\"/>\n<text x=\"46\" y=\"20\" fill=\"#5b6470\" font-size=\"10\">opus</text>\n<rect x=\"92\" y=\"10\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#1f5eff\" stroke=\"#0f1a33\" stroke-opacity=\"0.2\"/>\n<text x=\"108\" y=\"20\" fill=\"#5b6470\" font-size=\"10\">sonnet</text>\n<rect x=\"154\" y=\"10\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#6f9bff\" stroke=\"#0f1a33\" stroke-opacity=\"0.2\"/>\n<text x=\"170\" y=\"20\" fill=\"#5b6470\" font-size=\"10\">haiku</text>\n<rect x=\"216\" y=\"10\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#e9edf3\" stroke=\"#0f1a33\" stroke-opacity=\"0.2\"/>\n<text x=\"232\" y=\"20\" fill=\"#5b6470\" font-size=\"10\">code</text>\n</svg>",
+  "scan": {
+    "root": "/Users/saxena/Desktop/ClaudeCode_GIT/AgentTopologyBuilder/case_study/03_account_inquiry",
+    "files_scanned": 7,
+    "languages": {
+      "python": 3
+    },
+    "frameworks": [
+      "anthropic-sdk"
+    ],
+    "tools": [
+      "explain_balance_change",
+      "faq_lookup",
+      "get_balances",
+      "get_contributions_ytd",
+      "get_cost_basis",
+      "get_positions",
+      "get_transactions"
+    ],
+    "knowledge_sources": [
+      "pgvector",
+      "sql"
+    ],
+    "side_effects": [],
+    "current_topology": "single_agent",
+    "current_topology_reason": "A tool-use loop (or tool definitions) with no delegation.",
+    "evidence": [
+      {
+        "category": "frameworks",
+        "label": "anthropic-sdk",
+        "path": "app/assistant.py",
+        "line": 2,
+        "snippet": "import anthropic"
+      },
+      {
+        "category": "frameworks",
+        "label": "anthropic-sdk",
+        "path": "app/assistant.py",
+        "line": 10,
+        "snippet": "client = anthropic.Anthropic()"
+      },
+      {
+        "category": "agent_patterns",
+        "label": "tool runner",
+        "path": "app/assistant.py",
+        "line": 24,
+        "snippet": "runner = client.beta.messages.tool_runner("
+      },
+      {
+        "category": "agent_patterns",
+        "label": "tool runner",
+        "path": "app/assistant.py",
+        "line": 28,
+        "snippet": "final = runner.until_done()"
+      },
+      {
+        "category": "serving",
+        "label": "http-api",
+        "path": "app/assistant.py",
+        "line": 9,
+        "snippet": "app = FastAPI()"
+      },
+      {
+        "category": "serving",
+        "label": "websocket/streaming",
+        "path": "app/assistant.py",
+        "line": 1,
+        "snippet": "\"\"\"Account assistant: one tool-use loop behind a websocket, with Redis-backed memory.\"\"\""
+      },
+      {
+        "category": "frameworks",
+        "label": "anthropic-sdk",
+        "path": "app/tools.py",
+        "line": 3,
+        "snippet": "from anthropic import beta_tool"
+      },
+      {
+        "category": "tools",
+        "label": "python decorator tool",
+        "path": "app/tools.py",
+        "line": 7,
+        "snippet": "get_balances"
+      },
+      {
+        "category": "tools",
+        "label": "python decorator tool",
+        "path": "app/tools.py",
+        "line": 13,
+        "snippet": "get_positions"
+      },
+      {
+        "category": "tools",
+        "label": "python decorator tool",
+        "path": "app/tools.py",
+        "line": 19,
+        "snippet": "get_cost_basis"
+      },
+      {
+        "category": "tools",
+        "label": "python decorator tool",
+        "path": "app/tools.py",
+        "line": 25,
+        "snippet": "get_transactions"
+      },
+      {
+        "category": "tools",
+        "label": "python decorator tool",
+        "path": "app/tools.py",
+        "line": 31,
+        "snippet": "get_contributions_ytd"
+      },
+      {
+        "category": "retrieval",
+        "label": "pgvector",
+        "path": "app/tools.py",
+        "line": 4,
+        "snippet": "from pgvector.psycopg import register_vector"
+      },
+      {
+        "category": "retrieval",
+        "label": "pgvector",
+        "path": "app/tools.py",
+        "line": 45,
+        "snippet": "\"\"\"Semantic search over the approved FAQ / explanations knowledge base (pgvector).\"\"\""
+      },
+      {
+        "category": "retrieval",
+        "label": "sql",
+        "path": "app/tools.py",
+        "line": 4,
+        "snippet": "from pgvector.psycopg import register_vector"
+      },
+      {
+        "category": "quality",
+        "label": "tests",
+        "path": "tests/test_numbers_match.py",
+        "line": 1,
+        "snippet": "def test_answers_only_use_tool_numbers():"
+      }
+    ],
+    "inferred": [
+      {
+        "field": "tool_count",
+        "value": 7,
+        "confidence": 0.8,
+        "reason": "7 tool definitions found (decorators, schemas, MCP tools, OpenAPI operations)."
+      },
+      {
+        "field": "tool_calls_per_task",
+        "value": 4,
+        "confidence": 0.3,
+        "reason": "Rough: 7 tools and 0 tool-handling call sites; verify against traces."
+      },
+      {
+        "field": "tool_dependency",
+        "value": "sequential",
+        "confidence": 0.4,
+        "reason": "No concurrency primitives around tool calls."
+      },
+      {
+        "field": "tool_side_effects",
+        "value": "read_only",
+        "confidence": 0.6,
+        "reason": "No write/side-effect integrations detected."
+      },
+      {
+        "field": "knowledge_sources",
+        "value": 2,
+        "confidence": 0.6,
+        "reason": "Retrieval integrations: pgvector, sql"
+      },
+      {
+        "field": "retrieval_depth",
+        "value": "multi_hop",
+        "confidence": 0.5,
+        "reason": "Derived from sources (2) and whether a loop can issue follow-up queries."
+      },
+      {
+        "field": "context_tokens_per_task",
+        "value": 24500,
+        "confidence": 0.3,
+        "reason": "Rough function of sources and tools; replace with measured input tokens per request."
+      },
+      {
+        "field": "scope_breadth",
+        "value": 1,
+        "confidence": 0.4,
+        "reason": "1 file(s) define system prompts/instructions; routing/handoffs raise this."
+      },
+      {
+        "field": "parallel_subtasks",
+        "value": 1,
+        "confidence": 0.4,
+        "reason": "Single tool loop."
+      },
+      {
+        "field": "steps_predictable",
+        "value": false,
+        "confidence": 0.6,
+        "reason": "The model chooses steps at run time."
+      },
+      {
+        "field": "task_complexity",
+        "value": "moderate",
+        "confidence": 0.4,
+        "reason": "Tool loop with 7 tools."
+      },
+      {
+        "field": "latency_budget_s",
+        "value": 10.0,
+        "confidence": 0.4,
+        "reason": "Request/response serving implies an interactive budget."
+      },
+      {
+        "field": "interaction",
+        "value": "single_turn",
+        "confidence": 0.4,
+        "reason": "Serving surface and memory usage."
+      },
+      {
+        "field": "verifiability",
+        "value": "partial",
+        "confidence": 0.5,
+        "reason": "Tests or schema validation present."
+      },
+      {
+        "field": "tool_overlap",
+        "value": true,
+        "confidence": 0.5,
+        "reason": "Similarly named tools: get_balances, get_contributions_ytd, get_cost_basis, get_positions, get_transactions"
+      }
+    ],
+    "warnings": [],
+    "inferred_profile": {
+      "tool_count": 7,
+      "tool_calls_per_task": 4,
+      "tool_dependency": "sequential",
+      "tool_side_effects": "read_only",
+      "knowledge_sources": 2,
+      "retrieval_depth": "multi_hop",
+      "context_tokens_per_task": 24500,
+      "scope_breadth": 1,
+      "parallel_subtasks": 1,
+      "steps_predictable": false,
+      "task_complexity": "moderate",
+      "latency_budget_s": 10.0,
+      "interaction": "single_turn",
+      "verifiability": "partial",
+      "tool_overlap": true
+    }
+  },
+  "selection": {
+    "policy": {
+      "allowed_providers": null,
+      "blocked_providers": [],
+      "allowed_platforms": null,
+      "regions": null,
+      "require_verified": true,
+      "require_approved": true,
+      "prefer_provider": null,
+      "family_consistency_bonus": 0.25,
+      "deprecation_horizon_days": 180,
+      "max_alternatives": 4
+    },
+    "catalog": "case-study-ecosystem",
+    "choices": [
+      {
+        "component_id": "agent",
+        "role_type": "single_agent",
+        "requirements": {
+          "component_id": "agent",
+          "role_type": "single_agent",
+          "reasoning_level": 3,
+          "context_tokens": 10050,
+          "output_tokens": 180,
+          "needs_tools": true,
+          "tool_count": 7,
+          "needs_parallel_tools": true,
+          "needs_structured_output": false,
+          "needs_strict_schema": false,
+          "latency_share_s": 5.0,
+          "tool_rounds": 1,
+          "stakes": 5,
+          "calls_per_day": 400000.0,
+          "data_class": "restricted",
+          "modalities": [
+            "text"
+          ],
+          "task_family": "conversation",
+          "effort_hint": "max",
+          "independent_of": null,
+          "cache_group": "loop",
+          "notes": []
+        },
+        "model_id": "acme-onprem-70b",
+        "effort": "n/a",
+        "fallback_model_id": null,
+        "score": 1.857,
+        "est_latency_s": 5.0,
+        "est_cost_per_call": 0.00527,
+        "est_cost_per_day": 2108.0,
+        "rationale": [
+          "Tier 4 vs required 3; est. 5.0s of a 5.0s share; $0.0053 per call.",
+          "measured conversation accuracy 90%"
+        ],
+        "alternatives": [],
+        "rejected": [
+          {
+            "model_id": "claude-opus-5",
+            "reason": "not cleared for restricted data"
+          },
+          {
+            "model_id": "claude-sonnet-5",
+            "reason": "not cleared for restricted data"
+          },
+          {
+            "model_id": "claude-haiku-4-5",
+            "reason": "not cleared for restricted data"
+          },
+          {
+            "model_id": "acme-onprem-8b",
+            "reason": "capability tier 2 below required 3"
+          },
+          {
+            "model_id": "cloud-frontier-x",
+            "reason": "not approved by the platform team"
+          }
+        ]
+      }
+    ],
+    "warnings": [],
+    "unfilled": [],
+    "providers_used": [
+      "self_hosted"
+    ],
+    "families_used": [
+      "acme-open"
+    ],
+    "est_cost_per_day": 2108.0
+  },
+  "selected_estimate": {
+    "latency_s": 6.6,
+    "cost_usd": 0.0034,
+    "token_multiplier": 1.4,
+    "tiers_used": {
+      "opus": "acme-onprem-70b",
+      "sonnet": "acme-onprem-70b",
+      "haiku": "acme-onprem-70b"
+    }
+  },
+  "tiers": {
+    "opus": "acme-onprem-70b",
+    "sonnet": "acme-onprem-70b",
+    "haiku": "acme-onprem-70b"
+  }
+}

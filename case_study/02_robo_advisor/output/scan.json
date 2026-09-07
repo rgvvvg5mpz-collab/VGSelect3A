@@ -1,0 +1,304 @@
+{
+  "root": "/Users/saxena/Desktop/ClaudeCode_GIT/AgentTopologyBuilder/case_study/02_robo_advisor",
+  "files_scanned": 7,
+  "languages": {
+    "python": 2
+  },
+  "frameworks": [
+    "anthropic-sdk",
+    "langgraph"
+  ],
+  "tools": [
+    "contribution_limits",
+    "create_proposal",
+    "get_portfolio",
+    "market_data",
+    "risk_score",
+    "search_methodology",
+    "search_policy",
+    "search_products",
+    "suitability_check",
+    "tax_lots"
+  ],
+  "knowledge_sources": [
+    "elasticsearch"
+  ],
+  "side_effects": [
+    "external-post (irreversible)"
+  ],
+  "current_topology": "evaluator_optimizer",
+  "current_topology_reason": "Generator with an evaluator/critic and iteration cap.",
+  "evidence": [
+    {
+      "category": "frameworks",
+      "label": "anthropic-sdk",
+      "path": "app/advisor.py",
+      "line": 2,
+      "snippet": "import anthropic"
+    },
+    {
+      "category": "frameworks",
+      "label": "anthropic-sdk",
+      "path": "app/advisor.py",
+      "line": 10,
+      "snippet": "client = anthropic.Anthropic()"
+    },
+    {
+      "category": "frameworks",
+      "label": "langgraph",
+      "path": "app/advisor.py",
+      "line": 4,
+      "snippet": "from langgraph.checkpoint.memory import MemorySaver"
+    },
+    {
+      "category": "agent_patterns",
+      "label": "tool runner",
+      "path": "app/advisor.py",
+      "line": 23,
+      "snippet": "runner = client.beta.messages.tool_runner("
+    },
+    {
+      "category": "agent_patterns",
+      "label": "tool runner",
+      "path": "app/advisor.py",
+      "line": 27,
+      "snippet": "draft = runner.until_done()"
+    },
+    {
+      "category": "agent_patterns",
+      "label": "evaluator loop",
+      "path": "app/advisor.py",
+      "line": 1,
+      "snippet": "\"\"\"Single-prompt advisor with a compliance reviewer pass.\"\"\""
+    },
+    {
+      "category": "agent_patterns",
+      "label": "evaluator loop",
+      "path": "app/advisor.py",
+      "line": 14,
+      "snippet": "REVIEWER = \"\"\"You are the compliance reviewer. Check the draft answer against policy and the suitability result."
+    },
+    {
+      "category": "serving",
+      "label": "http-api",
+      "path": "app/advisor.py",
+      "line": 9,
+      "snippet": "app = FastAPI()"
+    },
+    {
+      "category": "quality",
+      "label": "human-approval",
+      "path": "app/advisor.py",
+      "line": 34,
+      "snippet": "requires_confirmation = verdict.startswith(\"flag\")"
+    },
+    {
+      "category": "quality",
+      "label": "memory",
+      "path": "app/advisor.py",
+      "line": 4,
+      "snippet": "from langgraph.checkpoint.memory import MemorySaver"
+    },
+    {
+      "category": "frameworks",
+      "label": "anthropic-sdk",
+      "path": "app/tools.py",
+      "line": 3,
+      "snippet": "from anthropic import beta_tool"
+    },
+    {
+      "category": "tools",
+      "label": "python decorator tool",
+      "path": "app/tools.py",
+      "line": 9,
+      "snippet": "get_portfolio"
+    },
+    {
+      "category": "tools",
+      "label": "python decorator tool",
+      "path": "app/tools.py",
+      "line": 15,
+      "snippet": "risk_score"
+    },
+    {
+      "category": "tools",
+      "label": "python decorator tool",
+      "path": "app/tools.py",
+      "line": 21,
+      "snippet": "tax_lots"
+    },
+    {
+      "category": "tools",
+      "label": "python decorator tool",
+      "path": "app/tools.py",
+      "line": 27,
+      "snippet": "contribution_limits"
+    },
+    {
+      "category": "tools",
+      "label": "python decorator tool",
+      "path": "app/tools.py",
+      "line": 33,
+      "snippet": "suitability_check"
+    },
+    {
+      "category": "retrieval",
+      "label": "elasticsearch",
+      "path": "app/tools.py",
+      "line": 4,
+      "snippet": "from opensearchpy import OpenSearch"
+    },
+    {
+      "category": "retrieval",
+      "label": "elasticsearch",
+      "path": "app/tools.py",
+      "line": 6,
+      "snippet": "kb = OpenSearch(hosts=[\"https://kb.internal:9200\"])"
+    },
+    {
+      "category": "side_effects",
+      "label": "external-post (irreversible)",
+      "path": "app/tools.py",
+      "line": 36,
+      "snippet": "return requests.post(\"https://rules.internal/suitability\", json={\"client_id\": client_id, \"proposal\": proposal}, timeout=5).text"
+    },
+    {
+      "category": "side_effects",
+      "label": "external-post (irreversible)",
+      "path": "app/tools.py",
+      "line": 66,
+      "snippet": "return requests.post(\"https://proposals.internal/draft\", json={\"client_id\": client_id, \"summary\": summary}, timeout=5).text"
+    }
+  ],
+  "inferred": [
+    {
+      "field": "tool_count",
+      "value": 10,
+      "confidence": 0.8,
+      "reason": "10 tool definitions found (decorators, schemas, MCP tools, OpenAPI operations)."
+    },
+    {
+      "field": "tool_calls_per_task",
+      "value": 6,
+      "confidence": 0.3,
+      "reason": "Rough: 10 tools and 0 tool-handling call sites; verify against traces."
+    },
+    {
+      "field": "tool_dependency",
+      "value": "sequential",
+      "confidence": 0.4,
+      "reason": "No concurrency primitives around tool calls."
+    },
+    {
+      "field": "tool_side_effects",
+      "value": "irreversible",
+      "confidence": 0.7,
+      "reason": "Side-effecting integrations: external-post (irreversible)"
+    },
+    {
+      "field": "knowledge_sources",
+      "value": 1,
+      "confidence": 0.6,
+      "reason": "Retrieval integrations: elasticsearch"
+    },
+    {
+      "field": "retrieval_depth",
+      "value": "multi_hop",
+      "confidence": 0.5,
+      "reason": "Derived from sources (1) and whether a loop can issue follow-up queries."
+    },
+    {
+      "field": "context_tokens_per_task",
+      "value": 23000,
+      "confidence": 0.3,
+      "reason": "Rough function of sources and tools; replace with measured input tokens per request."
+    },
+    {
+      "field": "scope_breadth",
+      "value": 1,
+      "confidence": 0.4,
+      "reason": "0 file(s) define system prompts/instructions; routing/handoffs raise this."
+    },
+    {
+      "field": "parallel_subtasks",
+      "value": 1,
+      "confidence": 0.4,
+      "reason": "Single tool loop."
+    },
+    {
+      "field": "steps_predictable",
+      "value": false,
+      "confidence": 0.6,
+      "reason": "The model chooses steps at run time."
+    },
+    {
+      "field": "task_complexity",
+      "value": "complex",
+      "confidence": 0.4,
+      "reason": "Tool loop with 10 tools."
+    },
+    {
+      "field": "latency_budget_s",
+      "value": 8.0,
+      "confidence": 0.4,
+      "reason": "Request/response serving implies an interactive budget."
+    },
+    {
+      "field": "interaction",
+      "value": "multi_turn",
+      "confidence": 0.4,
+      "reason": "Serving surface and memory usage."
+    },
+    {
+      "field": "verifiability",
+      "value": "none",
+      "confidence": 0.3,
+      "reason": "No tests, evals or schemas found."
+    },
+    {
+      "field": "human_in_loop",
+      "value": true,
+      "confidence": 0.6,
+      "reason": "Approval/confirmation logic present."
+    },
+    {
+      "field": "error_recoverability",
+      "value": "hard",
+      "confidence": 0.5,
+      "reason": "Irreversible integrations present."
+    },
+    {
+      "field": "accuracy_priority",
+      "value": 4,
+      "confidence": 0.4,
+      "reason": "Irreversible actions raise the cost of errors."
+    },
+    {
+      "field": "tool_overlap",
+      "value": true,
+      "confidence": 0.5,
+      "reason": "Similarly named tools: search_methodology, search_policy, search_products"
+    }
+  ],
+  "warnings": [],
+  "inferred_profile": {
+    "tool_count": 10,
+    "tool_calls_per_task": 6,
+    "tool_dependency": "sequential",
+    "tool_side_effects": "irreversible",
+    "knowledge_sources": 1,
+    "retrieval_depth": "multi_hop",
+    "context_tokens_per_task": 23000,
+    "scope_breadth": 1,
+    "parallel_subtasks": 1,
+    "steps_predictable": false,
+    "task_complexity": "complex",
+    "latency_budget_s": 8.0,
+    "interaction": "multi_turn",
+    "verifiability": "none",
+    "human_in_loop": true,
+    "error_recoverability": "hard",
+    "accuracy_priority": 4,
+    "tool_overlap": true
+  }
+}

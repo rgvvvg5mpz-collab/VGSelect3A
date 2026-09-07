@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="236" height="176" viewBox="0 0 236 176" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="12">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5b6470"/></marker></defs>
+<rect width="236" height="176" fill="#ffffff"/>
+<rect x="30" y="54" width="176" height="50" rx="8" fill="#1f5eff" stroke="#0f1a33" stroke-opacity="0.15"/>
+<text x="118.0" y="75" fill="#ffffff" text-anchor="middle" font-weight="600">Agent</text>
+<text x="118.0" y="92" fill="#ffffff" fill-opacity="0.85" text-anchor="middle" font-size="10">acme-onprem-70b · effort n/a</text>
+<rect x="30" y="10" width="12" height="12" rx="3" fill="#0f1a33" stroke="#0f1a33" stroke-opacity="0.2"/>
+<text x="46" y="20" fill="#5b6470" font-size="10">opus</text>
+<rect x="92" y="10" width="12" height="12" rx="3" fill="#1f5eff" stroke="#0f1a33" stroke-opacity="0.2"/>
+<text x="108" y="20" fill="#5b6470" font-size="10">sonnet</text>
+<rect x="154" y="10" width="12" height="12" rx="3" fill="#6f9bff" stroke="#0f1a33" stroke-opacity="0.2"/>
+<text x="170" y="20" fill="#5b6470" font-size="10">haiku</text>
+<rect x="216" y="10" width="12" height="12" rx="3" fill="#e9edf3" stroke="#0f1a33" stroke-opacity="0.2"/>
+<text x="232" y="20" fill="#5b6470" font-size="10">code</text>
+</svg>

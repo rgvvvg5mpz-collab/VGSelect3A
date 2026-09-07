@@ -1,0 +1,179 @@
+{
+  "root": "/Users/saxena/Desktop/ClaudeCode_GIT/AgentTopologyBuilder/case_study/01_call_summarization",
+  "files_scanned": 8,
+  "languages": {
+    "python": 3
+  },
+  "frameworks": [
+    "anthropic-sdk"
+  ],
+  "tools": [],
+  "knowledge_sources": [],
+  "side_effects": [
+    "external-post (irreversible)",
+    "ticket/crm (irreversible)"
+  ],
+  "current_topology": "single_call",
+  "current_topology_reason": "Model calls without tools or loops.",
+  "evidence": [
+    {
+      "category": "side_effects",
+      "label": "external-post (irreversible)",
+      "path": "app/crm.py",
+      "line": 10,
+      "snippet": "requests.post(\"https://hooks.internal/compliance\", json={\"call_id\": call_id, \"flags\": payload[\"compliance_flags\"]}, timeout=5)"
+    },
+    {
+      "category": "side_effects",
+      "label": "ticket/crm (irreversible)",
+      "path": "app/crm.py",
+      "line": 1,
+      "snippet": "\"\"\"Salesforce integration.\"\"\""
+    },
+    {
+      "category": "side_effects",
+      "label": "ticket/crm (irreversible)",
+      "path": "app/crm.py",
+      "line": 3,
+      "snippet": "from simple_salesforce import Salesforce"
+    },
+    {
+      "category": "frameworks",
+      "label": "anthropic-sdk",
+      "path": "app/pipeline.py",
+      "line": 4,
+      "snippet": "import anthropic"
+    },
+    {
+      "category": "frameworks",
+      "label": "anthropic-sdk",
+      "path": "app/pipeline.py",
+      "line": 11,
+      "snippet": "client = anthropic.Anthropic()"
+    },
+    {
+      "category": "serving",
+      "label": "batch/cron",
+      "path": "app/pipeline.py",
+      "line": 5,
+      "snippet": "from celery import Celery"
+    },
+    {
+      "category": "quality",
+      "label": "structured-output",
+      "path": "app/pipeline.py",
+      "line": 31,
+      "snippet": "response = client.messages.parse("
+    }
+  ],
+  "inferred": [
+    {
+      "field": "tool_count",
+      "value": 0,
+      "confidence": 0.5,
+      "reason": "No tool definitions found."
+    },
+    {
+      "field": "tool_calls_per_task",
+      "value": 0,
+      "confidence": 0.6,
+      "reason": "No tools found."
+    },
+    {
+      "field": "tool_side_effects",
+      "value": "irreversible",
+      "confidence": 0.7,
+      "reason": "Side-effecting integrations: external-post (irreversible), ticket/crm (irreversible)"
+    },
+    {
+      "field": "knowledge_sources",
+      "value": 0,
+      "confidence": 0.5,
+      "reason": "No retrieval integrations found."
+    },
+    {
+      "field": "retrieval_depth",
+      "value": "none",
+      "confidence": 0.5,
+      "reason": "Derived from sources (0) and whether a loop can issue follow-up queries."
+    },
+    {
+      "field": "context_tokens_per_task",
+      "value": 2000,
+      "confidence": 0.3,
+      "reason": "Rough function of sources and tools; replace with measured input tokens per request."
+    },
+    {
+      "field": "scope_breadth",
+      "value": 1,
+      "confidence": 0.4,
+      "reason": "1 file(s) define system prompts/instructions; routing/handoffs raise this."
+    },
+    {
+      "field": "parallel_subtasks",
+      "value": 1,
+      "confidence": 0.3,
+      "reason": "No orchestration detected."
+    },
+    {
+      "field": "steps_predictable",
+      "value": true,
+      "confidence": 0.5,
+      "reason": "No run-time planning detected."
+    },
+    {
+      "field": "task_complexity",
+      "value": "simple",
+      "confidence": 0.3,
+      "reason": "Defaulted from tool presence."
+    },
+    {
+      "field": "latency_budget_s",
+      "value": 3600.0,
+      "confidence": 0.5,
+      "reason": "Batch/cron execution: minutes to hours are acceptable."
+    },
+    {
+      "field": "interaction",
+      "value": "single_turn",
+      "confidence": 0.5,
+      "reason": "Batch jobs are single-shot."
+    },
+    {
+      "field": "verifiability",
+      "value": "partial",
+      "confidence": 0.5,
+      "reason": "Tests or schema validation present."
+    },
+    {
+      "field": "error_recoverability",
+      "value": "hard",
+      "confidence": 0.5,
+      "reason": "Irreversible integrations present."
+    },
+    {
+      "field": "accuracy_priority",
+      "value": 4,
+      "confidence": 0.4,
+      "reason": "Irreversible actions raise the cost of errors."
+    }
+  ],
+  "warnings": [],
+  "inferred_profile": {
+    "tool_count": 0,
+    "tool_calls_per_task": 0,
+    "tool_side_effects": "irreversible",
+    "knowledge_sources": 0,
+    "retrieval_depth": "none",
+    "context_tokens_per_task": 2000,
+    "scope_breadth": 1,
+    "parallel_subtasks": 1,
+    "steps_predictable": true,
+    "task_complexity": "simple",
+    "latency_budget_s": 3600.0,
+    "interaction": "single_turn",
+    "verifiability": "partial",
+    "error_recoverability": "hard",
+    "accuracy_priority": 4
+  }
+}

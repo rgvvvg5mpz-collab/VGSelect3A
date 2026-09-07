@@ -1,0 +1,6 @@
+anthropic>=1.0
+celery
+pydantic
+simple-salesforce
+requests
+promptfoo

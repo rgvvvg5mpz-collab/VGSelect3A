@@ -1,0 +1,23 @@
+{
+  "name": "account_inquiry",
+  "description": "In-app assistant answering questions about account balances, cost basis, contributions and balance changes from deterministic books-and-records APIs, with FAQ explanations.",
+  "task_complexity": "simple",
+  "steps_predictable": false,
+  "scope_breadth": 1,
+  "parallel_subtasks": 1,
+  "output_type": "short_answer",
+  "tool_dependency": "independent",
+  "context_tokens_per_task": 6000,
+  "accuracy_priority": 5,
+  "verifiability": "strong",
+  "error_recoverability": "easy",
+  "latency_budget_s": 5,
+  "interaction": "multi_turn",
+  "requests_per_day": 200000,
+  "cost_sensitivity": 5,
+  "human_in_loop": false,
+  "data_sensitivity": "restricted",
+  "single_agent_baseline": 0.88,
+  "tool_calls_per_task": 2,
+  "tool_latency_s": 0.3
+}

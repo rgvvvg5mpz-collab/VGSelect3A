@@ -1,0 +1,6 @@
+anthropic>=1.0
+fastapi
+opensearch-py
+requests
+langgraph
+langsmith

@@ -1,0 +1,6 @@
+flowchart TD
+    extract["Extract<br/><i>claude-sonnet-5</i>"]
+    validate[["Validate (code)<br/><i>code</i>"]]
+    finalize["Finalize<br/><i>claude-sonnet-5</i>"]
+    extract -->|gate: validate output| validate
+    validate -->|gate: validate output| finalize

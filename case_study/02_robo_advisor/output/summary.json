@@ -1,0 +1,84 @@
+{
+  "case": "02_robo_advisor",
+  "name": "robo_advisor",
+  "current_topology": "evaluator_optimizer",
+  "recommended": "router",
+  "recommended_name": "Router / classifier dispatch",
+  "score": 1.05,
+  "latency_s": 26.8,
+  "budget_s": 15.0,
+  "verdict": "exceeds",
+  "cost_usd": 0.4141,
+  "tokens_x": 1.7,
+  "selected_latency_s": 15.7,
+  "selected_cost_usd": 0.0231,
+  "current_score": -5.72,
+  "current_latency_s": 81.5,
+  "fastest_viable": null,
+  "most_accurate": "Router / classifier dispatch",
+  "models": [
+    [
+      "router",
+      "claude-haiku-4-5",
+      "n/a",
+      "claude-sonnet-5"
+    ],
+    [
+      "handler_1",
+      "acme-onprem-70b",
+      "n/a",
+      "claude-sonnet-5"
+    ],
+    [
+      "handler_2",
+      "acme-onprem-70b",
+      "n/a",
+      "claude-sonnet-5"
+    ],
+    [
+      "handler_3",
+      "acme-onprem-70b",
+      "n/a",
+      "claude-sonnet-5"
+    ],
+    [
+      "handler_4",
+      "acme-onprem-70b",
+      "n/a",
+      "claude-sonnet-5"
+    ]
+  ],
+  "unfilled": [],
+  "warnings": [],
+  "providers": [
+    "anthropic",
+    "self_hosted"
+  ],
+  "top_reasons": [
+    "4 distinct domains: route each request to a specialist prompt/agent instead of one prompt carrying every domain's instructions and tools.",
+    "Routing to specialists gives each a small, non-overlapping tool set."
+  ],
+  "scan_tools": [
+    "contribution_limits",
+    "create_proposal",
+    "get_portfolio",
+    "market_data",
+    "risk_score",
+    "search_methodology",
+    "search_policy",
+    "search_products",
+    "suitability_check",
+    "tax_lots"
+  ],
+  "scan_sources": [
+    "elasticsearch"
+  ],
+  "scan_side_effects": [
+    "external-post (irreversible)"
+  ],
+  "scan_frameworks": [
+    "anthropic-sdk",
+    "langgraph"
+  ],
+  "files": 7
+}

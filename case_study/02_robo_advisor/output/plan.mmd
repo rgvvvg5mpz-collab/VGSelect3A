@@ -1,0 +1,10 @@
+flowchart TD
+    router["Router<br/><i>claude-haiku-4-5</i>"]
+    handler_1["financial planning specialist<br/><i>acme-onprem-70b</i>"]
+    handler_2["tax specialist<br/><i>acme-onprem-70b</i>"]
+    handler_3["risk specialist<br/><i>acme-onprem-70b</i>"]
+    handler_4["products specialist<br/><i>acme-onprem-70b</i>"]
+    router -->|financial planning| handler_1
+    router -->|tax| handler_2
+    router -->|risk| handler_3
+    router -->|products| handler_4

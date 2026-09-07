@@ -1,0 +1,284 @@
+{
+  "name": "case-study-ecosystem",
+  "_comment": "FICTIONAL case-study ecosystem. The Anthropic entries mirror the bundled catalog. The ACME on-prem model and the third-party cloud entries are invented for the case studies: capability, serving and price numbers are illustrative fixtures marked verified only so the selector will use them here. Do not reuse this file in production.",
+  "models": [
+    {
+      "id": "claude-opus-5",
+      "display_name": "Claude Opus 5",
+      "provider": "anthropic",
+      "family": "claude-5",
+      "platforms": [
+        "anthropic_api",
+        "bedrock",
+        "vertex",
+        "foundry"
+      ],
+      "regions": [
+        "global",
+        "us",
+        "eu"
+      ],
+      "approved": true,
+      "data_classes": [
+        "public",
+        "internal",
+        "confidential"
+      ],
+      "retention": "standard",
+      "reasoning_tier": 5,
+      "tool_use": 3,
+      "structured_output": true,
+      "strict_schema": true,
+      "context_window": 1000000,
+      "max_output": 128000,
+      "modalities": [
+        "text",
+        "image",
+        "pdf"
+      ],
+      "thinking": true,
+      "effort_control": true,
+      "ttft_s": 1.5,
+      "tokens_per_s": 55,
+      "batch": true,
+      "input_price": 5.0,
+      "output_price": 25.0,
+      "cache_read_price": 0.5,
+      "batch_discount": 0.5,
+      "evidence": {},
+      "langchain_provider": "anthropic",
+      "illustrative": false,
+      "verified_on": "2026-06-24"
+    },
+    {
+      "id": "claude-sonnet-5",
+      "display_name": "Claude Sonnet 5",
+      "provider": "anthropic",
+      "family": "claude-5",
+      "platforms": [
+        "anthropic_api",
+        "bedrock",
+        "vertex",
+        "foundry"
+      ],
+      "regions": [
+        "global",
+        "us",
+        "eu"
+      ],
+      "approved": true,
+      "data_classes": [
+        "public",
+        "internal",
+        "confidential"
+      ],
+      "retention": "standard",
+      "reasoning_tier": 4,
+      "tool_use": 3,
+      "structured_output": true,
+      "strict_schema": true,
+      "context_window": 1000000,
+      "max_output": 128000,
+      "modalities": [
+        "text",
+        "image",
+        "pdf"
+      ],
+      "thinking": true,
+      "effort_control": true,
+      "ttft_s": 1.0,
+      "tokens_per_s": 85,
+      "batch": true,
+      "input_price": 2.0,
+      "output_price": 10.0,
+      "cache_read_price": 0.2,
+      "batch_discount": 0.5,
+      "evidence": {
+        "extraction": 0.9,
+        "conversation": 0.88
+      },
+      "langchain_provider": "anthropic",
+      "illustrative": false,
+      "verified_on": "2026-06-24"
+    },
+    {
+      "id": "claude-haiku-4-5",
+      "display_name": "Claude Haiku 4.5",
+      "provider": "anthropic",
+      "family": "claude-4",
+      "platforms": [
+        "anthropic_api",
+        "bedrock",
+        "vertex",
+        "foundry"
+      ],
+      "regions": [
+        "global",
+        "us",
+        "eu"
+      ],
+      "approved": true,
+      "data_classes": [
+        "public",
+        "internal",
+        "confidential"
+      ],
+      "retention": "standard",
+      "reasoning_tier": 3,
+      "tool_use": 2,
+      "structured_output": true,
+      "strict_schema": true,
+      "context_window": 200000,
+      "max_output": 64000,
+      "modalities": [
+        "text",
+        "image"
+      ],
+      "thinking": true,
+      "effort_control": false,
+      "ttft_s": 0.6,
+      "tokens_per_s": 140,
+      "batch": true,
+      "input_price": 1.0,
+      "output_price": 5.0,
+      "cache_read_price": 0.1,
+      "batch_discount": 0.5,
+      "evidence": {
+        "classification": 0.93
+      },
+      "langchain_provider": "anthropic",
+      "illustrative": false,
+      "verified_on": "2026-06-24"
+    },
+    {
+      "id": "acme-onprem-70b",
+      "display_name": "ACME on-prem 70B (fictional)",
+      "provider": "self_hosted",
+      "family": "acme-open",
+      "platforms": [
+        "self_hosted"
+      ],
+      "regions": [
+        "on_prem"
+      ],
+      "approved": true,
+      "data_classes": [
+        "public",
+        "internal",
+        "confidential",
+        "restricted"
+      ],
+      "retention": "zero",
+      "reasoning_tier": 4,
+      "tool_use": 2,
+      "structured_output": true,
+      "strict_schema": false,
+      "context_window": 128000,
+      "max_output": 16000,
+      "modalities": [
+        "text"
+      ],
+      "thinking": false,
+      "effort_control": false,
+      "ttft_s": 0.5,
+      "tokens_per_s": 90,
+      "rpm": 1200,
+      "max_concurrency": 64,
+      "batch": false,
+      "input_price": 0.25,
+      "output_price": 0.75,
+      "evidence": {
+        "conversation": 0.9,
+        "classification": 0.92
+      },
+      "langchain_provider": "openai",
+      "illustrative": false,
+      "verified_on": "2026-09-07",
+      "notes": "FICTIONAL. vLLM behind an OpenAI-compatible gateway; the only model cleared for restricted client data in this case study."
+    },
+    {
+      "id": "acme-onprem-8b",
+      "display_name": "ACME on-prem 8B (fictional)",
+      "provider": "self_hosted",
+      "family": "acme-open",
+      "platforms": [
+        "self_hosted"
+      ],
+      "regions": [
+        "on_prem"
+      ],
+      "approved": true,
+      "data_classes": [
+        "public",
+        "internal",
+        "confidential",
+        "restricted"
+      ],
+      "retention": "zero",
+      "reasoning_tier": 2,
+      "tool_use": 1,
+      "structured_output": true,
+      "strict_schema": false,
+      "context_window": 32000,
+      "max_output": 4000,
+      "modalities": [
+        "text"
+      ],
+      "thinking": false,
+      "effort_control": false,
+      "ttft_s": 0.3,
+      "tokens_per_s": 160,
+      "rpm": 3000,
+      "max_concurrency": 128,
+      "batch": false,
+      "input_price": 0.05,
+      "output_price": 0.15,
+      "evidence": {
+        "classification": 0.9
+      },
+      "langchain_provider": "openai",
+      "illustrative": false,
+      "verified_on": "2026-09-07",
+      "notes": "FICTIONAL. Router/classifier tier, restricted-data cleared."
+    },
+    {
+      "id": "cloud-frontier-x",
+      "display_name": "Third-party cloud frontier model (fictional)",
+      "provider": "other",
+      "family": "cloud-x",
+      "platforms": [
+        "other"
+      ],
+      "regions": [
+        "us"
+      ],
+      "approved": false,
+      "data_classes": [
+        "public"
+      ],
+      "retention": "standard",
+      "reasoning_tier": 5,
+      "tool_use": 3,
+      "structured_output": true,
+      "strict_schema": true,
+      "context_window": 400000,
+      "max_output": 64000,
+      "modalities": [
+        "text",
+        "image"
+      ],
+      "thinking": true,
+      "effort_control": true,
+      "ttft_s": 1.4,
+      "tokens_per_s": 60,
+      "batch": true,
+      "input_price": 4.0,
+      "output_price": 20.0,
+      "evidence": {},
+      "langchain_provider": "openai",
+      "illustrative": false,
+      "verified_on": "2026-09-07",
+      "notes": "FICTIONAL. Present to show an unapproved, public-data-only model being rejected with reasons."
+    }
+  ]
+}

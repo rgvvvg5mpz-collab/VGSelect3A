@@ -1,0 +1,22 @@
+{
+  "name": "call_summarization",
+  "description": "Post-call summarisation for a contact centre: summary, intents, commitments and compliance flags posted to the CRM within a minute of call end.",
+  "task_complexity": "moderate",
+  "steps_predictable": true,
+  "scope_breadth": 1,
+  "parallel_subtasks": 1,
+  "output_type": "structured_data",
+  "tool_calls_per_task": 1,
+  "tool_dependency": "sequential",
+  "context_tokens_per_task": 9000,
+  "accuracy_priority": 4,
+  "verifiability": "strong",
+  "error_recoverability": "moderate",
+  "latency_budget_s": 60,
+  "interaction": "single_turn",
+  "requests_per_day": 50000,
+  "cost_sensitivity": 4,
+  "human_in_loop": false,
+  "data_sensitivity": "confidential",
+  "single_agent_baseline": 0.78
+}

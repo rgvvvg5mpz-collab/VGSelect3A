@@ -1,0 +1,892 @@
+{
+  "profile": {
+    "name": "call_summarization",
+    "description": "Post-call summarisation for a contact centre: summary, intents, commitments and compliance flags posted to the CRM within a minute of call end.",
+    "task_complexity": "moderate",
+    "steps_predictable": true,
+    "scope_breadth": 1,
+    "parallel_subtasks": 1,
+    "output_type": "structured_data",
+    "tool_count": 0,
+    "tool_calls_per_task": 1,
+    "tool_dependency": "sequential",
+    "tool_side_effects": "irreversible",
+    "tool_overlap": false,
+    "tool_latency_s": 0.5,
+    "knowledge_sources": 0,
+    "retrieval_depth": "none",
+    "context_tokens_per_task": 9000,
+    "accuracy_priority": 4,
+    "single_agent_baseline": 0.78,
+    "verifiability": "strong",
+    "error_recoverability": "moderate",
+    "latency_budget_s": 60.0,
+    "interaction": "single_turn",
+    "requests_per_day": 50000,
+    "cost_sensitivity": 4,
+    "human_in_loop": false,
+    "data_sensitivity": "confidential",
+    "tools": [],
+    "sources": []
+  },
+  "headline": "Recommended: **Prompt chain (sequential workflow)** (score +3.2; est. p50 latency ~26s vs budget 60s, ~2x tokens of one call). The repository currently implements **Single model call** (score +0.2, ~9s); the recommendation changes the topology.",
+  "primary": "prompt_chain",
+  "candidates": [
+    {
+      "topology": "prompt_chain",
+      "name": "Prompt chain (sequential workflow)",
+      "family": "workflow",
+      "score": 3.25,
+      "fit": 2.5,
+      "quality_proxy": 2.5,
+      "latency_adj": 1.0,
+      "cost_adj": -0.25,
+      "latency_verdict": "fits",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 25.8,
+        "cost_usd": 0.0448,
+        "llm_calls": 4,
+        "total_tokens": 22750,
+        "token_multiplier": 1.8,
+        "assumptions": [
+          "3 sequential stages with programmatic gates between them."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R03",
+          "topology_id": "prompt_chain",
+          "delta": 2.5,
+          "rationale": "Steps are predictable: a code-defined chain with gates beats an agent deciding the path (more predictable, cheaper, easier to test).",
+          "citation": "ANTHROPIC_BEA"
+        }
+      ]
+    },
+    {
+      "topology": "single_agent",
+      "name": "Single agent with tools",
+      "family": "single",
+      "score": 1.46,
+      "fit": 1.5,
+      "quality_proxy": 1.5,
+      "latency_adj": 1.0,
+      "cost_adj": -1.04,
+      "latency_verdict": "fits",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 13.5,
+        "cost_usd": 0.0888,
+        "llm_calls": 2,
+        "total_tokens": 15550,
+        "token_multiplier": 1.3,
+        "assumptions": [
+          "1 sequential tool round(s) for 1 tool calls (batching by dependency=sequential)."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R03",
+          "topology_id": "single_agent",
+          "delta": -0.5,
+          "rationale": "Predictable steps do not need run-time planning.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R37",
+          "topology_id": "single_agent",
+          "delta": 2.0,
+          "rationale": "A 78% single-agent baseline is the regime where one agent plus a better model/effort/tools wins.",
+          "citation": "SCALING"
+        }
+      ]
+    },
+    {
+      "topology": "single_call",
+      "name": "Single model call",
+      "family": "single",
+      "score": 0.24,
+      "fit": 0,
+      "quality_proxy": 0,
+      "latency_adj": 1.0,
+      "cost_adj": -0.76,
+      "latency_verdict": "fits",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 8.8,
+        "cost_usd": 0.07,
+        "llm_calls": 1,
+        "total_tokens": 12400,
+        "token_multiplier": 1.0,
+        "assumptions": [
+          "One claude-opus-5 call; retrieval (if any) done in code before the call."
+        ]
+      },
+      "signals": []
+    },
+    {
+      "topology": "router",
+      "name": "Router / classifier dispatch",
+      "family": "workflow",
+      "score": 0.19,
+      "fit": 0.0,
+      "quality_proxy": -1.0,
+      "latency_adj": 1.0,
+      "cost_adj": -0.81,
+      "latency_verdict": "fits",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 9.5,
+        "cost_usd": 0.0731,
+        "llm_calls": 2,
+        "total_tokens": 15420,
+        "token_multiplier": 1.2,
+        "assumptions": [
+          "Small-model router (~20 output tokens) then one specialist handler."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R12",
+          "topology_id": "router",
+          "delta": -1.0,
+          "rationale": "Single domain: nothing to route between (unless routing by difficulty for cost).",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R26",
+          "topology_id": "router",
+          "delta": 1.0,
+          "rationale": "Routing easy requests to a small model is the cheapest accuracy-preserving lever.",
+          "citation": "ANTHROPIC_BEA"
+        }
+      ]
+    },
+    {
+      "topology": "evaluator_optimizer",
+      "name": "Evaluator-optimizer loop",
+      "family": "workflow",
+      "score": -0.16,
+      "fit": 1.5,
+      "quality_proxy": 2.5,
+      "latency_adj": 0.27,
+      "cost_adj": -1.93,
+      "latency_verdict": "tight",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 43.6,
+        "cost_usd": 0.1929,
+        "llm_calls": 6,
+        "total_tokens": 31395,
+        "token_multiplier": 2.5,
+        "assumptions": [
+          "2 generate/evaluate iterations (worst case); most requests exit after the first accepted evaluation."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R18",
+          "topology_id": "evaluator_optimizer",
+          "delta": 2.5,
+          "rationale": "High accuracy priority and an objective check: generate -> evaluate -> refine converts test/rubric feedback into measurable gains.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R26",
+          "topology_id": "evaluator_optimizer",
+          "delta": -1.0,
+          "rationale": "Cost-sensitive: token multipliers of 3-25x over a single call must be justified by task value.",
+          "citation": "ANTHROPIC_MAR"
+        }
+      ]
+    },
+    {
+      "topology": "parallel_voting",
+      "name": "Parallel voting / ensemble",
+      "family": "workflow",
+      "score": -0.34,
+      "fit": 1.0,
+      "quality_proxy": 2.5,
+      "latency_adj": 1.0,
+      "cost_adj": -2.34,
+      "latency_verdict": "fits",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 15.3,
+        "cost_usd": 0.2737,
+        "llm_calls": 6,
+        "total_tokens": 46950,
+        "token_multiplier": 3.8,
+        "assumptions": [
+          "3 parallel claude-opus-5 samples; majority vote in code (no judge call)."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R20",
+          "topology_id": "parallel_voting",
+          "delta": 2.5,
+          "rationale": "High-stakes bounded decision: several independent votes/judges raise confidence at parallel (not serial) latency cost.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R26",
+          "topology_id": "parallel_voting",
+          "delta": -1.5,
+          "rationale": "Cost-sensitive: token multipliers of 3-25x over a single call must be justified by task value.",
+          "citation": "ANTHROPIC_MAR"
+        }
+      ]
+    },
+    {
+      "topology": "orchestrator_workers",
+      "name": "Orchestrator + worker subagents",
+      "family": "multi_agent",
+      "score": -9.61,
+      "fit": -9.0,
+      "quality_proxy": -7.0,
+      "latency_adj": 0.33,
+      "cost_adj": -0.94,
+      "latency_verdict": "fits",
+      "viable": true,
+      "infeasible_reason": "",
+      "estimate": {
+        "latency_s": 40.4,
+        "cost_usd": 0.0818,
+        "llm_calls": 4,
+        "total_tokens": 25400,
+        "token_multiplier": 2.0,
+        "assumptions": [
+          "2 Sonnet-tier workers in 1 wave(s) of <= 10, each with ~0 tool calls; Opus-tier lead plans and synthesises."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R02",
+          "topology_id": "orchestrator_workers",
+          "delta": -3.0,
+          "rationale": "Multi-agent coordination is not justified below complex/open-ended tasks; it costs ~15x tokens and adds failure modes.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R03",
+          "topology_id": "orchestrator_workers",
+          "delta": -1.0,
+          "rationale": "Dynamic decomposition adds nothing when sub-tasks are known in advance; prefer code-defined parallel sectioning.",
+          "citation": "ANTHROPIC_BEA"
+        },
+        {
+          "rule_id": "R26",
+          "topology_id": "orchestrator_workers",
+          "delta": -2.0,
+          "rationale": "Cost-sensitive: token multipliers of 3-25x over a single call must be justified by task value.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R37",
+          "topology_id": "orchestrator_workers",
+          "delta": -3.0,
+          "rationale": "Single-agent baseline is 78%: above ~45% the scaling study found negative returns from adding agents (capability saturation). Improve the model/prompt/tools instead.",
+          "citation": "SCALING"
+        }
+      ]
+    },
+    {
+      "topology": "parallel_sectioning",
+      "name": "Parallel sectioning (code-defined fan-out)",
+      "family": "workflow",
+      "score": 1.0,
+      "fit": 0,
+      "quality_proxy": 0,
+      "latency_adj": 1.0,
+      "cost_adj": -0.0,
+      "latency_verdict": "fits",
+      "viable": false,
+      "infeasible_reason": "nothing to fan out",
+      "estimate": {
+        "latency_s": 16.7,
+        "cost_usd": 0.0361,
+        "llm_calls": 5,
+        "total_tokens": 26550,
+        "token_multiplier": 2.1,
+        "assumptions": [
+          "2 code-defined branches run concurrently, then one aggregation call."
+        ]
+      },
+      "signals": []
+    },
+    {
+      "topology": "handoff_network",
+      "name": "Specialist handoffs (decentralised)",
+      "family": "multi_agent",
+      "score": -4.75,
+      "fit": -4.0,
+      "quality_proxy": -4.0,
+      "latency_adj": 1.0,
+      "cost_adj": -1.75,
+      "latency_verdict": "fits",
+      "viable": false,
+      "infeasible_reason": "no second specialist to hand off to",
+      "estimate": {
+        "latency_s": 27.6,
+        "cost_usd": 0.1643,
+        "llm_calls": 5,
+        "total_tokens": 28650,
+        "token_multiplier": 2.3,
+        "assumptions": [
+          "One handoff per request assumed (specialist A -> B); each handoff re-briefs the next agent."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R12",
+          "topology_id": "handoff_network",
+          "delta": -2.0,
+          "rationale": "Single domain: nothing to hand off between.",
+          "citation": "OPENAI_PG"
+        },
+        {
+          "rule_id": "R37",
+          "topology_id": "handoff_network",
+          "delta": -2.0,
+          "rationale": "Single-agent baseline is 78%: above ~45% the scaling study found negative returns from adding agents (capability saturation). Improve the model/prompt/tools instead.",
+          "citation": "SCALING"
+        }
+      ]
+    },
+    {
+      "topology": "hierarchical",
+      "name": "Hierarchical teams (orchestrator -> leads -> workers)",
+      "family": "multi_agent",
+      "score": -16.64,
+      "fit": -13.0,
+      "quality_proxy": -10.0,
+      "latency_adj": -1.44,
+      "cost_adj": -2.2,
+      "latency_verdict": "exceeds",
+      "viable": false,
+      "infeasible_reason": "no domains or sub-task volume to justify two levels",
+      "estimate": {
+        "latency_s": 76.8,
+        "cost_usd": 0.2419,
+        "llm_calls": 22,
+        "total_tokens": 97400,
+        "token_multiplier": 7.9,
+        "assumptions": [
+          "2 leads x 2 workers; two delegation levels add two extra plan/synthesis hops."
+        ]
+      },
+      "signals": [
+        {
+          "rule_id": "R02",
+          "topology_id": "hierarchical",
+          "delta": -3.0,
+          "rationale": "Multi-agent coordination is not justified below complex/open-ended tasks; it costs ~15x tokens and adds failure modes.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R12",
+          "topology_id": "hierarchical",
+          "delta": -3.0,
+          "rationale": "Single domain: no reason for a second delegation level.",
+          "citation": "COGNITION"
+        },
+        {
+          "rule_id": "R26",
+          "topology_id": "hierarchical",
+          "delta": -3.0,
+          "rationale": "Cost-sensitive: token multipliers of 3-25x over a single call must be justified by task value.",
+          "citation": "ANTHROPIC_MAR"
+        },
+        {
+          "rule_id": "R37",
+          "topology_id": "hierarchical",
+          "delta": -4.0,
+          "rationale": "Single-agent baseline is 78%: above ~45% the scaling study found negative returns from adding agents (capability saturation). Improve the model/prompt/tools instead.",
+          "citation": "SCALING"
+        }
+      ]
+    }
+  ],
+  "frontier": [
+    "single_call",
+    "single_agent",
+    "parallel_voting"
+  ],
+  "fastest_viable": "single_call",
+  "most_accurate": "parallel_voting",
+  "plan": {
+    "topology": "prompt_chain",
+    "components": [
+      {
+        "id": "extract",
+        "name": "Extract",
+        "role": "Pull candidate fields from the input (tools if needed).",
+        "tier": "sonnet",
+        "effort": "high",
+        "tools": "",
+        "parallel_group": null,
+        "notes": [],
+        "chosen_model": "claude-sonnet-5",
+        "provider": "anthropic",
+        "fallback_model": "claude-haiku-4-5",
+        "model_id": "claude-sonnet-5"
+      },
+      {
+        "id": "validate",
+        "name": "Validate (code)",
+        "role": "Schema and business-rule checks in code; reject or route back.",
+        "tier": "code",
+        "effort": "medium",
+        "tools": "",
+        "parallel_group": null,
+        "notes": [],
+        "chosen_model": null,
+        "provider": null,
+        "fallback_model": null,
+        "model_id": "code"
+      },
+      {
+        "id": "finalize",
+        "name": "Finalize",
+        "role": "Resolve ambiguities and emit the final structured record.",
+        "tier": "opus",
+        "effort": "high",
+        "tools": "",
+        "parallel_group": null,
+        "notes": [],
+        "chosen_model": "claude-sonnet-5",
+        "provider": "anthropic",
+        "fallback_model": "claude-haiku-4-5",
+        "model_id": "claude-sonnet-5"
+      }
+    ],
+    "edges": [
+      {
+        "src": "extract",
+        "dst": "validate",
+        "label": "gate: validate output"
+      },
+      {
+        "src": "validate",
+        "dst": "finalize",
+        "label": "gate: validate output"
+      }
+    ],
+    "augmentations": [
+      {
+        "id": "evals",
+        "title": "Build a ~20-query eval before adding any structure",
+        "why": "Every source agrees: measure a single agent/call first, then add topology only where the eval shows it failing. Above a ~45% single-agent baseline, adding agents tended to hurt in the scaling study. Keep the eval to compare latency and accuracy across topologies.",
+        "citation": "SCALING"
+      },
+      {
+        "id": "caching",
+        "title": "Prompt caching on the stable prefix (system prompt, tool schemas, reference docs)",
+        "why": "Multi-turn and multi-call topologies re-send the same prefix on every call; caching cuts cost up to ~90% and time-to-first-token.",
+        "citation": "ANTHROPIC_CTX"
+      },
+      {
+        "id": "structured_outputs",
+        "title": "Structured outputs (JSON schema) for routers, extractors and votes",
+        "why": "Removes parsing failures and makes code-side gates and majority votes trivial.",
+        "citation": "ANTHROPIC_BEA"
+      },
+      {
+        "id": "gate",
+        "title": "Dedicated, gated tools for irreversible actions with checkpoints/rollback",
+        "why": "Promote side-effecting actions to typed tools so the harness can intercept, confirm, audit and roll back; never let them run through a generic shell tool.",
+        "citation": "ANTHROPIC_BEA"
+      },
+      {
+        "id": "difficulty_router",
+        "title": "Consider a difficulty router in front",
+        "why": "Send easy requests to a small model and hard ones to the full path; the largest cost lever after caching.",
+        "citation": "ANTHROPIC_BEA"
+      }
+    ],
+    "briefing_rules": []
+  },
+  "mermaid": "flowchart TD\n    extract[\"Extract<br/><i>claude-sonnet-5</i>\"]\n    validate[[\"Validate (code)<br/><i>code</i>\"]]\n    finalize[\"Finalize<br/><i>claude-sonnet-5</i>\"]\n    extract -->|gate: validate output| validate\n    validate -->|gate: validate output| finalize",
+  "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"236\" height=\"420\" viewBox=\"0 0 236 420\" font-family=\"-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif\" font-size=\"12\">\n<defs><marker id=\"arr\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"8\" markerHeight=\"8\" orient=\"auto-start-reverse\"><path d=\"M0 0L10 5L0 10z\" fill=\"#5b6470\"/></marker></defs>\n<rect width=\"236\" height=\"420\" fill=\"#ffffff\"/>\n<line x1=\"100\" y1=\"104\" x2=\"100\" y2=\"176\" stroke=\"#5b6470\" stroke-width=\"1.4\" marker-end=\"url(#arr)\"/>\n<text x=\"100\" y=\"137\" fill=\"#5b6470\" font-size=\"10\" text-anchor=\"middle\">gate: validate output</text>\n<line x1=\"100\" y1=\"226\" x2=\"100\" y2=\"298\" stroke=\"#5b6470\" stroke-width=\"1.4\" marker-end=\"url(#arr)\"/>\n<text x=\"100\" y=\"259\" fill=\"#5b6470\" font-size=\"10\" text-anchor=\"middle\">gate: validate output</text>\n<rect x=\"30\" y=\"54\" width=\"176\" height=\"50\" rx=\"8\" fill=\"#1f5eff\" stroke=\"#0f1a33\" stroke-opacity=\"0.15\"/>\n<text x=\"118.0\" y=\"75\" fill=\"#ffffff\" text-anchor=\"middle\" font-weight=\"600\">Extract</text>\n<text x=\"118.0\" y=\"92\" fill=\"#ffffff\" fill-opacity=\"0.85\" text-anchor=\"middle\" font-size=\"10\">claude-sonnet-5 \u00b7 effort high</text>\n<rect x=\"30\" y=\"176\" width=\"176\" height=\"50\" rx=\"8\" fill=\"#e9edf3\" stroke=\"#0f1a33\" stroke-opacity=\"0.15\"/>\n<text x=\"118.0\" y=\"197\" fill=\"#1c2128\" text-anchor=\"middle\" font-weight=\"600\">Validate (code)</text>\n<text x=\"118.0\" y=\"214\" fill=\"#1c2128\" fill-opacity=\"0.85\" text-anchor=\"middle\" font-size=\"10\">code \u00b7 effort medium</text>\n<rect x=\"30\" y=\"298\" width=\"176\" height=\"50\" rx=\"8\" fill=\"#0f1a33\" stroke=\"#0f1a33\" stroke-opacity=\"0.15\"/>\n<text x=\"118.0\" y=\"319\" fill=\"#ffffff\" text-anchor=\"middle\" font-weight=\"600\">Finalize</text>\n<text x=\"118.0\" y=\"336\" fill=\"#ffffff\" fill-opacity=\"0.85\" text-anchor=\"middle\" font-size=\"10\">claude-sonnet-5 \u00b7 effort high</text>\n<rect x=\"30\" y=\"10\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#0f1a33\" stroke=\"#0f1a33\" stroke-opacity=\"0.2\"/>\n<text x=\"46\" y=\"20\" fill=\"#5b6470\" font-size=\"10\">opus</text>\n<rect x=\"92\" y=\"10\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#1f5eff\" stroke=\"#0f1a33\" stroke-opacity=\"0.2\"/>\n<text x=\"108\" y=\"20\" fill=\"#5b6470\" font-size=\"10\">sonnet</text>\n<rect x=\"154\" y=\"10\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#6f9bff\" stroke=\"#0f1a33\" stroke-opacity=\"0.2\"/>\n<text x=\"170\" y=\"20\" fill=\"#5b6470\" font-size=\"10\">haiku</text>\n<rect x=\"216\" y=\"10\" width=\"12\" height=\"12\" rx=\"3\" fill=\"#e9edf3\" stroke=\"#0f1a33\" stroke-opacity=\"0.2\"/>\n<text x=\"232\" y=\"20\" fill=\"#5b6470\" font-size=\"10\">code</text>\n</svg>",
+  "scan": {
+    "root": "/Users/saxena/Desktop/ClaudeCode_GIT/AgentTopologyBuilder/case_study/01_call_summarization",
+    "files_scanned": 8,
+    "languages": {
+      "python": 3
+    },
+    "frameworks": [
+      "anthropic-sdk"
+    ],
+    "tools": [],
+    "knowledge_sources": [],
+    "side_effects": [
+      "external-post (irreversible)",
+      "ticket/crm (irreversible)"
+    ],
+    "current_topology": "single_call",
+    "current_topology_reason": "Model calls without tools or loops.",
+    "evidence": [
+      {
+        "category": "side_effects",
+        "label": "external-post (irreversible)",
+        "path": "app/crm.py",
+        "line": 10,
+        "snippet": "requests.post(\"https://hooks.internal/compliance\", json={\"call_id\": call_id, \"flags\": payload[\"compliance_flags\"]}, timeout=5)"
+      },
+      {
+        "category": "side_effects",
+        "label": "ticket/crm (irreversible)",
+        "path": "app/crm.py",
+        "line": 1,
+        "snippet": "\"\"\"Salesforce integration.\"\"\""
+      },
+      {
+        "category": "side_effects",
+        "label": "ticket/crm (irreversible)",
+        "path": "app/crm.py",
+        "line": 3,
+        "snippet": "from simple_salesforce import Salesforce"
+      },
+      {
+        "category": "frameworks",
+        "label": "anthropic-sdk",
+        "path": "app/pipeline.py",
+        "line": 4,
+        "snippet": "import anthropic"
+      },
+      {
+        "category": "frameworks",
+        "label": "anthropic-sdk",
+        "path": "app/pipeline.py",
+        "line": 11,
+        "snippet": "client = anthropic.Anthropic()"
+      },
+      {
+        "category": "serving",
+        "label": "batch/cron",
+        "path": "app/pipeline.py",
+        "line": 5,
+        "snippet": "from celery import Celery"
+      },
+      {
+        "category": "quality",
+        "label": "structured-output",
+        "path": "app/pipeline.py",
+        "line": 31,
+        "snippet": "response = client.messages.parse("
+      }
+    ],
+    "inferred": [
+      {
+        "field": "tool_count",
+        "value": 0,
+        "confidence": 0.5,
+        "reason": "No tool definitions found."
+      },
+      {
+        "field": "tool_calls_per_task",
+        "value": 0,
+        "confidence": 0.6,
+        "reason": "No tools found."
+      },
+      {
+        "field": "tool_side_effects",
+        "value": "irreversible",
+        "confidence": 0.7,
+        "reason": "Side-effecting integrations: external-post (irreversible), ticket/crm (irreversible)"
+      },
+      {
+        "field": "knowledge_sources",
+        "value": 0,
+        "confidence": 0.5,
+        "reason": "No retrieval integrations found."
+      },
+      {
+        "field": "retrieval_depth",
+        "value": "none",
+        "confidence": 0.5,
+        "reason": "Derived from sources (0) and whether a loop can issue follow-up queries."
+      },
+      {
+        "field": "context_tokens_per_task",
+        "value": 2000,
+        "confidence": 0.3,
+        "reason": "Rough function of sources and tools; replace with measured input tokens per request."
+      },
+      {
+        "field": "scope_breadth",
+        "value": 1,
+        "confidence": 0.4,
+        "reason": "1 file(s) define system prompts/instructions; routing/handoffs raise this."
+      },
+      {
+        "field": "parallel_subtasks",
+        "value": 1,
+        "confidence": 0.3,
+        "reason": "No orchestration detected."
+      },
+      {
+        "field": "steps_predictable",
+        "value": true,
+        "confidence": 0.5,
+        "reason": "No run-time planning detected."
+      },
+      {
+        "field": "task_complexity",
+        "value": "simple",
+        "confidence": 0.3,
+        "reason": "Defaulted from tool presence."
+      },
+      {
+        "field": "latency_budget_s",
+        "value": 3600.0,
+        "confidence": 0.5,
+        "reason": "Batch/cron execution: minutes to hours are acceptable."
+      },
+      {
+        "field": "interaction",
+        "value": "single_turn",
+        "confidence": 0.5,
+        "reason": "Batch jobs are single-shot."
+      },
+      {
+        "field": "verifiability",
+        "value": "partial",
+        "confidence": 0.5,
+        "reason": "Tests or schema validation present."
+      },
+      {
+        "field": "error_recoverability",
+        "value": "hard",
+        "confidence": 0.5,
+        "reason": "Irreversible integrations present."
+      },
+      {
+        "field": "accuracy_priority",
+        "value": 4,
+        "confidence": 0.4,
+        "reason": "Irreversible actions raise the cost of errors."
+      }
+    ],
+    "warnings": [],
+    "inferred_profile": {
+      "tool_count": 0,
+      "tool_calls_per_task": 0,
+      "tool_side_effects": "irreversible",
+      "knowledge_sources": 0,
+      "retrieval_depth": "none",
+      "context_tokens_per_task": 2000,
+      "scope_breadth": 1,
+      "parallel_subtasks": 1,
+      "steps_predictable": true,
+      "task_complexity": "simple",
+      "latency_budget_s": 3600.0,
+      "interaction": "single_turn",
+      "verifiability": "partial",
+      "error_recoverability": "hard",
+      "accuracy_priority": 4
+    }
+  },
+  "selection": {
+    "policy": {
+      "allowed_providers": null,
+      "blocked_providers": [],
+      "allowed_platforms": null,
+      "regions": null,
+      "require_verified": true,
+      "require_approved": true,
+      "prefer_provider": null,
+      "family_consistency_bonus": 0.25,
+      "deprecation_horizon_days": 180,
+      "max_alternatives": 4
+    },
+    "catalog": "case-study-ecosystem",
+    "choices": [
+      {
+        "component_id": "extract",
+        "role_type": "stage",
+        "requirements": {
+          "component_id": "extract",
+          "role_type": "stage",
+          "reasoning_level": 3,
+          "context_tokens": 12000,
+          "output_tokens": 400,
+          "needs_tools": true,
+          "tool_count": 0,
+          "needs_parallel_tools": false,
+          "needs_structured_output": true,
+          "needs_strict_schema": true,
+          "latency_share_s": 30.0,
+          "tool_rounds": 1,
+          "stakes": 3,
+          "calls_per_day": 100000.0,
+          "data_class": "confidential",
+          "modalities": [
+            "text"
+          ],
+          "task_family": "extraction",
+          "effort_hint": "high",
+          "independent_of": null,
+          "cache_group": null,
+          "notes": []
+        },
+        "model_id": "claude-sonnet-5",
+        "effort": "high",
+        "fallback_model_id": "claude-haiku-4-5",
+        "score": 1.583,
+        "est_latency_s": 9.0,
+        "est_cost_per_call": 0.0535,
+        "est_cost_per_day": 5350.0,
+        "rationale": [
+          "Tier 4 vs required 3; est. 9.0s of a 30.0s share; $0.0535 per call.",
+          "measured extraction accuracy 90%"
+        ],
+        "alternatives": [
+          {
+            "model_id": "claude-haiku-4-5",
+            "score": 1.4,
+            "quality": 1.1,
+            "latency_adj": 0.3,
+            "cost_adj": -0.0,
+            "est_latency_s": 5.6,
+            "est_cost_per_call": 0.02675,
+            "notes": []
+          },
+          {
+            "model_id": "claude-opus-5",
+            "score": 0.152,
+            "quality": 1.4,
+            "latency_adj": 0.3,
+            "cost_adj": -1.548,
+            "est_latency_s": 13.5,
+            "est_cost_per_call": 0.13375,
+            "notes": [
+              "over-provisioned for a low-stakes role under cost pressure"
+            ]
+          }
+        ],
+        "rejected": [
+          {
+            "model_id": "acme-onprem-70b",
+            "reason": "no strict schema enforcement (high-stakes structured output)"
+          },
+          {
+            "model_id": "acme-onprem-8b",
+            "reason": "no strict schema enforcement (high-stakes structured output)"
+          },
+          {
+            "model_id": "cloud-frontier-x",
+            "reason": "not approved by the platform team"
+          }
+        ]
+      },
+      {
+        "component_id": "finalize",
+        "role_type": "synthesizer",
+        "requirements": {
+          "component_id": "finalize",
+          "role_type": "synthesizer",
+          "reasoning_level": 3,
+          "context_tokens": 5700,
+          "output_tokens": 400,
+          "needs_tools": false,
+          "tool_count": 0,
+          "needs_parallel_tools": false,
+          "needs_structured_output": true,
+          "needs_strict_schema": true,
+          "latency_share_s": 30.0,
+          "tool_rounds": 0,
+          "stakes": 4,
+          "calls_per_day": 50000.0,
+          "data_class": "confidential",
+          "modalities": [
+            "text"
+          ],
+          "task_family": "extraction",
+          "effort_hint": "high",
+          "independent_of": null,
+          "cache_group": null,
+          "notes": []
+        },
+        "model_id": "claude-sonnet-5",
+        "effort": "high",
+        "fallback_model_id": "claude-haiku-4-5",
+        "score": 1.673,
+        "est_latency_s": 5.7,
+        "est_cost_per_call": 0.0154,
+        "est_cost_per_day": 770.0,
+        "rationale": [
+          "Tier 4 vs required 3; est. 5.7s of a 30.0s share; $0.0154 per call.",
+          "measured extraction accuracy 90%"
+        ],
+        "alternatives": [
+          {
+            "model_id": "claude-haiku-4-5",
+            "score": 1.4,
+            "quality": 1.1,
+            "latency_adj": 0.3,
+            "cost_adj": -0.0,
+            "est_latency_s": 3.5,
+            "est_cost_per_call": 0.0077,
+            "notes": []
+          },
+          {
+            "model_id": "claude-opus-5",
+            "score": 0.445,
+            "quality": 1.6,
+            "latency_adj": 0.3,
+            "cost_adj": -1.455,
+            "est_latency_s": 8.8,
+            "est_cost_per_call": 0.0385,
+            "notes": []
+          }
+        ],
+        "rejected": [
+          {
+            "model_id": "acme-onprem-70b",
+            "reason": "no strict schema enforcement (high-stakes structured output)"
+          },
+          {
+            "model_id": "acme-onprem-8b",
+            "reason": "no strict schema enforcement (high-stakes structured output)"
+          },
+          {
+            "model_id": "cloud-frontier-x",
+            "reason": "not approved by the platform team"
+          }
+        ]
+      }
+    ],
+    "warnings": [],
+    "unfilled": [],
+    "providers_used": [
+      "anthropic"
+    ],
+    "families_used": [
+      "claude-5"
+    ],
+    "est_cost_per_day": 6120.0
+  },
+  "selected_estimate": {
+    "latency_s": 25.1,
+    "cost_usd": 0.0595,
+    "token_multiplier": 1.8,
+    "tiers_used": {
+      "opus": "claude-sonnet-5",
+      "sonnet": "claude-sonnet-5",
+      "haiku": "claude-haiku-4-5"
+    }
+  },
+  "tiers": {
+    "opus": "claude-opus-5",
+    "sonnet": "acme-onprem-70b",
+    "haiku": "claude-haiku-4-5"
+  }
+}

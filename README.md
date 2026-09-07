@@ -67,6 +67,7 @@ Full write-up: [docs/METHODOLOGY.html](docs/METHODOLOGY.html) and [docs/MODEL_CA
 | Everyone | [Industry guidance](docs/industry_guidance.html) - the evidence behind every rule and how vendor patterns map to topologies |
 | API consumers | [OpenAPI spec](openapi/vgselect-3a.openapi.json) - also live at `/openapi.json`, Swagger at `/docs` |
 | Claude Code users | [Skill](.claude/skills/vg-select-3a/SKILL.md) - scan, recommend, and produce both deliverables from the editor |
+| Everyone | [Case studies](case_study/README.md) - three fictional applications run end to end: scan, recommendation, PDF, skeleton, model per role |
 | Maintainers | [Changelog](CHANGELOG.md) |
 
 ## Quick start
@@ -213,7 +214,8 @@ src/vgselect3a/
   examples/         eight canonical profiles
 docs/               executive brief, deployment guide, consumer guide, methodology, model catalog, industry guidance
 openapi/            exported OpenAPI 3 document (scripts/export_openapi.py)
-scripts/            OpenAPI export
+scripts/            OpenAPI export, Markdown-to-HTML converter
+case_study/         three mock applications with every 3A output (scan, recommendation, PDF, skeleton) and a runner
 .claude/skills/     Claude Code skill
 .claude/launch.json dev-server config for the Claude Code browser preview
 tests/              engine, scanner (fixture repo), catalog and selection, API, PDF and skeleton tests
