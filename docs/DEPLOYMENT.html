@@ -132,7 +132,7 @@ curl -s http://localhost:8080/api/v1/recommend/skeleton -H 'content-type: applic
   <li>Bump the version in the <code>Dockerfile</code> tag and <code>CHANGELOG.md</code> together with <code>pyproject.toml</code>.</li>
 </ul>
 <h3>Developer preview</h3>
-<p><code>.claude/launch.json</code> starts the service on port 8765 for the Claude Code browser preview with <code>tests/fixtures</code> as the scan root. It expects <code>uvicorn</code> and the service dependencies importable by <code>python3</code>; activate a virtual environment with the <code>service</code> extra first.</p>
+<p><code>.claude/launch.json</code> starts the service on port 8765 for the Claude Code browser preview, using the project's <code>.venv</code> (create it with <code>python3 -m venv .venv && .venv/bin/pip install -e '.[service]'</code>) and the repository itself as the scan root.</p>
 <div class="ok">Also ship the Claude Code skill in <code>.claude/skills/vg-select-3a/</code> to engineering teams (copy it to <code>~/.claude/skills/</code> or their project's <code>.claude/skills/</code>) and set <code>VGSELECT_URL</code> to your deployment so the skill calls the service.</div>
 </body>
 </html>
