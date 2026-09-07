@@ -21,7 +21,7 @@
 <p class="sub">For the engineer deploying <b>VG Select: 3A (Automated Agentic Architecture)</b> as an internal service. Consumers of the running service should read <code>docs/CONSUMER_GUIDE.html</code>.</p>
 
 <nav>
-  <a href="#what">What you are deploying</a><a href="#prereq">Prerequisites</a><a href="#local">Run locally</a><a href="#docker">Docker</a><a href="#config">Configuration</a><a href="#security">Security</a><a href="#ops">Operations</a><a href="#verify">Verify</a><a href="#upgrade">Upgrade</a>
+  <a href="#what">What you are deploying</a><a href="#prereq">Prerequisites</a><a href="#local">Run locally</a><a href="#docker">Docker</a><a href="#config">Configuration</a><a href="#models">Models catalog</a><a href="#security">Security</a><a href="#ops">Operations</a><a href="#verify">Verify</a><a href="#upgrade">Upgrade</a>
 </nav>
 
 <h2 id="what">1. What you are deploying</h2>
@@ -80,10 +80,67 @@ livenessProbe:   { httpGet: { path: /health, port: 8080 }, periodSeconds: 30 }</
 <tr><td><code>VGSELECT_SCAN_ROOTS</code></td><td>empty (path scanning disabled)</td><td>Colon-separated directories that <code>POST /api/v1/scan {path}</code> may read. Paths outside these roots return 403.</td></tr>
 <tr><td><code>VGSELECT_ALLOW_GIT_CLONE</code></td><td><code>0</code></td><td>Set to <code>1</code> to allow <code>POST /api/v1/scan {git_url}</code> (shallow clone into a temp dir, deleted afterwards). Only https://, ssh:// and git@ URLs are accepted.</td></tr>
 <tr><td><code>VGSELECT_MAX_UPLOAD_MB</code></td><td><code>50</code></td><td>Maximum zip size for <code>/api/v1/scan/upload</code>.</td></tr>
-<tr><td><code>VGSELECT_CATALOG</code></td><td>bundled default</td><td>Path to your model ecosystem catalog JSON (schema in <code>docs/MODEL_CATALOG.html</code>). The bundled default has verified Anthropic entries and placeholder entries for other providers, which are excluded until verified.</td></tr>
+<tr><td><code>VGSELECT_CATALOG</code></td><td>bundled default</td><td>Path to your model ecosystem catalog JSON (schema in <code>docs/MODEL_CATALOG.html</code>; how to maintain it in section 5a). Read at start-up; restart after changes.</td></tr>
 <tr><td><code>VGSELECT_CORS_ORIGINS</code></td><td>empty</td><td>Comma-separated origins allowed to call the API from a browser on another host.</td></tr>
 <tr><td><code>ANTHROPIC_API_KEY</code></td><td>unset</td><td>Enables <code>/api/v1/describe</code> when the <code>llm</code> extra is installed. <code>VGSELECT_DESCRIBE_ENABLED=1</code> enables it when credentials come from an <code>ant auth login</code> profile instead.</td></tr>
 </table>
+
+<h2 id="models">5a. Managing the available models</h2>
+<p>The set of models a role can be staffed with is <b>data, not code</b>: a JSON catalog. Changing which models are available, their prices, limits, approval or data clearance never requires a code change or a new image.</p>
+
+<h3>Where the catalog lives</h3>
+<table>
+<tr><th>Situation</th><th>Location</th></tr>
+<tr><td>Nothing configured</td><td>The bundled default inside the package: <code>src/vgselect3a/catalogs/default.json</code>. It has <b>verified</b> entries for the current Anthropic models and <b>placeholder</b> entries (<code>"illustrative": true</code>) for OpenAI, Google, self-hosted open-weights and Mistral models. Placeholders are never selected until you replace their numbers and mark them verified.</td></tr>
+<tr><td>Production (recommended)</td><td>Your own file, kept in version control next to your model registry, and passed with <code>VGSELECT_CATALOG=/path/catalog.json</code>. In Docker: <code>-v /srv/vgselect/catalog.json:/catalog.json:ro -e VGSELECT_CATALOG=/catalog.json</code>. In Kubernetes: a ConfigMap mounted at that path.</td></tr>
+<tr><td>Per request (experiments)</td><td>Callers can send extra or overriding entries in <code>catalog_models</code> on any recommend, scan, PDF or skeleton request. These are merged over the server catalog for that request only and are never stored.</td></tr>
+</table>
+<div class="warn">The catalog is read once at process start. After editing the file, restart the service (rolling restart in Kubernetes). <code>GET /health</code> reports the active catalog name and model count, and <code>GET /api/v1/catalog</code> returns the full active catalog, so you can confirm the new version is live.</div>
+
+<h3>How to add, change or retire a model</h3>
+<ol>
+  <li><b>Start from the bundled file</b> if you do not have one yet: <code>python -c "import importlib.resources as r; print(r.files('vgselect3a')/'catalogs'/'default.json')"</code> prints its path; copy it and edit the copy.</li>
+  <li><b>Add or edit an entry.</b> One object per model; the full schema is in <code>docs/MODEL_CATALOG.html</code>. The fields that decide selection:
+    <ul>
+      <li><code>approved</code>: false keeps the model in the catalog but rejects it for every role (the report shows "not approved by the platform team"). Use this to stage a model before clearance.</li>
+      <li><code>data_classes</code>: which of <code>public</code>, <code>internal</code>, <code>confidential</code>, <code>restricted</code> the model may see. A role is only staffed by models cleared for the request's <code>data_sensitivity</code>.</li>
+      <li><code>platforms</code> and <code>regions</code>: where the model is reachable and served; request policies filter on both.</li>
+      <li><code>reasoning_tier</code> (1-5), <code>tool_use</code> (0-3), <code>structured_output</code>, <code>strict_schema</code>, <code>context_window</code>, <code>max_output</code>, <code>modalities</code>, <code>thinking</code>, <code>effort_control</code>: capability facts used as hard filters and floors.</li>
+      <li><code>ttft_s</code>, <code>tokens_per_s</code>, <code>input_price</code>, <code>output_price</code>: latency and cost per role and per request. Take them from vendor price lists and your gateway telemetry.</li>
+      <li><code>evidence</code>: measured accuracy per task family from your evals; the strongest signal the selector has and the only thing that can lift a lower-tier model into a role.</li>
+      <li><code>langchain_provider</code>: the provider key the generated skeleton passes to <code>init_chat_model</code> (defaulted from <code>provider</code>; set it for self-hosted OpenAI-compatible endpoints, Bedrock, Vertex, Azure).</li>
+      <li><code>illustrative</code>: set to <code>false</code> and fill <code>verified_on</code> once the numbers are real; otherwise the entry stays excluded by the default policy.</li>
+      <li><code>deprecation_date</code>: set it when a vendor announces retirement; the selector penalises the model six months ahead and rejects it after the date.</li>
+    </ul>
+  </li>
+  <li><b>Retire a model</b> by setting <code>approved: false</code> (keeps history and rejection reasons visible) or by removing the entry.</li>
+  <li><b>Validate</b> before deploying: <code>vgselect catalog --catalog catalog.json</code> lists the entries and fails on schema errors or duplicate ids; or <code>POST /api/v1/catalog/validate</code> with the list of entries against a running instance.</li>
+  <li><b>Deploy and restart</b>, then confirm with <code>GET /health</code> and run one recommendation to see the new model appear in "Model selection per role" (or in a role's rejected list with the reason).</li>
+</ol>
+
+<h3>Worked example: registering a self-hosted model cleared for restricted data</h3>
+<pre><code>{
+  "id": "acme-llama-70b", "display_name": "ACME Llama 70B (on-prem)", "provider": "self_hosted", "family": "llama",
+  "platforms": ["self_hosted"], "regions": ["on_prem"],
+  "approved": true, "data_classes": ["public", "internal", "confidential", "restricted"], "retention": "zero",
+  "reasoning_tier": 4, "tool_use": 2, "structured_output": true, "strict_schema": false,
+  "context_window": 128000, "max_output": 16000, "modalities": ["text"],
+  "thinking": false, "effort_control": false,
+  "ttft_s": 0.7, "tokens_per_s": 65, "rpm": 600, "max_concurrency": 32, "batch": false,
+  "input_price": 0.25, "output_price": 0.75,
+  "evidence": {"extraction": 0.91, "classification": 0.95},
+  "langchain_provider": "openai", "illustrative": false, "verified_on": "2026-09-07",
+  "notes": "vLLM behind an OpenAI-compatible gateway; set OPENAI_BASE_URL in the skeleton .env"
+}</code></pre>
+<p>Restricted-data workloads will now be staffed by this model where its tier and evidence satisfy the role, and the generated skeleton will list <code>langchain-openai</code> and an <code>OPENAI_BASE_URL</code> line for it.</p>
+
+<h3>Operational checklist</h3>
+<ul>
+  <li>One catalog per environment; review changes like code (approval, data clearance and regions are governance decisions).</li>
+  <li>Refresh prices and serving figures on a schedule; record <code>verified_on</code>.</li>
+  <li>Feed <code>evidence</code> from your eval pipeline whenever a task family is re-measured.</li>
+  <li>Never rely on placeholder numbers: keep <code>illustrative: true</code> until verified, and keep the default policy (<code>require_verified</code>) on in production.</li>
+</ul>
 
 <h2 id="security">6. Security model</h2>
 <div class="warn"><b>The service ships without authentication.</b> Deploy it behind your API gateway, SSO proxy, or service mesh. Anyone who can reach the port can scan whatever the allow-list permits and, if git cloning is enabled, make the host clone arbitrary repositories.</div>
