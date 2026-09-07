@@ -185,16 +185,18 @@
 <main>
   <section class="inputs" aria-label="Inputs">
     <div class="card">
-      <div class="step"><span class="n">1</span><h2>Start from</h2></div>
+      <div class="step"><span class="n">1</span><h2>Start from</h2><button class="tip" type="button" data-tip="Any starting point works and none is required. An example fills the profile with a known scenario; scanning code pre-fills it from what your repository does; describing the app asks Claude to fill it; from scratch leaves the defaults. Whatever you pick, every field stays editable in step 2 before you ask for the recommendation." aria-label="About starting points">i</button><span class="muted">optional</span></div>
       <div class="seg" role="tablist" aria-label="Input source">
-        <button role="tab" aria-selected="true" data-pane="example">Example</button>
-        <button role="tab" aria-selected="false" data-pane="scan">Scan code</button>
-        <button role="tab" aria-selected="false" data-pane="describe">Describe</button>
-        <button role="tab" aria-selected="false" data-pane="blank">Blank</button>
+        <button role="tab" aria-selected="true" data-pane="example" data-tip="Load one of eight bundled scenarios (FAQ bot, deep research, coding agent, ...) as a starting point, then edit any field." class="dn">Example</button>
+        <button role="tab" aria-selected="false" data-pane="scan" data-tip="Upload a zip of your repository (or point at a server path / git URL). The scanner infers tools, retrieval, side effects, the current agent loop and the serving surface, each with a confidence, and pre-fills the profile." class="dn">Scan code</button>
+        <button role="tab" aria-selected="false" data-pane="describe" data-tip="Write a few sentences about the application. Claude fills in the profile; the recommendation itself stays deterministic. Needs Anthropic credentials on the server." class="dn">Describe</button>
+        <button role="tab" aria-selected="false" data-pane="blank" data-tip="Skip the helpers and fill in step 2 yourself. Every field has a sensible default; the ones marked key matter most." class="dn">From scratch</button>
       </div>
+      <p class="hint" style="margin:8px 0 0">Pick whichever you have. Not sure? Load an example and edit it, or go straight to step 2: the defaults already describe a moderate single-domain task.</p>
       <div class="pane on" id="pane-example">
-        <div class="field"><div class="lbl">Pick a scenario <button class="tip" type="button" data-tip="Eight canonical workloads. Loading one fills every field below; edit anything before recommending." aria-label="About examples">i</button></div>
-          <select id="example" aria-label="Example scenario"><option value="">Choose a scenario…</option></select></div>
+        <div class="field"><div class="lbl">Pick a scenario <button class="tip" type="button" data-tip="Eight canonical workloads. Loading one fills every field in step 2; edit anything before recommending." aria-label="About examples">i</button></div>
+          <select id="example" aria-label="Example scenario"><option value="">Choose a scenario…</option></select>
+          <div class="help">Loading a scenario overwrites the fields in step 2; use Reset to return to defaults.</div></div>
       </div>
       <div class="pane" id="pane-scan">
         <p class="lede">Scanning reads your code for tools, data sources, side effects and existing agent loops, and pre-fills the profile with a confidence for each inference. Your entries in step 2 override anything inferred.</p>
@@ -209,9 +211,9 @@
         <div class="field"><textarea id="describe-text" placeholder="A support agent that looks up orders, issues refunds and opens tickets. 20k chats a day; answers within about 8 seconds; refunds must never be wrong."></textarea></div>
         <div class="cta"><button class="btn" id="btn-describe">Infer profile and recommend</button></div>
       </div>
-      <div class="pane" id="pane-blank"><p class="lede">Fill in step 2 from scratch. Every field has a sensible default; the ones that matter most are marked.</p></div>
+      <div class="pane" id="pane-blank"><p class="lede">Nothing to load. Fill in step 2 below; every field has a sensible default and the ones marked <span class="badge info" style="font-size:10px;padding:1px 7px">key</span> matter most. Hover any <span class="tip" style="display:inline-flex">i</span> for what a field means.</p></div>
 
-      <div class="step"><span class="n">2</span><h2>Describe the workload</h2><span class="muted" id="setcount"></span></div>
+      <div class="step"><span class="n">2</span><h2>Describe the workload</h2><button class="tip" type="button" data-tip="The profile the recommendation runs on. Whatever step 1 filled in is shown here and can be changed. Fields marked key change the answer most; the sentence below the form restates what you are asking for." aria-label="About the workload profile">i</button><span class="muted" id="setcount"></span></div>
       <form id="profile-form" aria-label="Workload profile"></form>
       <details class="grp" id="ecosystem"><summary>Model ecosystem <span class="cnt" id="eco-cnt"></span></summary>
         <p class="lede">Which catalog models may staff each role. Each role's needs (capability, latency share, context, tools, data class) are derived from the plan; the selector matches them against the catalog.</p>
@@ -222,7 +224,7 @@
       </details>
       <div class="summary" id="summary" aria-live="polite"></div>
 
-      <div class="step"><span class="n">3</span><h2>Get the recommendation</h2></div>
+      <div class="step"><span class="n">3</span><h2>Get the recommendation</h2><button class="tip" type="button" data-tip="Ranks ten architectures with cited rules, estimates latency and cost, staffs each role from the model catalog, and produces the plan. Results appear on the right; the PDF and skeleton downloads are on the verdict card." aria-label="About the recommendation">i</button></div>
       <div class="cta"><button class="btn" id="btn-recommend">Recommend architecture</button><button class="btn ghost" id="btn-reset" type="button">Reset</button></div>
       <div class="err" id="error" role="alert"></div>
     </div>
@@ -234,7 +236,7 @@
       <div style="font-size:15px;color:var(--ink)"><b>Your recommendation will appear here.</b></div>
       <div>Three steps: pick a starting point, describe the workload, get a ranked, cited recommendation with a build plan.</div>
       <div class="steps">
-        <div><b>1 · Start</b>Load a scenario, scan a repository, or describe the app.</div>
+        <div><b>1 · Start (optional)</b>Load a scenario, scan a repository, describe the app, or skip straight to step 2.</div>
         <div><b>2 · Describe</b>Set the latency budget, how costly errors are, and cost sensitivity. These drive the trade-off.</div>
         <div><b>3 · Decide</b>Compare options on latency, cost and evidence; take the plan and next steps to your design review.</div>
       </div>
