@@ -41,7 +41,7 @@ same scan, profile and download steps with a tooltip on every field.
 
 | Surface | When |
 |---|---|
-| Web UI at `/` | Design reviews and first looks. Three steps: start from a scenario, scan, description or blank; describe the workload; get the verdict, comparison, chart, plan, next steps and both downloads. |
+| Web UI at `/` | Design reviews and first looks. Three steps: start from a scenario, scan, description or blank; describe the workload and constrain the model ecosystem; get the verdict, comparison, chart, model per role, plan, next steps and both downloads. |
 | REST API (`/api/v1/*`, OpenAPI at `/openapi.json`, Swagger at `/docs`, ReDoc at `/redoc`) | CI checks, architecture linting, internal tooling, generated clients |
 | CLI `vgselect` (`pip install -e '.[pdf]'` from this repository) | Local use without the service; the same reports, PDF and skeleton |
 | Claude Code skill `.claude/skills/vg-select-3a` | Ask Claude Code "which architecture should this agent use?"; it scans, asks for the missing fields, recommends, and writes the PDF and skeleton |
@@ -134,6 +134,25 @@ components in the plan and the tool stubs in the skeleton (for example
 Latency and cost are order-of-magnitude estimates for ranking, computed from
 published serving assumptions and your tool latency. Do not quote them as
 measurements.
+
+## 5b. Model per role
+
+Every plan component is staffed from the model ecosystem catalog under your
+policy. Send a `policy` with any request:
+
+```json
+{"profile": {...}, "policy": {"allowed_providers": ["anthropic", "self_hosted"], "regions": ["eu"], "require_verified": true}}
+```
+
+and read `selection.choices[]` in the response: the derived requirements, the
+chosen model and effort, the fallback (another provider where possible), the
+per-call latency and cost, the scored alternatives, and every rejected model
+with its reason. `selection.unfilled` lists roles no model could staff;
+`selection.warnings` flags placeholder entries and roles whose best model still
+exceeds its latency share. Set `data_sensitivity` in the profile so only
+cleared models are eligible. Register your own models (or override bundled
+ones) per request with `catalog_models`, or ask the platform team to deploy a
+catalog. Schema and procedure: [MODEL_CATALOG.md](MODEL_CATALOG.md).
 
 ## 6. The two deliverables
 

@@ -28,7 +28,7 @@
 <p>A single stateless Python process (FastAPI + Uvicorn) that serves:</p>
 <table>
 <tr><th>Path</th><th>Purpose</th></tr>
-<tr><td><code>/</code></td><td>Web UI: guided three-step flow (start from scenario / scan / description, describe the workload, get the recommendation), tooltips on every field, verdict card, comparison table, latency-versus-fit chart, plan and diagram, next steps, and download buttons for the PDF and the LangGraph skeleton</td></tr>
+<tr><td><code>/</code></td><td>Web UI: guided three-step flow (start from scenario / scan / description, describe the workload, get the recommendation), model-ecosystem policy controls, tooltips on every field, verdict card, comparison table, latency-versus-fit chart, model selection per role, plan and diagram, next steps, and download buttons for the PDF and the LangGraph skeleton</td></tr>
 <tr><td><code>/api/v1/recommend</code></td><td>Rank topologies for a workload profile; returns the plan and a Markdown report</td></tr>
 <tr><td><code>/api/v1/scan</code>, <code>/api/v1/scan/upload</code></td><td>Scan a repository (server path, git URL, or uploaded zip) and infer the profile, then recommend</td></tr>
 <tr><td><code>/api/v1/recommend/pdf</code>, <code>/api/v1/recommend/skeleton</code></td><td>Architecture document (PDF, needs reportlab) and downloadable LangGraph project skeleton (zip)</td></tr>

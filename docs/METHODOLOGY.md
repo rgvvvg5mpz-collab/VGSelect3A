@@ -27,9 +27,11 @@ repository ──scan──▶ inferred profile ─┐
 prose/description ──Claude intake──────┤                                                                   │
 manual profile / examples ─────────────┘                                                    decomposition plan + guardrails
                                                                                                            │
+                                                                              per-role requirements ─▶ model selection (catalog + policy)
+                                                                                                           │
                                                           ┌────────────────────────────────────────────────┤
                                                           ▼                                                ▼
-                                             architecture document (PDF)                    agent skeleton (LangGraph zip)
+                                             architecture document (PDF)                    agent skeleton (LangGraph zip, provider-aware)
                                              + Markdown / JSON / SVG / UI
 ```
 
