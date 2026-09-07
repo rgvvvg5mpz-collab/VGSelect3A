@@ -102,6 +102,12 @@
   [data-tip]:hover::after,[data-tip]:hover::before,[data-tip]:focus-visible::after,[data-tip]:focus-visible::before{opacity:1}
   [data-tip].dn::after{bottom:auto;top:calc(100% + 8px)}[data-tip].dn::before{bottom:auto;top:calc(100% + 3px);border-top-color:transparent;border-bottom-color:var(--ink)}
   th[data-tip]{cursor:help;text-decoration:underline dotted var(--ink-3);text-underline-offset:3px}
+  /* keep edge tooltips inside the card so they never cause horizontal scroll */
+  .seg [role=tab]:first-child[data-tip]::after{left:0;transform:none}
+  .seg [role=tab]:first-child[data-tip]::before{left:24px;transform:none}
+  .seg [role=tab]:last-child[data-tip]::after{left:auto;right:0;transform:none}
+  .seg [role=tab]:last-child[data-tip]::before{left:auto;right:24px;transform:none}
+  .inputs{overflow-x:hidden}
   .cite{display:inline-block;font-size:11px;color:var(--info);background:var(--info-tint);border-radius:5px;padding:1px 6px;cursor:help;margin-left:4px;font-weight:600}
 
   /* results */
