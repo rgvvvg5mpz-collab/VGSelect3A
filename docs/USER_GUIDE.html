@@ -63,6 +63,7 @@
 <tr><td><b>Scan code</b></td><td>Reads a repository and pre-fills the form from what the code does: tools, knowledge sources, side effects (payments, email, tickets), the serving surface, tests and evals, and the topology as implemented today. Optionally takes a traces file for the report card.</td><td>The application exists, even partially. This is the most accurate starting point.</td></tr>
 <tr><td><b>Describe</b></td><td>You write a paragraph; Claude fills in the form. The recommendation itself is still deterministic.</td><td>You have a description but no code yet. Only available if your deployment enabled it (the status line at the bottom of the input panel says "describe: on").</td></tr>
 <tr><td><b>From scratch</b></td><td>Leaves the defaults, which describe a moderate single-domain task.</td><td>You know the workload and prefer to type it in.</td></tr>
+<tr><td><b>Grade agent</b></td><td>Takes a run-time traces file and, optionally, the repository zip, and produces the agent report card (section 9) alongside the recommendation.</td><td>The agent already runs and you want to know how well, and what to fix.</td></tr>
 </table>
 
 <h3>4.1 Scanning a repository</h3>
@@ -190,7 +191,7 @@
 </table>
 
 <h2 id="existing">9. Grading an agent you already run</h2>
-<p>Scan its repository (section 4.1). You immediately get a <b>design-time report card</b>: design complexity from the code (tools and overlap, delegation, handoffs, loops, prompt load), governance checks (evaluation harness, approval gates, termination limits, tracing, structured output), and mismatch flags against the task complexity you described.</p>
+<p>Choose <kbd>Grade agent</kbd> in Step 1. Drop the traces file, optionally the repository zip, set at least the latency budget and accuracy priority in Step 2 (they set the bar the grades are measured against), and press <kbd>Grade agent</kbd>. The results open on the report card. Alternatively, scanning the repository from the Scan tab (section 4.1) without traces gives a <b>design-time report card</b>: design complexity from the code (tools and overlap, delegation, handoffs, loops, prompt load), governance checks (evaluation harness, approval gates, termination limits, tracing, structured output), and mismatch flags against the task complexity you described.</p>
 <p>Add a <b>traces file</b> and the card becomes a <b>full report card</b> with behaviour graded from real runs:</p>
 <ul>
   <li><b>Three complexity tiles</b>: task (what you described), design (what the code is), behaviour (what the agent does). Big gaps between them are the story: over-built, under-built, or improvising structure at run time.</li>

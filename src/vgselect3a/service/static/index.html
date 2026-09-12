@@ -45,8 +45,8 @@
   .step{display:flex;align-items:center;gap:10px;margin:14px 0 8px}
   .step .n{width:26px;height:26px;border-radius:50%;background:var(--vg-red);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
   .step h2{margin:0;font-size:15px}
-  .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:var(--well);border:1px solid var(--line-2);padding:5px;border-radius:9px}
-  .seg button{border:0;background:transparent;padding:8px 6px;border-radius:7px;cursor:pointer;font:inherit;font-size:13px;color:var(--ink-2);font-weight:600}
+  .seg{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:var(--well);border:1px solid var(--line-2);padding:5px;border-radius:9px}
+  .seg button{border:0;background:transparent;padding:8px 4px;border-radius:7px;cursor:pointer;font:inherit;font-size:12.5px;color:var(--ink-2);font-weight:600}
   .seg button[aria-selected="true"]{background:#fff;color:var(--vg-red);box-shadow:var(--shadow)}
   .pane{display:none;margin-top:12px}.pane.on{display:block}
 
@@ -197,6 +197,7 @@
         <button role="tab" aria-selected="false" data-pane="scan" data-tip="Upload a zip of your repository (or point at a server path / git URL). The scanner infers tools, retrieval, side effects, the current agent loop and the serving surface, each with a confidence, and pre-fills the profile." class="dn">Scan code</button>
         <button role="tab" aria-selected="false" data-pane="describe" data-tip="Write a few sentences about the application. Claude fills in the profile; the recommendation itself stays deterministic. Needs Anthropic credentials on the server." class="dn">Describe</button>
         <button role="tab" aria-selected="false" data-pane="blank" data-tip="Skip the helpers and fill in step 2 yourself. Every field has a sensible default; the ones marked key matter most." class="dn">From scratch</button>
+        <button role="tab" aria-selected="false" data-pane="grade" data-tip="Grade an agent you already run: upload its run-time traces (and optionally its code) to get the report card with complexity levels, mismatches, graded dimensions and a card per agent." class="dn">Grade agent</button>
       </div>
       <p class="hint" style="margin:8px 0 0">Pick whichever you have. Not sure? Load an example and edit it, or go straight to step 2: the defaults already describe a moderate single-domain task.</p>
       <div class="pane on" id="pane-example">
@@ -218,6 +219,14 @@
         <p class="lede">Describe the application in plain language. Claude fills in the profile; the recommendation itself stays deterministic. Needs Anthropic credentials on the server.</p>
         <div class="field"><textarea id="describe-text" placeholder="A support agent that looks up orders, issues refunds and opens tickets. 20k chats a day; answers within about 8 seconds; refunds must never be wrong."></textarea></div>
         <div class="cta"><button class="btn" id="btn-describe">Infer profile and recommend</button></div>
+      </div>
+      <div class="pane" id="pane-grade">
+        <p class="lede">For an agent that already exists. Upload its <b>run-time traces</b> to grade behaviour (success, loops, latency, tokens, per-agent rows) and, optionally, its <b>code</b> to grade design (tools, delegation, limits, guardrails). The budget and stakes come from step 2, so set at least the latency budget and accuracy priority there.</p>
+        <div class="field"><div class="lbl">Traces file <button class="tip" type="button" data-tip="JSONL in the vgselect-trace format, a LangSmith run export, or OpenTelemetry GenAI spans. Only step types, agent names, token counts, timings, tool names and an argument hash are needed. See the user guide for the format." aria-label="About traces">i</button></div>
+          <label class="drop" id="drop-traces-g" for="traces-g"><b>Drop a traces file here</b> or click to choose<input type="file" id="traces-g" accept=".jsonl,.json,application/json" class="sr"></label><div class="help" id="tracesname-g"></div></div>
+        <div class="field"><div class="lbl">Repository zip (optional) <button class="tip" type="button" data-tip="Adds design complexity and governance checks from the code, and lets the scan pre-fill the profile. Without it the card grades behaviour against the profile in step 2 only." aria-label="About the repository zip">i</button></div>
+          <label class="drop" id="drop-zip-g" for="zip-g"><b>Drop a .zip here</b> or click to choose<input type="file" id="zip-g" accept=".zip,application/zip" class="sr"></label><div class="help" id="zipname-g"></div></div>
+        <div class="cta"><button class="btn" id="btn-grade">Grade agent</button></div>
       </div>
       <div class="pane" id="pane-blank"><p class="lede">Nothing to load. Fill in step 2 below; every field has a sensible default and the ones marked <span class="badge info" style="font-size:10px;padding:1px 7px">key</span> matter most. Hover any <span class="tip" style="display:inline-flex">i</span> for what a field means.</p></div>
 
@@ -391,17 +400,35 @@ drop.addEventListener('drop', e=>{ $('#zip').files=e.dataTransfer.files; $('#zip
 $('#zip').addEventListener('change', ()=>{ $('#zipname').textContent=$('#zip').files[0]?.name||''; });
 const dropT=$('#drop-traces'); ['dragenter','dragover'].forEach(ev=>dropT.addEventListener(ev,e=>{e.preventDefault();dropT.classList.add('hot');})); ['dragleave','drop'].forEach(ev=>dropT.addEventListener(ev,e=>{e.preventDefault();dropT.classList.remove('hot');}));
 dropT.addEventListener('drop', e=>{ $('#traces').files=e.dataTransfer.files; loadTraces(); });
-$('#traces').addEventListener('change', loadTraces);
-async function loadTraces(){
-  const f=$('#traces').files[0]; if(!f){ TRACES=null; $('#tracesname').textContent=''; return; }
+$('#traces').addEventListener('change', ()=>loadTraces('#traces','#tracesname'));
+const dropTG=$('#drop-traces-g'); ['dragenter','dragover'].forEach(ev=>dropTG.addEventListener(ev,e=>{e.preventDefault();dropTG.classList.add('hot');})); ['dragleave','drop'].forEach(ev=>dropTG.addEventListener(ev,e=>{e.preventDefault();dropTG.classList.remove('hot');}));
+dropTG.addEventListener('drop', e=>{ $('#traces-g').files=e.dataTransfer.files; loadTraces('#traces-g','#tracesname-g'); });
+$('#traces-g').addEventListener('change', ()=>loadTraces('#traces-g','#tracesname-g'));
+const dropZG=$('#drop-zip-g'); ['dragenter','dragover'].forEach(ev=>dropZG.addEventListener(ev,e=>{e.preventDefault();dropZG.classList.add('hot');})); ['dragleave','drop'].forEach(ev=>dropZG.addEventListener(ev,e=>{e.preventDefault();dropZG.classList.remove('hot');}));
+dropZG.addEventListener('drop', e=>{ $('#zip-g').files=e.dataTransfer.files; $('#zipname-g').textContent=$('#zip-g').files[0]?.name||''; });
+$('#zip-g').addEventListener('change', ()=>{ $('#zipname-g').textContent=$('#zip-g').files[0]?.name||''; });
+async function loadTraces(inputSel='#traces', nameSel='#tracesname'){
+  const f=$(inputSel).files[0]; if(!f){ TRACES=null; $(nameSel).textContent=''; return; }
   const raw=(await f.text()).trim();
   try{
     if(raw.startsWith('[')) TRACES=JSON.parse(raw);
     else if(raw.startsWith('{') && !raw.includes('\n')){ const d=JSON.parse(raw); TRACES=d.runs||d.spans||d.records||[d]; }
     else TRACES=raw.split('\n').filter(l=>l.trim()).map(l=>JSON.parse(l));
-    $('#tracesname').textContent=`${f.name}: ${TRACES.length} records`;
-  }catch(err){ TRACES=null; $('#tracesname').textContent='Could not parse traces: '+err.message; }
+    $(nameSel).textContent=`${f.name}: ${TRACES.length} records`;
+  }catch(err){ TRACES=null; $(nameSel).textContent='Could not parse traces: '+err.message; }
 }
+$('#btn-grade').addEventListener('click', async e=>{
+  e.preventDefault(); showError('');
+  if(!TRACES || !TRACES.length){ showError('Add a traces file first (or use Scan code for a design-time card without traces).'); return; }
+  busy(true,'Grading the agent…');
+  try{
+    let j;
+    const zip=$('#zip-g').files[0];
+    if(zip){ const fd=new FormData(); fd.append('archive',zip); fd.append('overrides',JSON.stringify(readForm(true))); fd.append('policy',JSON.stringify(readPolicy())); fd.append('traces',$('#traces-g').files[0]||$('#traces').files[0]); const r=await post('/api/v1/scan/upload', fd, true); fillForm(r.profile); EXTRAS={tools:r.profile.tools, sources:r.profile.sources}; j=r.recommendation; render(j, r.scan); }
+    else { const profile={...EXTRAS, ...readForm()}; j=await post('/api/v1/recommend',{profile, policy: readPolicy(), traces: TRACES}); render(j); }
+    toast('Report card ready: '+(j.report_card? j.report_card.overall_grade+' ('+j.report_card.mode+')':'see results'));
+  }catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
+});
 
 function busy(on,msg){ document.querySelectorAll('.btn').forEach(b=>b.disabled=on); if(on) $('#results').innerHTML=`<div class="card"><span class="spin"></span>${esc(msg||'Working…')}</div>`; }
 function showError(m){ const e=$('#error'); e.textContent=m; e.classList.toggle('on', !!m); }
@@ -539,7 +566,10 @@ function render(rec, scan){
   $('#dl-skel').addEventListener('click',()=>deliverable('/api/v1/recommend/skeleton', `${rec.profile.name||'app'}-langgraph-skeleton.zip`, 'Generating the skeleton…'));
   $('#dl-json').addEventListener('click',()=>download('vgselect-recommendation.json', JSON.stringify(rec,null,2), 'application/json'));
   drawChart(rec, budget);
-  if(window.innerWidth<=1040) $('#results').scrollIntoView({behavior:'smooth'}); else window.scrollTo({top:0, behavior:'smooth'});
+  const grading = document.querySelector('.seg [role=tab][data-pane="grade"]')?.getAttribute('aria-selected')==='true';
+  const rcCard=[...document.querySelectorAll('#results .card')].find(c=>c.querySelector('h2')?.textContent.startsWith('Agent report card'));
+  if(grading && rcCard) rcCard.scrollIntoView({behavior:'smooth', block:'start'});
+  else if(window.innerWidth<=1040) $('#results').scrollIntoView({behavior:'smooth'}); else window.scrollTo({top:0, behavior:'smooth'});
 }
 
 function drawChart(rec, budget){
