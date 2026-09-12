@@ -6,256 +6,315 @@
 <title>VG Select: 3A</title>
 <style>
   :root{
-    --vg-red:#96151D;--vg-red-dark:#6E0E14;--vg-red-tint:#F8ECED;--vg-red-mid:#C4353F;
-    --ink:#1E1E1E;--ink-2:#4A4A4A;--ink-3:#6F6F6F;--line:#D9D6D2;--line-2:#ECEAE6;
-    --paper:#F5F3F0;--card:#FFFFFF;--well:#FAF9F7;
-    --ok:#1B7F4C;--ok-tint:#E6F4EC;--warn:#A6620A;--warn-tint:#FBF1E2;--bad:#B3261E;--bad-tint:#FBE9E7;--info:#245E9E;--info-tint:#E7EFF9;
-    --r:10px;--shadow:0 1px 2px rgba(30,30,30,.06),0 4px 14px rgba(30,30,30,.05);
+    --vg-red:#96151D;--vg-red-dark:#6E0E14;--vg-red-deep:#4A090E;--vg-red-tint:#F8ECED;--vg-red-mid:#C4353F;
+    --ink:#1E1E1E;--ink-2:#454545;--ink-3:#6F6F6F;--ink-4:#9A9A9A;--line:#DDD9D4;--line-2:#ECEAE6;
+    --paper:#F4F2EF;--card:#FFFFFF;--well:#FAF8F6;--well-2:#F3F0EC;
+    --ok:#1B7F4C;--ok-tint:#E4F4EA;--warn:#A6620A;--warn-tint:#FBF1E2;--bad:#B3261E;--bad-tint:#FBE9E7;--info:#245E9E;--info-tint:#E7EFF9;
+    --r:14px;--r-sm:9px;--shadow:0 1px 2px rgba(30,30,30,.05),0 8px 24px rgba(30,30,30,.06);--shadow-lg:0 2px 4px rgba(30,30,30,.06),0 18px 48px rgba(30,30,30,.10);
     --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
-  body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.5 var(--font)}
+  body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.55 var(--font);-webkit-font-smoothing:antialiased}
   a{color:var(--vg-red)}
   :focus-visible{outline:3px solid #F2B8BC;outline-offset:2px;border-radius:6px}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
-  /* header */
-  .hdr{background:var(--vg-red);color:#fff;padding:0 28px;height:64px;display:flex;align-items:center;gap:18px}
-  .hdr .brand{display:flex;align-items:center;gap:12px}
-  .hdr .mark{width:34px;height:34px;border-radius:8px;background:#fff;color:var(--vg-red);display:grid;place-items:center;font-weight:800;font-size:13px;letter-spacing:.02em}
-  .hdr h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.01em}
-  .hdr .sub{font-size:12.5px;opacity:.9;margin-top:-2px}
-  .hdr nav{margin-left:auto;display:flex;gap:6px}
-  .hdr nav a{color:#fff;text-decoration:none;font-size:13px;padding:7px 11px;border-radius:7px;border:1px solid rgba(255,255,255,.35)}
-  .hdr nav a:hover{background:rgba(255,255,255,.12)}
-  .band{background:var(--vg-red-dark);color:#fff;padding:9px 28px;font-size:13px;display:flex;gap:22px;flex-wrap:wrap}
-  .band b{font-weight:600}
+  /* ---------- app bar ---------- */
+  .bar{background:linear-gradient(90deg,var(--vg-red-deep),var(--vg-red) 55%,var(--vg-red-mid));color:#fff;padding:0 28px;height:60px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:40;box-shadow:0 2px 10px rgba(74,9,14,.25)}
+  .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff}
+  .mark{width:36px;height:36px;border-radius:10px;background:#fff;color:var(--vg-red);display:grid;place-items:center;font-weight:900;font-size:13px;letter-spacing:.02em;box-shadow:inset 0 0 0 2px rgba(150,21,29,.15)}
+  .brand h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.01em;line-height:1.1}
+  .brand .sub{font-size:11.5px;opacity:.85}
+  .bar nav{margin-left:auto;display:flex;gap:6px}
+  .bar nav a{color:#fff;text-decoration:none;font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.3);transition:background .15s}
+  .bar nav a:hover{background:rgba(255,255,255,.14)}
 
-  /* layout */
-  main{display:grid;grid-template-columns:minmax(360px,440px) minmax(0,1fr);gap:22px;padding:22px 28px 60px;max-width:1680px;margin:0 auto}
-  @media (max-width:1040px){main{grid-template-columns:1fr;padding:16px}.inputs{position:static;max-height:none;overflow:visible}.hdr{padding:0 16px}.band{padding:9px 16px}}
-  .inputs{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);overflow:auto;padding-right:2px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:16px}
-  .card h2{font-size:16px;margin:0 0 4px;font-weight:700}
-  .card h3{font-size:13.5px;margin:18px 0 8px;font-weight:700;color:var(--ink-2);text-transform:uppercase;letter-spacing:.05em}
+  /* ---------- hero + tracker ---------- */
+  .hero{background:linear-gradient(180deg,#fff,var(--paper));border-bottom:1px solid var(--line-2);padding:22px 28px 18px}
+  .hero-in{max-width:1680px;margin:0 auto;display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+  .hero h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em}
+  .hero p{margin:3px 0 0;color:var(--ink-3);font-size:13px;max-width:720px}
+  .tracker{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .tstep{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--ink-3);transition:all .2s}
+  .tstep .n{width:24px;height:24px;border-radius:50%;background:var(--line-2);color:var(--ink-3);display:grid;place-items:center;font-size:12px;font-weight:800}
+  .tstep.on{border-color:var(--vg-red);color:var(--ink)}.tstep.on .n{background:var(--vg-red);color:#fff}
+  .tstep.done .n{background:var(--ok);color:#fff}.tstep.done{color:var(--ink)}
+  .tarrow{color:var(--ink-4)}
+
+  /* ---------- layout ---------- */
+  main{display:grid;grid-template-columns:minmax(380px,460px) minmax(0,1fr);gap:24px;padding:22px 28px 70px;max-width:1680px;margin:0 auto}
+  @media (max-width:1080px){main{grid-template-columns:1fr;padding:16px}.inputs{position:static;max-height:none;overflow:visible}.bar{padding:0 16px}.hero{padding:16px}}
+  .inputs{position:sticky;top:76px;align-self:start;max-height:calc(100vh - 92px);overflow:auto;overflow-x:hidden;padding-right:2px;scrollbar-width:thin}
+  .card{background:var(--card);border:1px solid var(--line-2);border-radius:var(--r);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:18px;animation:rise .25s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card h2{font-size:16px;margin:0 0 4px;font-weight:800;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .card h3{font-size:12.5px;margin:20px 0 8px;font-weight:800;color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em}
   .lede{color:var(--ink-3);font-size:13px;margin:0 0 12px}
+  .ico{width:18px;height:18px;vertical-align:-4px;flex:none}
 
-  /* steps */
-  .step{display:flex;align-items:center;gap:10px;margin:14px 0 8px}
-  .step .n{width:26px;height:26px;border-radius:50%;background:var(--vg-red);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
-  .step h2{margin:0;font-size:15px}
-  .seg{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;background:var(--well);border:1px solid var(--line-2);padding:5px;border-radius:9px}
-  .seg button{border:0;background:transparent;padding:8px 4px;border-radius:7px;cursor:pointer;font:inherit;font-size:12.5px;color:var(--ink-2);font-weight:600}
+  /* ---------- steps ---------- */
+  .step{display:flex;align-items:center;gap:10px;margin:18px 0 10px}
+  .step:first-child{margin-top:0}
+  .step .n{width:28px;height:28px;border-radius:50%;background:var(--vg-red);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;box-shadow:0 2px 6px rgba(150,21,29,.3)}
+  .step h2{margin:0;font-size:15px;font-weight:800}
+  .step .opt{font-size:11.5px;color:var(--ink-3);font-weight:600;background:var(--well-2);padding:2px 8px;border-radius:999px}
+  .seg{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:var(--well-2);border:1px solid var(--line-2);padding:4px;border-radius:12px}
+  .seg button{border:0;background:transparent;padding:9px 4px 7px;border-radius:9px;cursor:pointer;font:inherit;font-size:11.5px;color:var(--ink-3);font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s}
+  .seg button svg{width:18px;height:18px;opacity:.7}
+  .seg button:hover{color:var(--ink);background:rgba(255,255,255,.7)}
   .seg button[aria-selected="true"]{background:#fff;color:var(--vg-red);box-shadow:var(--shadow)}
-  .pane{display:none;margin-top:12px}.pane.on{display:block}
+  .seg button[aria-selected="true"] svg{opacity:1}
+  .pane{display:none;margin-top:14px}.pane.on{display:block;animation:rise .2s ease both}
 
-  /* fields */
+  /* ---------- fields ---------- */
   .field{margin-top:14px}
-  .lbl{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
-  .help{font-size:12px;color:var(--ink-3);margin-top:2px}
-  input[type=text],input[type=number],input[type=url],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff;color:var(--ink)}
+  .lbl{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px}
+  .help{font-size:12px;color:var(--ink-3);margin-top:3px}
+  input[type=text],input[type=number],input[type=url],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--r-sm);font:inherit;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
   input:hover,select:hover,textarea:hover{border-color:#b9b4ae}
   input:focus,select:focus,textarea:focus{border-color:var(--vg-red);outline:none;box-shadow:0 0 0 3px #F2D0D3}
   textarea{min-height:96px}
-  .unit{position:relative}.unit span{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:12px;pointer-events:none}
-  .unit input{padding-right:70px}
-  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-  .pills label{border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer;background:#fff;user-select:none}
+  .unit{position:relative}.unit span{position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:12px;pointer-events:none}
+  .unit input{padding-right:78px}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+  .pills label{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;cursor:pointer;background:#fff;user-select:none;transition:all .12s}
+  .pills label:hover{border-color:#b9b4ae}
   .pills input{position:absolute;opacity:0;width:0;height:0}
-  .pills label:has(input:checked){background:var(--vg-red);border-color:var(--vg-red);color:#fff}
+  .pills label:has(input:checked){background:var(--vg-red);border-color:var(--vg-red);color:#fff;box-shadow:0 2px 6px rgba(150,21,29,.25)}
   .pills label:has(input:focus-visible){outline:3px solid #F2B8BC}
-  .switch{display:flex;align-items:center;gap:10px;margin-top:6px;cursor:pointer}
-  .switch input{appearance:none;width:40px;height:22px;border-radius:999px;background:#CFCAC4;position:relative;transition:background .15s;margin:0;cursor:pointer}
-  .switch input::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+  .switch{display:flex;align-items:center;gap:10px;margin-top:7px;cursor:pointer}
+  .switch input{appearance:none;width:42px;height:24px;border-radius:999px;background:#CFCAC4;position:relative;transition:background .15s;margin:0;cursor:pointer}
+  .switch input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
   .switch input:checked{background:var(--vg-red)}.switch input:checked::after{left:21px}
   .switch .txt{font-size:13px}
-  .slider{margin-top:6px}
-  .slider input{width:100%;accent-color:var(--vg-red)}
+  .slider{margin-top:6px}.slider input{width:100%;accent-color:var(--vg-red)}
   .slider .ends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-3)}
-  .slider .val{font-weight:700;color:var(--vg-red);font-size:12.5px;margin-left:6px}
+  .slider .val{font-weight:800;color:var(--vg-red);font-size:12.5px;margin-left:6px}
+  .presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .presets button{border:1px dashed var(--line);background:var(--well);border-radius:999px;padding:3px 10px;font:inherit;font-size:11.5px;color:var(--ink-2);cursor:pointer}
+  .presets button:hover{border-style:solid;border-color:var(--vg-red);color:var(--vg-red)}
   details.grp{border-top:1px solid var(--line-2);margin-top:14px;padding-top:4px}
-  details.grp summary{cursor:pointer;font-weight:700;font-size:13.5px;padding:8px 0;list-style:none;display:flex;align-items:center;gap:8px}
+  details.grp summary{cursor:pointer;font-weight:800;font-size:13px;padding:9px 0;list-style:none;display:flex;align-items:center;gap:8px}
   details.grp summary::before{content:"";width:0;height:0;border-left:6px solid var(--ink-3);border-top:5px solid transparent;border-bottom:5px solid transparent;transition:transform .15s}
   details.grp[open] summary::before{transform:rotate(90deg)}
-  details.grp summary .cnt{margin-left:auto;font-weight:500;font-size:12px;color:var(--ink-3)}
-  .cta{display:flex;gap:10px;margin-top:18px;align-items:center}
-  .btn{padding:11px 18px;border-radius:8px;border:1px solid var(--vg-red);background:var(--vg-red);color:#fff;font-weight:700;cursor:pointer;font:inherit;font-size:14px}
-  .btn:hover{background:var(--vg-red-dark)}
-  .btn.ghost{background:#fff;color:var(--vg-red)}
-  .btn.ghost:hover{background:var(--vg-red-tint)}
-  .btn.sm{padding:7px 12px;font-size:13px;font-weight:600}
-  .btn:disabled{opacity:.5;cursor:default}
-  .err{display:none;margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--bad-tint);color:var(--bad);font-weight:600;border-left:4px solid var(--bad)}
+  details.grp summary .cnt{margin-left:auto;font-weight:600;font-size:11.5px;color:var(--ink-3);background:var(--well-2);padding:2px 8px;border-radius:999px}
+  details.grp summary .cnt.changed{background:var(--vg-red-tint);color:var(--vg-red)}
+  .cta{display:flex;gap:10px;margin-top:18px;align-items:center;flex-wrap:wrap}
+  .btn{padding:11px 18px;border-radius:10px;border:1px solid var(--vg-red);background:linear-gradient(180deg,var(--vg-red-mid),var(--vg-red));color:#fff;font-weight:800;cursor:pointer;font:inherit;font-size:14px;display:inline-flex;align-items:center;gap:8px;box-shadow:0 3px 10px rgba(150,21,29,.25);transition:transform .1s,box-shadow .15s}
+  .btn:hover{box-shadow:0 5px 14px rgba(150,21,29,.32);transform:translateY(-1px)}
+  .btn:active{transform:none}
+  .btn.ghost{background:#fff;color:var(--vg-red);box-shadow:none}.btn.ghost:hover{background:var(--vg-red-tint)}
+  .btn.sm{padding:7px 12px;font-size:12.5px;font-weight:700;border-radius:8px}
+  .btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
+  .err{display:none;margin-top:12px;padding:10px 12px;border-radius:9px;background:var(--bad-tint);color:var(--bad);font-weight:600;border-left:4px solid var(--bad)}
   .err.on{display:block}
-  .summary{margin-top:14px;padding:12px 14px;border-radius:8px;background:var(--well);border:1px dashed var(--line);font-size:13px;color:var(--ink-2)}
+  .summary{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--well);border:1px dashed var(--line);font-size:13px;color:var(--ink-2)}
   .summary b{color:var(--ink)}
-  .drop{border:2px dashed var(--line);border-radius:10px;padding:16px;text-align:center;color:var(--ink-3);font-size:13px;cursor:pointer;margin-top:6px}
+  .drop{border:2px dashed var(--line);border-radius:12px;padding:16px;text-align:center;color:var(--ink-3);font-size:13px;cursor:pointer;margin-top:6px;transition:all .15s;background:var(--well)}
+  .drop:hover{border-color:#b9b4ae}
   .drop.hot{border-color:var(--vg-red);background:var(--vg-red-tint);color:var(--vg-red)}
   .drop b{color:var(--ink)}
+  .drop.filled{border-style:solid;border-color:var(--ok);background:var(--ok-tint);color:var(--ok)}
 
-  /* tooltips */
-  .tip{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--ink-3);color:var(--ink-3);font-size:10px;font-weight:700;background:#fff;cursor:help;flex:none}
+  /* ---------- tooltips ---------- */
+  .tip{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--ink-4);color:var(--ink-3);font-size:10px;font-weight:800;background:#fff;cursor:help;flex:none;font-family:Georgia,serif;font-style:italic}
   [data-tip]{position:relative}
-  [data-tip]::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 10px;border-radius:7px;font-size:12px;font-weight:500;line-height:1.4;width:max-content;max-width:280px;white-space:normal;text-align:left;opacity:0;pointer-events:none;transition:opacity .12s;z-index:50;box-shadow:0 6px 18px rgba(0,0,0,.18)}
-  [data-tip]::before{content:"";position:absolute;left:50%;bottom:calc(100% + 3px);transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ink);opacity:0;transition:opacity .12s;z-index:50}
+  [data-tip]::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 11px;border-radius:8px;font-size:12px;font-weight:500;line-height:1.45;width:max-content;max-width:300px;white-space:normal;text-align:left;opacity:0;pointer-events:none;transition:opacity .12s;z-index:60;box-shadow:0 8px 22px rgba(0,0,0,.2);font-family:var(--font);text-transform:none;letter-spacing:0;font-style:normal}
+  [data-tip]::before{content:"";position:absolute;left:50%;bottom:calc(100% + 3px);transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ink);opacity:0;transition:opacity .12s;z-index:60}
   [data-tip]:hover::after,[data-tip]:hover::before,[data-tip]:focus-visible::after,[data-tip]:focus-visible::before{opacity:1}
   [data-tip].dn::after{bottom:auto;top:calc(100% + 8px)}[data-tip].dn::before{bottom:auto;top:calc(100% + 3px);border-top-color:transparent;border-bottom-color:var(--ink)}
-  th[data-tip]{cursor:help;text-decoration:underline dotted var(--ink-3);text-underline-offset:3px}
-  /* keep edge tooltips inside the card so they never cause horizontal scroll */
-  .seg [role=tab]:first-child[data-tip]::after{left:0;transform:none}
-  .seg [role=tab]:first-child[data-tip]::before{left:24px;transform:none}
-  .seg [role=tab]:last-child[data-tip]::after{left:auto;right:0;transform:none}
-  .seg [role=tab]:last-child[data-tip]::before{left:auto;right:24px;transform:none}
-  .inputs{overflow-x:hidden}
-  .cite{display:inline-block;font-size:11px;color:var(--info);background:var(--info-tint);border-radius:5px;padding:1px 6px;cursor:help;margin-left:4px;font-weight:600}
+  [data-tip].dl::after{left:0;transform:none}[data-tip].dl::before{left:18px;transform:none}
+  [data-tip].dr::after{left:auto;right:0;transform:none}[data-tip].dr::before{left:auto;right:18px;transform:none}
+  th[data-tip]{cursor:help;text-decoration:underline dotted var(--ink-4);text-underline-offset:3px}
+  .seg [role=tab]:first-child[data-tip]::after{left:0;transform:none}.seg [role=tab]:first-child[data-tip]::before{left:24px;transform:none}
+  .seg [role=tab]:last-child[data-tip]::after{left:auto;right:0;transform:none}.seg [role=tab]:last-child[data-tip]::before{left:auto;right:24px;transform:none}
+  .cite{display:inline-block;font-size:11px;color:var(--info);background:var(--info-tint);border-radius:6px;padding:1px 7px;cursor:help;margin-left:4px;font-weight:700}
 
-  /* results */
-  .empty{padding:36px 24px;text-align:center;color:var(--ink-3)}
-  .empty .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px;text-align:left}
-  .empty .steps div{background:var(--well);border:1px solid var(--line-2);border-radius:9px;padding:12px 14px;font-size:13px}
-  .empty .steps b{display:block;color:var(--ink);margin-bottom:3px}
-  .verdict{border-top:5px solid var(--vg-red)}
-  .verdict .top{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
-  .verdict .name{font-size:24px;font-weight:800;letter-spacing:-.01em;margin:2px 0 4px}
-  .verdict .fam{font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
-  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
-  .badge.ok{background:var(--ok-tint);color:var(--ok)}.badge.warn{background:var(--warn-tint);color:var(--warn)}.badge.bad{background:var(--bad-tint);color:var(--bad)}.badge.info{background:var(--info-tint);color:var(--info)}.badge.neutral{background:var(--line-2);color:var(--ink-2)}
+  /* ---------- results ---------- */
+  .empty{padding:40px 28px;text-align:center;color:var(--ink-3)}
+  .empty .big{font-size:17px;color:var(--ink);font-weight:800;margin-bottom:4px}
+  .empty .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px;text-align:left}
+  .empty .steps div{background:var(--well);border:1px solid var(--line-2);border-radius:12px;padding:14px 16px;font-size:13px}
+  .empty .steps b{display:block;color:var(--ink);margin-bottom:4px}
+  .strip{position:sticky;top:68px;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid var(--line-2);border-radius:12px;box-shadow:var(--shadow);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .strip .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .strip nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+  .strip nav a{font-size:12px;font-weight:700;color:var(--ink-2);text-decoration:none;padding:5px 9px;border-radius:7px}
+  .strip nav a:hover{background:var(--well-2);color:var(--vg-red)}
+  .verdict{border-top:5px solid var(--vg-red);background:linear-gradient(180deg,#fff,#fff 60%,var(--well))}
+  .verdict .top{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+  .verdict .name{font-size:26px;font-weight:900;letter-spacing:-.02em;margin:2px 0 6px;line-height:1.15}
+  .verdict .fam{font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap}
+  .badge.ok{background:var(--ok-tint);color:var(--ok)}.badge.warn{background:var(--warn-tint);color:var(--warn)}.badge.bad{background:var(--bad-tint);color:var(--bad)}.badge.info{background:var(--info-tint);color:var(--info)}.badge.neutral{background:var(--line-2);color:var(--ink-2)}.badge.red{background:var(--vg-red-tint);color:var(--vg-red)}
   .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0 6px}
-  .tile{background:var(--well);border:1px solid var(--line-2);border-radius:9px;padding:12px 14px}
-  .tile .k{font-size:11.5px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px}
-  .tile .v{font-size:22px;font-weight:800;margin-top:2px}
-  .tile .v small{font-size:12px;color:var(--ink-3);font-weight:600;margin-left:4px}
-  .bar{height:6px;background:var(--line-2);border-radius:99px;margin-top:8px;overflow:hidden}
-  .bar i{display:block;height:100%;background:var(--ok);border-radius:99px}
-  .bar i.warn{background:var(--warn)}.bar i.bad{background:var(--bad)}
-  .why li{margin:6px 0}
-  .why .d{font-family:var(--mono);font-size:12px;color:var(--ok);font-weight:700;margin-right:6px}
-  .why .d.neg{color:var(--bad)}
+  .tile{background:#fff;border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .tile .k{font-size:11px;color:var(--ink-3);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px}
+  .tile .v{font-size:24px;font-weight:900;margin-top:3px;letter-spacing:-.01em}
+  .tile .v small{font-size:12px;color:var(--ink-3);font-weight:600;margin-left:5px;letter-spacing:0}
+  .bar-h{height:7px;background:var(--line-2);border-radius:99px;margin-top:9px;overflow:hidden}
+  .bar-h i{display:block;height:100%;background:linear-gradient(90deg,#3fa96f,var(--ok));border-radius:99px;transition:width .4s}
+  .bar-h i.warn{background:linear-gradient(90deg,#e0a34a,var(--warn))}.bar-h i.bad{background:linear-gradient(90deg,#e0524a,var(--bad))}
+  .why li{margin:7px 0;padding-left:2px}
+  .why .d{font-family:var(--mono);font-size:12px;color:var(--ok);font-weight:800;margin-right:6px;background:var(--ok-tint);padding:1px 6px;border-radius:5px}
+  .why .d.neg{color:var(--bad);background:var(--bad-tint)}
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-  .chip{background:var(--line-2);border-radius:6px;padding:3px 9px;font-size:12px}
-  .chip.red{background:var(--vg-red-tint);color:var(--vg-red);font-weight:600}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line-2);vertical-align:top}
-  th{color:var(--ink-3);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:var(--well)}
+  .chip{background:var(--well-2);border-radius:7px;padding:3px 10px;font-size:12px;font-weight:600}
+  .chip.red{background:var(--vg-red-tint);color:var(--vg-red)}
+  table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line-2);vertical-align:top}
+  th{color:var(--ink-3);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;background:var(--well);position:sticky;top:0}
+  tbody tr:hover td{background:#fbfaf8}
   tr.primary td{background:var(--vg-red-tint)}
-  tr.nv td{color:#9a958f}
+  tr.primary:hover td{background:#f3e1e3}
+  tr.nv td{color:#a39d97}
   tr.nv td .nm{text-decoration:line-through}
-  .scorebar{display:inline-block;width:70px;height:7px;background:var(--line-2);border-radius:99px;vertical-align:middle;margin-right:6px;position:relative;overflow:hidden}
-  .scorebar i{position:absolute;top:0;bottom:0;background:var(--vg-red)}
-  .exp{cursor:pointer;color:var(--vg-red);font-weight:600;font-size:12px;background:none;border:0;font-family:inherit;padding:0}
+  .scorebar{display:inline-block;width:72px;height:8px;background:var(--line-2);border-radius:99px;vertical-align:middle;margin-right:6px;position:relative;overflow:hidden}
+  .scorebar i{position:absolute;top:0;bottom:0;background:var(--vg-red);border-radius:99px}
+  .exp{cursor:pointer;color:var(--vg-red);font-weight:800;font-size:12px;background:var(--vg-red-tint);border:0;font-family:inherit;padding:4px 10px;border-radius:999px}
+  .exp:hover{background:#f0d4d7}
   .sig{display:none;background:var(--well)}
   .sig.on{display:table-row}
   .sig ul{margin:4px 0;padding-left:18px;font-size:12.5px}
-  .wrap{overflow-x:auto}
-  .conf{height:6px;width:60px;background:var(--line-2);border-radius:99px;display:inline-block;vertical-align:middle;margin-right:6px;overflow:hidden}
+  .wrap{overflow-x:auto;border:1px solid var(--line-2);border-radius:10px}
+  .conf{height:7px;width:64px;background:var(--line-2);border-radius:99px;display:inline-block;vertical-align:middle;margin-right:6px;overflow:hidden}
   .conf i{display:block;height:100%;background:var(--info)}
   .conf i.lo{background:var(--warn)}
   .gap{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .gap .col{border:1px solid var(--line-2);border-radius:9px;padding:12px 14px;background:var(--well)}
+  .gap .col{border:1px solid var(--line-2);border-radius:12px;padding:14px 16px;background:var(--well)}
   .gap .col.rec{border-color:var(--vg-red);background:var(--vg-red-tint)}
-  .gap .col .t{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700}
-  .gap .col .n{font-weight:800;font-size:15px;margin:2px 0 8px}
-  .gap .col dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0;font-size:13px}
-  .gap dt{color:var(--ink-3)}.gap dd{margin:0;font-weight:600;text-align:right}
+  .gap .col .t{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:800}
+  .gap .col .n{font-weight:900;font-size:16px;margin:2px 0 8px}
+  .gap .col dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0;font-size:13px}
+  .gap dt{color:var(--ink-3)}.gap dd{margin:0;font-weight:700;text-align:right}
   .comps{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:8px}
-  .comp{border:1px solid var(--line-2);border-radius:9px;padding:10px 12px;background:#fff;border-left:4px solid var(--vg-red)}
+  .comp{border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;background:#fff;border-left:5px solid var(--vg-red);transition:box-shadow .15s}
+  .comp:hover{box-shadow:var(--shadow)}
   .comp.sonnet{border-left-color:var(--info)}.comp.haiku{border-left-color:#7FA7D6}.comp.code{border-left-color:#B5B0AA}
-  .comp .n{font-weight:700}.comp .m{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin:2px 0 4px}.comp .r{font-size:12.5px;color:var(--ink-2)}
-  .comp .pg{font-size:11px;color:var(--info);font-weight:700;margin-top:4px}
-  .diagram{border:1px solid var(--line-2);border-radius:9px;padding:8px;overflow:auto;background:#fff;margin-top:10px}
+  .comp .n{font-weight:800}.comp .m{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin:3px 0 5px}.comp .r{font-size:12.5px;color:var(--ink-2)}
+  .comp .pg{font-size:11px;color:var(--info);font-weight:800;margin-top:6px}
+  .diagram{border:1px solid var(--line-2);border-radius:12px;padding:10px;overflow:auto;background:#fff;margin-top:12px}
   .diagram svg{max-width:100%;height:auto}
-  .check li{list-style:none;display:flex;gap:10px;align-items:flex-start;margin:8px 0}
-  .check input{margin-top:3px;accent-color:var(--vg-red)}
+  .check li{list-style:none;display:flex;gap:10px;align-items:flex-start;margin:9px 0;padding:8px 10px;border-radius:9px;transition:background .15s}
+  .check li:hover{background:var(--well)}
+  .check input{margin-top:3px;accent-color:var(--vg-red);width:16px;height:16px}
   .check ul{padding:0;margin:0}
-  pre{background:#2A2A2A;color:#F2F2F2;padding:12px;border-radius:8px;overflow:auto;font-size:12px}
+  .check li:has(input:checked) label{text-decoration:line-through;color:var(--ink-4)}
+  pre{background:#2A2A2A;color:#F2F2F2;padding:12px;border-radius:10px;overflow:auto;font-size:12px}
   .muted{color:var(--ink-3);font-size:12.5px}
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .spin{display:inline-block;width:16px;height:16px;border:2px solid #E3C1C4;border-top-color:var(--vg-red);border-radius:50%;animation:s .9s linear infinite;vertical-align:middle;margin-right:8px}
   @keyframes s{to{transform:rotate(360deg)}}
+  .skel{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--line-2),#f6f4f1,var(--line-2));background-size:200% 100%;animation:sh 1.2s infinite;margin:10px 0}
+  @keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
   .chart{width:100%;height:240px;margin-top:8px}
   .legend{display:flex;gap:14px;font-size:12px;color:var(--ink-3);flex-wrap:wrap;margin-top:6px}
   .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .ring{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:22px;color:#fff;flex:none;box-shadow:inset 0 0 0 5px rgba(255,255,255,.35)}
+  .ring.A,.ring.B{background:var(--ok)}.ring.C{background:var(--warn)}.ring.D,.ring.F{background:var(--bad)}.ring.na{background:var(--ink-4)}
+  .dims{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0}
+  .dim{border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;background:#fff}
+  .dim .g{font-size:22px;font-weight:900}.dim .g.A,.dim .g.B{color:var(--ok)}.dim .g.C{color:var(--warn)}.dim .g.D,.dim .g.F{color:var(--bad)}.dim .g.na{color:var(--ink-4)}
+  .dim .k{font-size:11px;color:var(--ink-3);font-weight:800;text-transform:uppercase;letter-spacing:.05em;display:flex;gap:5px;align-items:center}
+  .dim ul{margin:6px 0 0;padding-left:16px;font-size:12.5px;color:var(--ink-2)}
   .sr{position:absolute;left:-9999px}
-  .toast{position:fixed;bottom:18px;right:18px;background:var(--ink);color:#fff;padding:10px 14px;border-radius:8px;font-size:13px;box-shadow:var(--shadow);display:none}
-  .toast.on{display:block}
+  .toast{position:fixed;bottom:18px;right:18px;background:var(--ink);color:#fff;padding:11px 15px;border-radius:10px;font-size:13px;box-shadow:var(--shadow-lg);display:none;z-index:70;max-width:420px}
+  .toast.on{display:block;animation:rise .2s ease both}
+  .kbd{font-family:var(--mono);font-size:11px;background:var(--well-2);border:1px solid var(--line);border-radius:5px;padding:0 5px}
 </style>
 </head>
 <body>
-<header class="hdr">
-  <div class="brand"><div class="mark">3A</div><div><h1>VG Select: 3A</h1><div class="sub">Automated Agentic Architecture</div></div></div>
-  <nav aria-label="Links"><a href="/guide" target="_blank" rel="noopener">User guide</a><a href="#" id="help-link">How it works</a><a href="/docs" target="_blank" rel="noopener">API docs</a></nav>
+<header class="bar">
+  <a class="brand" href="/" data-tip="Back to the start. Your inputs are kept in this browser until you press Reset." class="dn"><div class="mark">3A</div><div><h1>VG Select: 3A</h1><div class="sub">Automated Agentic Architecture</div></div></a>
+  <nav aria-label="Links">
+    <a href="/guide" target="_blank" rel="noopener" data-tip="Every step, field and result panel explained, with worked examples." class="dn">User guide</a>
+    <a href="#" id="help-link" data-tip="A short explanation of how the recommendation is computed." class="dn">How it works</a>
+    <a href="/docs" target="_blank" rel="noopener" data-tip="Swagger UI for the REST API behind this page." class="dn dr">API docs</a>
+  </nav>
 </header>
-<div class="band" id="band"><span><b>Purpose</b> Recommend the architecture of an agentic application that balances latency and accuracy, with an evidence-cited rationale and a build plan.</span></div>
+<section class="hero">
+  <div class="hero-in">
+    <div><h2>Choose the right architecture for an agentic application</h2><p>Describe the workload, or scan the code, and get a cited recommendation with latency and cost per option, a model for every role, a build plan, and a PDF for the design review. Already running an agent? Grade it from its traces.</p></div>
+    <div class="tracker" aria-label="Progress">
+      <div class="tstep on" id="ts1" data-tip="Optional: pick a starting point. Any of the five works, or skip to step 2." class="dn"><span class="n">1</span>Start</div><span class="tarrow">›</span>
+      <div class="tstep" id="ts2" data-tip="Describe the workload. Five key fields matter most: complexity, predictability, tool calls, latency budget, accuracy priority." class="dn"><span class="n">2</span>Describe</div><span class="tarrow">›</span>
+      <div class="tstep" id="ts3" data-tip="Read the verdict, compare options, take the PDF and the skeleton." class="dn"><span class="n">3</span>Results</div>
+    </div>
+  </div>
+</section>
 
 <main>
   <section class="inputs" aria-label="Inputs">
     <div class="card">
-      <div class="step"><span class="n">1</span><h2>Start from</h2><button class="tip" type="button" data-tip="Any starting point works and none is required. An example fills the profile with a known scenario; scanning code pre-fills it from what your repository does; describing the app asks Claude to fill it; from scratch leaves the defaults. Whatever you pick, every field stays editable in step 2 before you ask for the recommendation." aria-label="About starting points">i</button><span class="muted">optional</span></div>
+      <div class="step"><span class="n">1</span><h2>Start from</h2><span class="opt" data-tip="You can begin with any of these, or skip straight to step 2. Everything can be edited before you recommend." class="dn">optional</span></div>
       <div class="seg" role="tablist" aria-label="Input source">
-        <button role="tab" aria-selected="true" data-pane="example" data-tip="Load one of eight bundled scenarios (FAQ bot, deep research, coding agent, ...) as a starting point, then edit any field." class="dn">Example</button>
-        <button role="tab" aria-selected="false" data-pane="scan" data-tip="Upload a zip of your repository (or point at a server path / git URL). The scanner infers tools, retrieval, side effects, the current agent loop and the serving surface, each with a confidence, and pre-fills the profile." class="dn">Scan code</button>
-        <button role="tab" aria-selected="false" data-pane="describe" data-tip="Write a few sentences about the application. Claude fills in the profile; the recommendation itself stays deterministic. Needs Anthropic credentials on the server." class="dn">Describe</button>
-        <button role="tab" aria-selected="false" data-pane="blank" data-tip="Skip the helpers and fill in step 2 yourself. Every field has a sensible default; the ones marked key matter most." class="dn">From scratch</button>
-        <button role="tab" aria-selected="false" data-pane="grade" data-tip="Grade an agent you already run: upload its run-time traces (and optionally its code) to get the report card with complexity levels, mismatches, graded dimensions and a card per agent." class="dn">Grade agent</button>
+        <button role="tab" aria-selected="true" data-pane="example" data-tip="Load one of eight bundled scenarios and edit it. The quickest way to see how the tool thinks." class="dn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/></svg>Example</button>
+        <button role="tab" aria-selected="false" data-pane="scan" data-tip="Pre-fill the profile from what the code actually does: tools, retrieval, side effects, existing agent loops, serving surface." class="dn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3M7 12h10"/></svg>Scan code</button>
+        <button role="tab" aria-selected="false" data-pane="describe" data-tip="Write a paragraph; Claude fills in the profile. Needs credentials on the server; the status line says whether it is on." class="dn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Describe</button>
+        <button role="tab" aria-selected="false" data-pane="blank" data-tip="Skip the helpers and fill in step 2 yourself. Every field has a sensible default." class="dn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>From scratch</button>
+        <button role="tab" aria-selected="false" data-pane="grade" data-tip="Grade an agent you already run: upload its run-time traces (and optionally its code) for a report card with complexity levels, mismatches, graded dimensions and a card per agent." class="dn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Grade agent</button>
       </div>
-      <p class="hint" style="margin:8px 0 0">Pick whichever you have. Not sure? Load an example and edit it, or go straight to step 2: the defaults already describe a moderate single-domain task.</p>
+      <p class="help" style="margin-top:10px">Not sure? Load an example and edit it, or go straight to step 2: the defaults already describe a moderate single-domain task.</p>
+
       <div class="pane on" id="pane-example">
         <div class="field"><div class="lbl">Pick a scenario <button class="tip" type="button" data-tip="Eight canonical workloads. Loading one fills every field in step 2; edit anything before recommending." aria-label="About examples">i</button></div>
-          <select id="example" aria-label="Example scenario"><option value="">Choose a scenario…</option></select>
-          <div class="help">Loading a scenario overwrites the fields in step 2; use Reset to return to defaults.</div></div>
+          <select id="example" aria-label="Example scenario" data-tip="Loading a scenario overwrites step 2; press Reset to return to defaults." class="dn"><option value="">Choose a scenario…</option></select></div>
       </div>
       <div class="pane" id="pane-scan">
-        <p class="lede">Scanning reads your code for tools, data sources, side effects and existing agent loops, and pre-fills the profile with a confidence for each inference. Your entries in step 2 override anything inferred.</p>
-        <div class="field"><div class="lbl">Upload a zip of the repository <button class="tip" type="button" data-tip="Zip the project folder. Dependency and build directories (node_modules, .git, venv, dist) are skipped automatically. Nothing is executed; the archive is deleted after the scan." aria-label="About upload">i</button></div>
-          <label class="drop" id="drop" for="zip"><b>Drop a .zip here</b> or click to choose<input type="file" id="zip" accept=".zip,application/zip" class="sr"></label><div class="help" id="zipname"></div></div>
-        <div class="field"><div class="lbl">Or a path on the server <button class="tip" type="button" data-tip="Only directories under the service's configured scan roots are allowed. The status line at the bottom shows which." aria-label="About server path">i</button></div><input type="text" id="scan-path" placeholder="/scan/my-repo"></div>
-        <div class="field"><div class="lbl">Or a git URL <button class="tip" type="button" data-tip="Shallow clone into a temporary directory, scanned and deleted. Must be enabled on the server." aria-label="About git URL">i</button></div><input type="url" id="scan-git" placeholder="https://github.com/org/repo.git"></div>
-        <div class="field"><div class="lbl">Run-time traces (optional) <button class="tip" type="button" data-tip="Add production or eval traces to grade the agent's behaviour: JSONL in the vgselect-trace format, a LangSmith run export, or OpenTelemetry GenAI spans. Without traces the report card is design-time only (from the code)." aria-label="About traces">i</button></div>
-          <label class="drop" id="drop-traces" for="traces"><b>Drop a traces file here</b> or click to choose<input type="file" id="traces" accept=".jsonl,.json,application/json" class="sr"></label><div class="help" id="tracesname"></div></div>
-        <div class="cta"><button class="btn" id="btn-scan">Scan and pre-fill profile</button></div>
+        <p class="lede">The scanner reads code and configuration only (never prose, never executed) and pre-fills step 2 with a confidence for each inference. Anything you set in step 2 wins.</p>
+        <div class="field"><div class="lbl">Upload a zip of the repository <button class="tip" type="button" data-tip="Zip the project folder. node_modules, .git, venv, dist are skipped automatically. Deleted after the scan." aria-label="About upload">i</button></div>
+          <label class="drop" id="drop" for="zip" data-tip="Drag a .zip here or click to choose one." class="dn"><b>Drop a .zip here</b> or click to choose<input type="file" id="zip" accept=".zip,application/zip" class="sr"></label><div class="help" id="zipname"></div></div>
+        <div class="field"><div class="lbl">Or a path on the server <button class="tip" type="button" data-tip="Only directories under the server's configured scan roots are allowed; the status line lists them." aria-label="About server path">i</button></div><input type="text" id="scan-path" placeholder="/scan/my-repo" data-tip="A directory the server can read, under an allowed root." class="dn"></div>
+        <div class="field"><div class="lbl">Or a git URL <button class="tip" type="button" data-tip="Shallow clone into a temporary directory, scanned and deleted. Must be enabled on the server." aria-label="About git URL">i</button></div><input type="url" id="scan-git" placeholder="https://github.com/org/repo.git" data-tip="An https:// URL the server can reach; only if cloning is enabled." class="dn"></div>
+        <div class="field"><div class="lbl">Run-time traces (optional) <button class="tip" type="button" data-tip="Add production or eval traces to grade the agent's behaviour: JSONL in the vgselect-trace format, a LangSmith run export, or OpenTelemetry GenAI spans. Without traces the report card is design-time only." aria-label="About traces">i</button></div>
+          <label class="drop" id="drop-traces" for="traces" data-tip="Optional. Adds the behavioural half of the report card." class="dn"><b>Drop a traces file here</b> or click to choose<input type="file" id="traces" accept=".jsonl,.json,application/json" class="sr"></label><div class="help" id="tracesname"></div></div>
+        <div class="cta"><button class="btn" id="btn-scan" data-tip="Scan, pre-fill step 2, and recommend in one go. You can still edit step 2 and recommend again." class="dn dl"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"/></svg>Scan and pre-fill profile</button></div>
       </div>
       <div class="pane" id="pane-describe">
         <p class="lede">Describe the application in plain language. Claude fills in the profile; the recommendation itself stays deterministic. Needs Anthropic credentials on the server.</p>
-        <div class="field"><textarea id="describe-text" placeholder="A support agent that looks up orders, issues refunds and opens tickets. 20k chats a day; answers within about 8 seconds; refunds must never be wrong."></textarea></div>
-        <div class="cta"><button class="btn" id="btn-describe">Infer profile and recommend</button></div>
+        <div class="field"><textarea id="describe-text" placeholder="A support agent that looks up orders, issues refunds and opens tickets. 20k chats a day; answers within about 8 seconds; refunds must never be wrong." data-tip="Mention what it does, how fast it must answer, what happens when it is wrong, and how much traffic it gets." class="dn"></textarea></div>
+        <div class="cta"><button class="btn" id="btn-describe" data-tip="Sends only this text to Claude, fills step 2, then recommends." class="dn dl">Infer profile and recommend</button></div>
       </div>
+      <div class="pane" id="pane-blank"><p class="lede">Fill in step 2 from scratch. Every field has a sensible default; the ones that matter most are marked <span class="badge red" style="font-size:10px;padding:1px 7px">key</span>.</p></div>
       <div class="pane" id="pane-grade">
         <p class="lede">For an agent that already exists. Upload its <b>run-time traces</b> to grade behaviour (success, loops, latency, tokens, per-agent rows) and, optionally, its <b>code</b> to grade design (tools, delegation, limits, guardrails). The budget and stakes come from step 2, so set at least the latency budget and accuracy priority there.</p>
         <div class="field"><div class="lbl">Traces file <button class="tip" type="button" data-tip="JSONL in the vgselect-trace format, a LangSmith run export, or OpenTelemetry GenAI spans. Only step types, agent names, token counts, timings, tool names and an argument hash are needed. See the user guide for the format." aria-label="About traces">i</button></div>
-          <label class="drop" id="drop-traces-g" for="traces-g"><b>Drop a traces file here</b> or click to choose<input type="file" id="traces-g" accept=".jsonl,.json,application/json" class="sr"></label><div class="help" id="tracesname-g"></div></div>
+          <label class="drop" id="drop-traces-g" for="traces-g" data-tip="Required for grading behaviour." class="dn"><b>Drop a traces file here</b> or click to choose<input type="file" id="traces-g" accept=".jsonl,.json,application/json" class="sr"></label><div class="help" id="tracesname-g"></div></div>
         <div class="field"><div class="lbl">Repository zip (optional) <button class="tip" type="button" data-tip="Adds design complexity and governance checks from the code, and lets the scan pre-fill the profile. Without it the card grades behaviour against the profile in step 2 only." aria-label="About the repository zip">i</button></div>
-          <label class="drop" id="drop-zip-g" for="zip-g"><b>Drop a .zip here</b> or click to choose<input type="file" id="zip-g" accept=".zip,application/zip" class="sr"></label><div class="help" id="zipname-g"></div></div>
-        <div class="cta"><button class="btn" id="btn-grade">Grade agent</button></div>
+          <label class="drop" id="drop-zip-g" for="zip-g" data-tip="Optional. Adds the design half of the report card." class="dn"><b>Drop a .zip here</b> or click to choose<input type="file" id="zip-g" accept=".zip,application/zip" class="sr"></label><div class="help" id="zipname-g"></div></div>
+        <div class="cta"><button class="btn" id="btn-grade" data-tip="Builds the report card and opens the results on it." class="dn dl"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 11l3 3L22 4"/></svg>Grade agent</button></div>
       </div>
-      <div class="pane" id="pane-blank"><p class="lede">Nothing to load. Fill in step 2 below; every field has a sensible default and the ones marked <span class="badge info" style="font-size:10px;padding:1px 7px">key</span> matter most. Hover any <span class="tip" style="display:inline-flex">i</span> for what a field means.</p></div>
 
-      <div class="step"><span class="n">2</span><h2>Describe the workload</h2><button class="tip" type="button" data-tip="The profile the recommendation runs on. Whatever step 1 filled in is shown here and can be changed. Fields marked key change the answer most; the sentence below the form restates what you are asking for." aria-label="About the workload profile">i</button><span class="muted" id="setcount"></span></div>
+      <div class="step"><span class="n">2</span><h2>Describe the workload</h2><span class="opt" id="setcount" data-tip="How many fields differ from the defaults. Defaults describe a moderate, single-domain task with no tools." class="dn"></span></div>
       <form id="profile-form" aria-label="Workload profile"></form>
-      <details class="grp" id="ecosystem"><summary>Model ecosystem <span class="cnt" id="eco-cnt"></span></summary>
-        <p class="lede">Which catalog models may staff each role. Each role's needs (capability, latency share, context, tools, data class) are derived from the plan; the selector matches them against the catalog.</p>
+      <details class="grp" id="ecosystem"><summary data-tip="Which catalog models may staff each role. Each role's needs are derived from the plan; the selector matches them against the catalog under this policy." class="dn dl">Model ecosystem <span class="cnt" id="eco-cnt"></span></summary>
+        <p class="lede">Constrain which models from your organisation's catalog may be chosen. Leave everything unticked to allow the whole catalog.</p>
         <div class="field"><div class="lbl">Allowed providers <button class="tip" type="button" data-tip="Leave all unticked to allow every provider in the catalog." aria-label="About providers">i</button></div><div class="pills" id="pol-providers"></div></div>
         <div class="field"><div class="lbl">Allowed platforms <button class="tip" type="button" data-tip="Where the model must be reachable from (first-party API, Bedrock, Vertex, Foundry, Azure OpenAI, self-hosted). Leave unticked for any." aria-label="About platforms">i</button></div><div class="pills" id="pol-platforms"></div></div>
         <div class="field"><div class="lbl">Regions <button class="tip" type="button" data-tip="The model must be served in at least one ticked region. Leave unticked for any." aria-label="About regions">i</button></div><div class="pills" id="pol-regions"></div></div>
-        <div class="field"><label class="switch"><input type="checkbox" id="pol-unverified"><span class="txt">Allow illustrative (unverified) catalog entries</span></label><div class="help">Placeholder entries carry example numbers; verify them in the catalog before letting them win.</div></div>
+        <div class="field"><label class="switch" data-tip="Placeholder entries carry example numbers; verify them in the catalog before letting them win. Off in production." class="dn dl"><input type="checkbox" id="pol-unverified"><span class="txt">Allow illustrative (unverified) catalog entries</span></label></div>
       </details>
-      <div class="summary" id="summary" aria-live="polite"></div>
+      <div class="summary" id="summary" aria-live="polite" data-tip="A plain-language restatement of what you are asking for, updated as you edit." class="dn dl"></div>
 
-      <div class="step"><span class="n">3</span><h2>Get the recommendation</h2><button class="tip" type="button" data-tip="Ranks ten architectures with cited rules, estimates latency and cost, staffs each role from the model catalog, and produces the plan. Results appear on the right; the PDF and skeleton downloads are on the verdict card." aria-label="About the recommendation">i</button></div>
-      <div class="cta"><button class="btn" id="btn-recommend">Recommend architecture</button><button class="btn ghost" id="btn-reset" type="button">Reset</button></div>
+      <div class="step"><span class="n">3</span><h2>Get the recommendation</h2></div>
+      <div class="cta">
+        <button class="btn" id="btn-recommend" data-tip="Rank all ten architectures for this profile, choose a model per role, and build the plan. Shortcut: Ctrl/⌘ + Enter." class="dn dl"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Recommend architecture</button>
+        <button class="btn ghost" id="btn-reset" type="button" data-tip="Clear every field back to its default and forget the loaded scenario." class="dn">Reset</button>
+      </div>
       <div class="err" id="error" role="alert"></div>
     </div>
-    <div class="card muted" id="status">Loading field definitions…</div>
+    <div class="card muted" id="status" data-tip="What this deployment has enabled: catalog, scan roots, git cloning, Claude intake, PDF." class="dn dl">Loading field definitions…</div>
   </section>
 
   <section id="results" aria-live="polite" aria-label="Results">
     <div class="card empty">
-      <div style="font-size:15px;color:var(--ink)"><b>Your recommendation will appear here.</b></div>
-      <div>Three steps: pick a starting point, describe the workload, get a ranked, cited recommendation with a build plan.</div>
+      <div class="big">Your recommendation will appear here.</div>
+      <div>Three steps: pick a starting point (optional), describe the workload, get a ranked, cited recommendation with a build plan and two downloads.</div>
       <div class="steps">
-        <div><b>1 · Start (optional)</b>Load a scenario, scan a repository, describe the app, or skip straight to step 2.</div>
+        <div><b>1 · Start</b>Load a scenario, scan a repository, describe the app, or grade an existing agent from its traces.</div>
         <div><b>2 · Describe</b>Set the latency budget, how costly errors are, and cost sensitivity. These drive the trade-off.</div>
-        <div><b>3 · Decide</b>Compare options on latency, cost and evidence; take the plan and next steps to your design review.</div>
+        <div><b>3 · Decide</b>Compare options on latency, cost and evidence; take the plan, the PDF and the skeleton to your design review.</div>
       </div>
     </div>
   </section>
@@ -267,28 +326,37 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 const title = n => n.replace(/_s$/, ' (seconds)').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
-let FIELDS = [], CITES = {}, EXTRAS = {}, LAST = null, LAST_SCAN = null, TRACES = null;
+let FIELDS = [], CITES = {}, EXTRAS = {}, LAST = null, LAST_SCAN = null, TRACES = null, CATALOG = null;
 
 const GROUPS = {meta:"About the application", task:"Task shape", tools:"Tools", knowledge:"Knowledge and context", quality:"Quality and risk", ops:"Operating constraints"};
-let CATALOG = null;
+const GROUP_TIPS = {meta:"Name and description appear on the PDF cover and in file names.", task:"What one request is like: how much reasoning, whether steps can be fixed in code, how many domains and parallel pieces, and what comes out.", tools:"The functions the application can call: how many, how often, whether they can run together, and whether they can do harm.", knowledge:"What must be read to answer: sources, how many retrieval hops, and how much text per request.", quality:"How costly errors are, whether answers can be checked objectively, and any measured baseline.", ops:"The budget and volume the design must fit, and the data class that gates which models are allowed."};
 const KEY = new Set(['task_complexity','steps_predictable','parallel_subtasks','latency_budget_s','accuracy_priority','cost_sensitivity','tool_calls_per_task','retrieval_depth','data_sensitivity']);
 const UNITS = {latency_budget_s:'seconds', tool_latency_s:'seconds', context_tokens_per_task:'tokens', requests_per_day:'per day'};
 const ENDS = {accuracy_priority:['Best effort is fine','Errors are very costly'], cost_sensitivity:['Cost is no concern','Cost dominates']};
+const PRESETS = {latency_budget_s:[['Chat · 5s',5],['Interactive · 30s',30],['Background · 5 min',300],['Batch · 1 h',3600]], context_tokens_per_task:[['A few pages · 5k',5000],['A long report · 50k',50000],['A corpus · 500k',500000]], requests_per_day:[['Pilot · 100',100],['Team · 5k',5000],['Enterprise · 100k',100000]]};
 const OPTION_TIPS = {
   task_complexity:{trivial:'Lookup or classification; one obvious step.', simple:'One-step generation.', moderate:'A few dependent steps.', complex:'Many dependent steps needing judgment.', open_ended:'Steps cannot be enumerated in advance; the model must explore.'},
   retrieval_depth:{none:'No retrieval.', single_lookup:'One query answers it (classic RAG in code).', multi_hop:'Follow-up queries depend on earlier results.', exhaustive:'Breadth-first coverage across many documents or sources.'},
   tool_side_effects:{read_only:'Tools only read.', reversible_writes:'Drafts, files under version control, staged changes.', irreversible:'Sends email, moves money, deletes, creates tickets.'},
   output_type:{short_answer:'A sentence or a paragraph.', structured_data:'JSON / records for a system.', long_document:'Reports, specs, articles.', code_change:'Edits to a code base.', action:'The deliverable is something done in the world.'},
+  tool_dependency:{sequential:'Each call depends on the previous result.', mixed:'Some calls can be issued together.', independent:'Calls can all be issued at once; much faster.'},
+  verifiability:{none:'Purely subjective.', partial:'Rubric or spot checks.', strong:'Tests, schemas, ground truth.'},
+  error_recoverability:{easy:'Reviewed before anything is committed.', moderate:'Can be undone with some effort.', hard:'Acts on the world immediately.'},
+  interaction:{single_turn:'One request, one answer.', multi_turn:'Conversational; the budget applies per turn.', long_running:'One task over many minutes or hours.'},
+  data_sensitivity:{public:'No restrictions.', internal:'Internal business data.', confidential:'Client or commercially sensitive data.', restricted:'Regulated or highly sensitive data; only cleared models are eligible.'},
 };
 const HEAD_TIPS = {
   score:'Fit plus the latency and cost adjustments. Higher is better. Roughly: one strong rule ≈ +3; missing the budget by 50% ≈ −2.',
   fit:'Sum of the evidence-based rules that fired for this topology (positive and negative). See the reasons below each row.',
-  latency:'Estimated p50 end-to-end latency on the critical path (parallel branches count once). Order-of-magnitude, from published serving assumptions and your tool latency.',
+  latency:'Estimated p50 end-to-end latency on the critical path (parallel branches count once). Order-of-magnitude, from the catalog\'s serving figures and your tool latency.',
   budget:'How the latency estimate compares with your budget: fits (≤70%), tight (≤100%), exceeds (≤2x), far over.',
   cost:'List-price cost per request summing every model call, without prompt caching.',
   tokens:'Total tokens relative to one plain model call. Anthropic reports agents ≈4x chat and multi-agent ≈15x.',
   calls:'Number of model calls on a typical request.',
 };
+
+function svgIco(path){ return `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${path}"/></svg>`; }
+const ICO = {verdict:'M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z', scan:'M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z', card:'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11', compare:'M4 20V10M10 20V4M16 20v-8M22 20H2', models:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15 15 0 0 1 0 20', plan:'M3 5h7v7H3zM14 5h7v7h-7zM8.5 15h7v7h-7z', next:'M9 11l3 3L22 4', assume:'M12 8v4l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'};
 
 async function init(){
   try{
@@ -298,31 +366,19 @@ async function init(){
     for(const e of ex){ const o=document.createElement('option'); o.value=e.name; o.textContent=`${title(e.name)} — ${e.description}`; o.dataset.profile=JSON.stringify(e.profile); $('#example').appendChild(o); }
     try{ CATALOG = await fetch('/api/v1/catalog').then(r=>r.json()); buildPolicy(); }catch(_){ }
     const h = await fetch('/health').then(r=>r.json());
-    $('#status').innerHTML = `<b>${esc(h.product)}</b> v${esc(h.version)} &middot; catalog: ${esc(h.catalog)} (${h.catalog_models} models) &middot; scan by path: ${h.scan_roots.length? esc(h.scan_roots.join(', ')) : 'disabled (use zip upload)'} &middot; git clone: ${h.git_clone_enabled?'on':'off'} &middot; describe: ${h.describe_enabled?'on':'off'} &middot; PDF: ${h.pdf_enabled?'on':'off'}`;
+    $('#status').innerHTML = `<b>${esc(h.product)}</b> v${esc(h.version)} &middot; catalog <b>${esc(h.catalog)}</b> (${h.catalog_models} models) &middot; scan by path: ${h.scan_roots.length? esc(h.scan_roots.join(', ')) : 'disabled (use zip upload)'} &middot; git clone: ${h.git_clone_enabled?'on':'off'} &middot; describe: ${h.describe_enabled?'on':'off'} &middot; PDF: ${h.pdf_enabled?'on':'off'}`;
+    restoreSession();
     updateSummary();
   }catch(e){ showError('Could not load field definitions: '+e.message); }
 }
 
-function buildPolicy(){
-  if(!CATALOG) return;
-  const mk=(id, items, name)=>{ const el=$('#'+id); el.innerHTML=''; for(const v of items){ el.insertAdjacentHTML('beforeend', `<label><input type="checkbox" name="${name}" value="${esc(v)}">${esc(v)}</label>`);} };
-  mk('pol-providers', CATALOG.providers, 'pol_provider'); mk('pol-platforms', CATALOG.platforms, 'pol_platform'); mk('pol-regions', CATALOG.regions, 'pol_region');
-  $('#eco-cnt').textContent = `${CATALOG.models.length} models · ${CATALOG.models.filter(m=>!m.illustrative).length} verified`;
-}
-function readPolicy(){
-  const vals = n => [...document.querySelectorAll(`input[name="${n}"]:checked`)].map(i=>i.value);
-  const pol = {require_verified: !$('#pol-unverified')?.checked};
-  const p=vals('pol_provider'), pl=vals('pol_platform'), rg=vals('pol_region');
-  if(p.length) pol.allowed_providers=p; if(pl.length) pol.allowed_platforms=pl; if(rg.length) pol.regions=rg;
-  return pol;
-}
 function buildForm(){
   const form = $('#profile-form'); form.innerHTML='';
   const groups = {};
   for(const f of FIELDS) (groups[f.group] ||= []).push(f);
   for(const [g, fs] of Object.entries(groups)){
-    const d = document.createElement('details'); d.className='grp'; d.open = (g==='meta'||g==='task'||g==='ops');
-    d.innerHTML = `<summary>${GROUPS[g]||g}<span class="cnt">${fs.length} fields</span></summary>`;
+    const d = document.createElement('details'); d.className='grp'; d.dataset.group=g; d.open = (g==='meta'||g==='task'||g==='ops');
+    d.innerHTML = `<summary data-tip="${esc(GROUP_TIPS[g]||'')}" class="dn dl">${GROUPS[g]||g}<span class="cnt">${fs.length} fields</span></summary>`;
     for(const f of fs) d.appendChild(fieldEl(f));
     form.appendChild(d);
   }
@@ -330,8 +386,8 @@ function buildForm(){
   form.addEventListener('change', updateSummary);
 }
 function fieldEl(f){
-  const wrap = document.createElement('div'); wrap.className='field';
-  const key = KEY.has(f.name) ? '<span class="badge info" style="font-size:10px;padding:1px 7px">key</span>' : '';
+  const wrap = document.createElement('div'); wrap.className='field'; wrap.dataset.field=f.name;
+  const key = KEY.has(f.name) ? '<span class="badge red" style="font-size:10px;padding:1px 7px" data-tip="One of the fields that changes the answer most." class="dn">key</span>' : '';
   wrap.innerHTML = `<div class="lbl">${title(f.name)} ${key}<button class="tip" type="button" data-tip="${esc(f.description)}" aria-label="About ${esc(f.name)}">i</button></div>`;
   let el;
   if(f.kind==='enum' && f.choices.length<=5){
@@ -340,19 +396,25 @@ function fieldEl(f){
   } else if(f.kind==='enum'){
     el = document.createElement('select'); el.name=f.name; for(const c of f.choices){const o=document.createElement('option');o.value=c;o.textContent=c;el.appendChild(o);} el.value=f.default;
   } else if(f.kind==='bool'){
-    el = document.createElement('label'); el.className='switch'; el.innerHTML = `<input type="checkbox" name="${f.name}" ${f.default?'checked':''}><span class="txt">${f.default?'Yes':'No'}</span>`;
+    el = document.createElement('label'); el.className='switch'; el.setAttribute('data-tip', f.description); el.classList.add('dn','dl'); el.innerHTML = `<input type="checkbox" name="${f.name}" ${f.default?'checked':''}><span class="txt">${f.default?'Yes':'No'}</span>`;
     el.querySelector('input').addEventListener('change', e=>{ el.querySelector('.txt').textContent = e.target.checked?'Yes':'No'; });
   } else if(f.kind==='int' && f.minimum===1 && f.maximum===5){
     el = document.createElement('div'); el.className='slider';
-    el.innerHTML = `<div><input type="range" name="${f.name}" min="1" max="5" step="1" value="${f.default}" aria-valuetext="${f.default} of 5"><span class="val">${f.default} / 5</span></div><div class="ends"><span>${ENDS[f.name]?.[0]||'Low'}</span><span>${ENDS[f.name]?.[1]||'High'}</span></div>`;
+    el.innerHTML = `<div><input type="range" name="${f.name}" min="1" max="5" step="1" value="${f.default}" aria-valuetext="${f.default} of 5" data-tip="Drag from 1 (${esc(ENDS[f.name]?.[0]||'low')}) to 5 (${esc(ENDS[f.name]?.[1]||'high')})." class="dn dl"><span class="val">${f.default} / 5</span></div><div class="ends"><span>${ENDS[f.name]?.[0]||'Low'}</span><span>${ENDS[f.name]?.[1]||'High'}</span></div>`;
     el.querySelector('input').addEventListener('input', e=>{ el.querySelector('.val').textContent = e.target.value+' / 5'; });
   } else if(f.kind==='str'){
     el = document.createElement(f.name==='description'?'textarea':'input'); if(el.tagName==='INPUT') el.type='text'; el.name=f.name; el.value=f.default||''; if(f.name==='description') el.style.minHeight='64px';
+    el.setAttribute('data-tip', f.name==='name'?'Used in the PDF title and download file names.':'Printed on the PDF cover.'); el.classList.add('dn','dl');
   } else {
     el = document.createElement('div'); el.className='unit';
-    el.innerHTML = `<input type="number" name="${f.name}" step="${f.kind==='float'?'any':'1'}" ${f.minimum!=null?`min="${f.minimum}"`:''} ${f.maximum!=null?`max="${f.maximum}"`:''} value="${f.default}">${UNITS[f.name]?`<span>${UNITS[f.name]}</span>`:''}`;
+    el.innerHTML = `<input type="number" name="${f.name}" step="${f.kind==='float'?'any':'1'}" ${f.minimum!=null?`min="${f.minimum}"`:''} ${f.maximum!=null?`max="${f.maximum}"`:''} value="${f.default}" data-tip="${esc(f.description)}" class="dn dl">${UNITS[f.name]?`<span>${UNITS[f.name]}</span>`:''}`;
   }
   wrap.appendChild(el);
+  if(PRESETS[f.name]){
+    const p=document.createElement('div'); p.className='presets';
+    for(const [label,val] of PRESETS[f.name]){ const b=document.createElement('button'); b.type='button'; b.textContent=label; b.setAttribute('data-tip',`Set ${title(f.name)} to ${val.toLocaleString()}.`); b.classList.add('dn'); b.addEventListener('click',()=>{ const inp=wrap.querySelector('input'); inp.value=val; inp.dispatchEvent(new Event('input',{bubbles:true})); }); p.appendChild(b); }
+    wrap.appendChild(p);
+  }
   if(f.name==='single_agent_baseline') wrap.insertAdjacentHTML('beforeend','<div class="help">Leave at −1 if you have not measured it. Values above 0.45 penalise multi-agent options.</div>');
   return wrap;
 }
@@ -380,91 +442,117 @@ function fillForm(p){
   updateSummary();
 }
 function updateSummary(){
-  const p=readForm(); if(!FIELDS.length) return;
-  const changed=Object.keys(readForm(true)).length; $('#setcount').textContent = changed? `${changed} of ${FIELDS.length} changed from defaults` : 'all defaults';
+  if(!FIELDS.length) return;
+  const p=readForm(), changed=readForm(true), n=Object.keys(changed).length;
+  $('#setcount').textContent = n? `${n} of ${FIELDS.length} changed` : 'all defaults';
+  for(const d of document.querySelectorAll('#profile-form details.grp')){ const g=d.dataset.group; const fs=FIELDS.filter(f=>f.group===g); const c=fs.filter(f=>changed[f.name]!==undefined).length; const cnt=d.querySelector('.cnt'); cnt.textContent = c? `${c} of ${fs.length} set` : `${fs.length} fields`; cnt.classList.toggle('changed', c>0); }
   const acc=['','best effort','some care','balanced','errors costly','errors very costly'][p.accuracy_priority]||'';
   const cost=['','cost no concern','cost minor','cost matters','cost important','cost dominates'][p.cost_sensitivity]||'';
-  $('#summary').innerHTML = `You are asking for a <b>${esc(p.task_complexity)}</b> task, ${p.steps_predictable?'with steps <b>fixed in code</b>':'where the <b>model chooses the steps</b>'}, ${p.tool_calls_per_task?`about <b>${p.tool_calls_per_task} tool calls</b>`:'<b>no tools</b>'}, retrieval <b>${esc(p.retrieval_depth)}</b>, answered within <b>${p.latency_budget_s}s</b>; ${acc}; ${cost}.`;
+  $('#summary').innerHTML = `You are asking for a <b>${esc(p.task_complexity)}</b> task, ${p.steps_predictable?'with steps <b>fixed in code</b>':'where the <b>model chooses the steps</b>'}, ${p.tool_calls_per_task?`about <b>${p.tool_calls_per_task} tool calls</b>`:'<b>no tools</b>'}, retrieval <b>${esc(p.retrieval_depth)}</b>, <b>${esc(p.data_sensitivity||'internal')}</b> data, answered within <b>${p.latency_budget_s}s</b>; ${acc}; ${cost}.`;
+  $('#ts2').classList.toggle('done', n>0);
+  saveSession();
 }
+function buildPolicy(){
+  if(!CATALOG) return;
+  const mk=(id, items, name, tipf)=>{ const el=$('#'+id); el.innerHTML=''; for(const v of items){ el.insertAdjacentHTML('beforeend', `<label data-tip="${esc(tipf(v))}" class="dn"><input type="checkbox" name="${name}" value="${esc(v)}">${esc(v)}</label>`);} };
+  const count=(k,v)=>CATALOG.models.filter(m=>k==='provider'? m.provider===v : (m[k]||[]).includes(v)).length;
+  mk('pol-providers', CATALOG.providers, 'pol_provider', v=>`${count('provider',v)} model(s) from ${v} in the catalog.`);
+  mk('pol-platforms', CATALOG.platforms, 'pol_platform', v=>`${count('platforms',v)} model(s) reachable on ${v}.`);
+  mk('pol-regions', CATALOG.regions, 'pol_region', v=>`${count('regions',v)} model(s) served in ${v}.`);
+  $('#eco-cnt').textContent = `${CATALOG.models.length} models · ${CATALOG.models.filter(m=>!m.illustrative).length} verified`;
+}
+function readPolicy(){
+  const vals = n => [...document.querySelectorAll(`input[name="${n}"]:checked`)].map(i=>i.value);
+  const pol = {require_verified: !$('#pol-unverified')?.checked};
+  const p=vals('pol_provider'), pl=vals('pol_platform'), rg=vals('pol_region');
+  if(p.length) pol.allowed_providers=p; if(pl.length) pol.allowed_platforms=pl; if(rg.length) pol.regions=rg;
+  return pol;
+}
+function saveSession(){ try{ localStorage.setItem('vgselect.profile', JSON.stringify({...EXTRAS, ...readForm(true)})); }catch(_){} }
+function restoreSession(){ try{ const s=localStorage.getItem('vgselect.profile'); if(!s) return; const p=JSON.parse(s); if(!Object.keys(p).length) return; fillForm(p); for(const k of ['domains','sources','tools','subtasks','sections']) if(p[k]) EXTRAS[k]=p[k]; toast('Restored your last inputs. Press Reset to start clean.'); }catch(_){} }
 
 /* tabs */
 document.querySelectorAll('.seg [role=tab]').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.seg [role=tab]').forEach(x=>x.setAttribute('aria-selected','false')); b.setAttribute('aria-selected','true');
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on')); $('#pane-'+b.dataset.pane).classList.add('on');
+  $('#ts1').classList.add('done');
 }));
-$('#example').addEventListener('change', e=>{ const o=e.target.selectedOptions[0]; if(o&&o.dataset.profile){ const p=JSON.parse(o.dataset.profile); fillForm(p); EXTRAS={}; for(const k of ['domains','sources','tools','subtasks','sections']) if(p[k]) EXTRAS[k]=p[k]; toast('Scenario loaded. Adjust anything, then recommend.'); } });
-$('#btn-reset').addEventListener('click', ()=>{ buildForm(); EXTRAS={}; $('#example').value=''; updateSummary(); });
-$('#help-link').addEventListener('click', e=>{ e.preventDefault(); $('#results').innerHTML = helpCard(); window.scrollTo({top:0}); });
-const drop=$('#drop'); ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hot');})); ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('hot');}));
-drop.addEventListener('drop', e=>{ $('#zip').files=e.dataTransfer.files; $('#zipname').textContent=$('#zip').files[0]?.name||''; });
-$('#zip').addEventListener('change', ()=>{ $('#zipname').textContent=$('#zip').files[0]?.name||''; });
-const dropT=$('#drop-traces'); ['dragenter','dragover'].forEach(ev=>dropT.addEventListener(ev,e=>{e.preventDefault();dropT.classList.add('hot');})); ['dragleave','drop'].forEach(ev=>dropT.addEventListener(ev,e=>{e.preventDefault();dropT.classList.remove('hot');}));
-dropT.addEventListener('drop', e=>{ $('#traces').files=e.dataTransfer.files; loadTraces(); });
-$('#traces').addEventListener('change', ()=>loadTraces('#traces','#tracesname'));
-const dropTG=$('#drop-traces-g'); ['dragenter','dragover'].forEach(ev=>dropTG.addEventListener(ev,e=>{e.preventDefault();dropTG.classList.add('hot');})); ['dragleave','drop'].forEach(ev=>dropTG.addEventListener(ev,e=>{e.preventDefault();dropTG.classList.remove('hot');}));
-dropTG.addEventListener('drop', e=>{ $('#traces-g').files=e.dataTransfer.files; loadTraces('#traces-g','#tracesname-g'); });
-$('#traces-g').addEventListener('change', ()=>loadTraces('#traces-g','#tracesname-g'));
-const dropZG=$('#drop-zip-g'); ['dragenter','dragover'].forEach(ev=>dropZG.addEventListener(ev,e=>{e.preventDefault();dropZG.classList.add('hot');})); ['dragleave','drop'].forEach(ev=>dropZG.addEventListener(ev,e=>{e.preventDefault();dropZG.classList.remove('hot');}));
-dropZG.addEventListener('drop', e=>{ $('#zip-g').files=e.dataTransfer.files; $('#zipname-g').textContent=$('#zip-g').files[0]?.name||''; });
-$('#zip-g').addEventListener('change', ()=>{ $('#zipname-g').textContent=$('#zip-g').files[0]?.name||''; });
-async function loadTraces(inputSel='#traces', nameSel='#tracesname'){
-  const f=$(inputSel).files[0]; if(!f){ TRACES=null; $(nameSel).textContent=''; return; }
+$('#example').addEventListener('change', e=>{ const o=e.target.selectedOptions[0]; if(o&&o.dataset.profile){ const p=JSON.parse(o.dataset.profile); fillForm(p); EXTRAS={}; for(const k of ['domains','sources','tools','subtasks','sections']) if(p[k]) EXTRAS[k]=p[k]; $('#ts1').classList.add('done'); toast('Scenario loaded. Adjust anything, then recommend.'); } });
+$('#btn-reset').addEventListener('click', ()=>{ buildForm(); EXTRAS={}; $('#example').value=''; try{ localStorage.removeItem('vgselect.profile'); }catch(_){} updateSummary(); $('#ts1').classList.remove('done'); $('#ts2').classList.remove('done'); toast('Back to defaults.'); });
+$('#help-link').addEventListener('click', e=>{ e.preventDefault(); $('#results').innerHTML = helpCard(); window.scrollTo({top:0, behavior:'smooth'}); });
+document.addEventListener('keydown', e=>{ if((e.metaKey||e.ctrlKey) && e.key==='Enter'){ e.preventDefault(); $('#btn-recommend').click(); } });
+
+function dropZone(dropSel, inputSel, onChange){
+  const d=$(dropSel), i=$(inputSel);
+  ['dragenter','dragover'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('hot');})); ['dragleave','drop'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove('hot');}));
+  d.addEventListener('drop', e=>{ i.files=e.dataTransfer.files; onChange(); });
+  i.addEventListener('change', onChange);
+}
+dropZone('#drop','#zip', ()=>{ const f=$('#zip').files[0]; $('#zipname').textContent=f? `${f.name} (${(f.size/1048576).toFixed(1)} MB)`:''; $('#drop').classList.toggle('filled', !!f); });
+dropZone('#drop-zip-g','#zip-g', ()=>{ const f=$('#zip-g').files[0]; $('#zipname-g').textContent=f? `${f.name} (${(f.size/1048576).toFixed(1)} MB)`:''; $('#drop-zip-g').classList.toggle('filled', !!f); });
+dropZone('#drop-traces','#traces', ()=>loadTraces('#traces','#tracesname','#drop-traces'));
+dropZone('#drop-traces-g','#traces-g', ()=>loadTraces('#traces-g','#tracesname-g','#drop-traces-g'));
+async function loadTraces(inputSel, nameSel, dropSel){
+  const f=$(inputSel).files[0]; if(!f){ TRACES=null; $(nameSel).textContent=''; $(dropSel).classList.remove('filled'); return; }
   const raw=(await f.text()).trim();
   try{
     if(raw.startsWith('[')) TRACES=JSON.parse(raw);
     else if(raw.startsWith('{') && !raw.includes('\n')){ const d=JSON.parse(raw); TRACES=d.runs||d.spans||d.records||[d]; }
     else TRACES=raw.split('\n').filter(l=>l.trim()).map(l=>JSON.parse(l));
-    $(nameSel).textContent=`${f.name}: ${TRACES.length} records`;
-  }catch(err){ TRACES=null; $(nameSel).textContent='Could not parse traces: '+err.message; }
+    $(nameSel).textContent=`${f.name}: ${TRACES.length} records`; $(dropSel).classList.add('filled');
+  }catch(err){ TRACES=null; $(nameSel).textContent='Could not parse traces: '+err.message; $(dropSel).classList.remove('filled'); }
 }
-$('#btn-grade').addEventListener('click', async e=>{
-  e.preventDefault(); showError('');
-  if(!TRACES || !TRACES.length){ showError('Add a traces file first (or use Scan code for a design-time card without traces).'); return; }
-  busy(true,'Grading the agent…');
-  try{
-    let j;
-    const zip=$('#zip-g').files[0];
-    if(zip){ const fd=new FormData(); fd.append('archive',zip); fd.append('overrides',JSON.stringify(readForm(true))); fd.append('policy',JSON.stringify(readPolicy())); fd.append('traces',$('#traces-g').files[0]||$('#traces').files[0]); const r=await post('/api/v1/scan/upload', fd, true); fillForm(r.profile); EXTRAS={tools:r.profile.tools, sources:r.profile.sources}; j=r.recommendation; render(j, r.scan); }
-    else { const profile={...EXTRAS, ...readForm()}; j=await post('/api/v1/recommend',{profile, policy: readPolicy(), traces: TRACES}); render(j); }
-    toast('Report card ready: '+(j.report_card? j.report_card.overall_grade+' ('+j.report_card.mode+')':'see results'));
-  }catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
-});
 
-function busy(on,msg){ document.querySelectorAll('.btn').forEach(b=>b.disabled=on); if(on) $('#results').innerHTML=`<div class="card"><span class="spin"></span>${esc(msg||'Working…')}</div>`; }
-function showError(m){ const e=$('#error'); e.textContent=m; e.classList.toggle('on', !!m); }
-function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'), 2600); }
+function busy(on,msg){ document.querySelectorAll('.btn').forEach(b=>b.disabled=on); if(on) $('#results').innerHTML=`<div class="card"><span class="spin"></span>${esc(msg||'Working…')}<div class="skel" style="width:60%"></div><div class="skel" style="width:90%"></div><div class="skel" style="width:75%"></div></div>`; }
+function showError(m){ const e=$('#error'); e.textContent=m; e.classList.toggle('on', !!m); if(m) e.scrollIntoView({block:'nearest'}); }
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'), 3200); }
 async function post(url, body, isForm){ const r = await fetch(url, isForm? {method:'POST', body} : {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}); const j=await r.json(); if(!r.ok) throw new Error(typeof j.detail==='string'? j.detail : JSON.stringify(j.detail)); return j; }
 
 $('#btn-recommend').addEventListener('click', async e=>{
   e.preventDefault(); showError('');
   const profile={...EXTRAS, ...readForm()};
-  busy(true,'Scoring ten topologies…');
+  busy(true,'Scoring ten architectures, choosing a model per role, building the plan…');
   try{ render(await post('/api/v1/recommend',{profile, policy: readPolicy(), traces: TRACES||undefined})); }
   catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
 });
 $('#btn-scan').addEventListener('click', async e=>{
   e.preventDefault(); showError('');
   const overrides=readForm(true);
-  busy(true,'Scanning repository…');
+  busy(true,'Scanning the repository…');
   try{
     let j;
     if($('#zip').files.length){ const fd=new FormData(); fd.append('archive',$('#zip').files[0]); fd.append('overrides',JSON.stringify(overrides)); fd.append('policy',JSON.stringify(readPolicy())); if($('#traces').files[0]) fd.append('traces',$('#traces').files[0]); j=await post('/api/v1/scan/upload', fd, true); }
     else { const body={overrides, policy: readPolicy(), traces: TRACES||undefined}; if($('#scan-path').value) body.path=$('#scan-path').value; else if($('#scan-git').value) body.git_url=$('#scan-git').value; else throw new Error('Choose a zip, a server path, or a git URL.'); j=await post('/api/v1/scan', body); }
-    fillForm(j.profile); EXTRAS={tools:j.profile.tools, sources:j.profile.sources};
-    render(j.recommendation, j.scan); toast('Profile pre-filled from the scan. Review the low-confidence fields.');
+    fillForm(j.profile); EXTRAS={tools:j.profile.tools, sources:j.profile.sources}; $('#ts1').classList.add('done');
+    render(j.recommendation, j.scan); toast('Profile pre-filled from the scan. Review the low-confidence fields in step 2.');
   }catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
 });
 $('#btn-describe').addEventListener('click', async e=>{
   e.preventDefault(); showError(''); busy(true,'Asking Claude to infer the profile…');
-  try{ const j=await post('/api/v1/describe',{text:$('#describe-text').value, policy: readPolicy()}); fillForm(j.profile); render(j); }
+  try{ const j=await post('/api/v1/describe',{text:$('#describe-text').value, policy: readPolicy()}); fillForm(j.profile); $('#ts1').classList.add('done'); render(j); }
   catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
+});
+$('#btn-grade').addEventListener('click', async e=>{
+  e.preventDefault(); showError('');
+  if(!TRACES || !TRACES.length){ showError('Add a traces file first (or use Scan code for a design-time card without traces).'); return; }
+  busy(true,'Grading the agent from its traces…');
+  try{
+    let j;
+    const zip=$('#zip-g').files[0];
+    if(zip){ const fd=new FormData(); fd.append('archive',zip); fd.append('overrides',JSON.stringify(readForm(true))); fd.append('policy',JSON.stringify(readPolicy())); fd.append('traces',$('#traces-g').files[0]||$('#traces').files[0]); const r=await post('/api/v1/scan/upload', fd, true); fillForm(r.profile); EXTRAS={tools:r.profile.tools, sources:r.profile.sources}; j=r.recommendation; render(j, r.scan); }
+    else { const profile={...EXTRAS, ...readForm()}; j=await post('/api/v1/recommend',{profile, policy: readPolicy(), traces: TRACES}); render(j); }
+    $('#ts1').classList.add('done');
+    toast('Report card ready: '+(j.report_card? j.report_card.overall_grade+' ('+j.report_card.mode+')':'see results'));
+  }catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
 });
 
 /* rendering */
 const cite = k => `<span class="cite" data-tip="${esc(CITES[k]||k)}" tabindex="0">${esc(k.replace(/_/g,' ').toLowerCase())}</span>`;
 const verdictClass = v => v==='fits'?'ok': v==='tight'?'warn':'bad';
 const verdictText = v => ({fits:'Fits the budget', tight:'Tight against budget', exceeds:'Exceeds budget', 'far over':'Far over budget'})[v]||v;
+const gcls=g=>({A:'ok',B:'ok',C:'warn',D:'bad',F:'bad'})[g]||'neutral';
 function pct(n,d){ return Math.max(2, Math.min(100, Math.round(100*n/d))); }
+const h2 = (ico, text, extra='') => `<h2>${svgIco(ICO[ico])}${text}${extra}</h2>`;
 
 function render(rec, scan){
   LAST=rec; LAST_SCAN=scan||null;
@@ -473,103 +561,120 @@ function render(rec, scan){
   const ratio = best.estimate.latency_s/budget;
   const pos=best.signals.filter(s=>s.delta>0).sort((a,b)=>b.delta-a.delta);
   const neg=best.signals.filter(s=>s.delta<0).sort((a,b)=>a.delta-b.delta);
-  let h = `<div class="card verdict">
+  const rc=rec.report_card;
+  const jump=[['#r-verdict','Verdict'], scan?['#r-scan','Scan']:null, rc?['#r-card','Report card']:null, ['#r-compare','Options'], rec.selection?['#r-models','Models']:null, ['#r-plan','Plan'], ['#r-next','Next steps'], ['#r-assume','Assumptions']].filter(Boolean);
+  let h = `<div class="strip"><div class="chips">
+      <span class="badge red" data-tip="The recommended architecture." class="dn dl">${esc(best.name)}</span>
+      <span class="badge ${verdictClass(best.latency_verdict)}" data-tip="${esc(HEAD_TIPS.latency)}" class="dn">~${Math.round(best.estimate.latency_s)}s / ${budget}s</span>
+      <span class="badge neutral" data-tip="${esc(HEAD_TIPS.cost)}" class="dn">$${best.estimate.cost_usd.toFixed(3)} per request</span>
+      ${rc?`<span class="badge ${gcls(rc.overall_grade)}" data-tip="Overall report-card grade (${esc(rc.mode)})." class="dn">Report card ${esc(rc.overall_grade)}</span>`:''}
+      ${rec.selection?`<span class="badge info" data-tip="Providers of the models chosen for the roles." class="dn">${esc(rec.selection.providers_used.join(', ')||'no models')}</span>`:''}
+    </div><nav aria-label="Result sections">${jump.map(([a,t])=>`<a href="${a}" data-tip="Jump to ${esc(t)}." class="dn">${esc(t)}</a>`).join('')}</nav></div>`;
+
+  h += `<div class="card verdict" id="r-verdict">
     <div class="top"><div style="flex:1"><div class="fam">Recommended architecture · ${esc(best.family.replace('_',' '))}</div><div class="name">${esc(best.name)}</div>
-      <div><span class="badge ${verdictClass(best.latency_verdict)}">${esc(verdictText(best.latency_verdict))}</span> ${scan? (scan.current_topology===best.topology? '<span class="badge ok">Matches current implementation</span>' : `<span class="badge neutral">Currently: ${esc(byId[scan.current_topology]?.name||scan.current_topology)}</span>`):''}</div></div>
-      <div class="toolbar"><button class="btn sm" id="dl-pdf" data-tip="A4 architecture document: summary, evidence, options compared, plan with diagram, next steps, assumptions, sources." class="dn">Architecture doc (PDF)</button><button class="btn sm" id="dl-skel" data-tip="Runnable LangGraph project for this topology: graph wiring, role agents on the recommended models, tool stubs, limits, tests.">LangGraph skeleton (.zip)</button><button class="btn sm ghost" id="dl-md">Markdown</button><button class="btn sm ghost" id="dl-json">JSON</button></div></div>
+      <div class="chips"><span class="badge ${verdictClass(best.latency_verdict)}" data-tip="${esc(HEAD_TIPS.budget)}" class="dn dl">${esc(verdictText(best.latency_verdict))}</span> ${scan? (scan.current_topology===best.topology? '<span class="badge ok" data-tip="The code already implements this topology; focus on the next steps." class="dn">Matches current implementation</span>' : `<span class="badge neutral" data-tip="What the scanned code implements today; see the gap table below." class="dn">Currently: ${esc(byId[scan.current_topology]?.name||scan.current_topology)}</span>`):''}</div></div>
+      <div class="toolbar">
+        <button class="btn sm" id="dl-pdf" data-tip="A4 architecture document: summary, evidence, options compared, plan with diagram, model per role, report card, next steps, assumptions, sources." class="dn">${svgIco('M12 3v12m0 0l-4-4m4 4l4-4M5 21h14')}Architecture doc (PDF)</button>
+        <button class="btn sm" id="dl-skel" data-tip="Runnable LangGraph project for this topology: graph wiring, role agents on the chosen models, tool stubs, limits, tests." class="dn">${svgIco('M12 3v12m0 0l-4-4m4 4l4-4M5 21h14')}LangGraph skeleton (.zip)</button>
+        <button class="btn sm ghost" id="dl-md" data-tip="The full report as Markdown, for wikis and pull requests." class="dn">Markdown</button>
+        <button class="btn sm ghost" id="dl-json" data-tip="Every number, rule and choice as JSON, for tooling." class="dn dr">JSON</button>
+      </div></div>
     <div class="tiles">
-      <div class="tile"><div class="k">Est. latency <button class="tip" data-tip="${esc(HEAD_TIPS.latency)}" aria-label="About latency">i</button></div><div class="v">~${Math.round(best.estimate.latency_s)}s<small>of ${budget}s budget</small></div><div class="bar"><i class="${ratio>1?'bad':ratio>0.7?'warn':''}" style="width:${pct(best.estimate.latency_s,budget)}%"></i></div></div>
-      <div class="tile"><div class="k">Cost / request <button class="tip" data-tip="${esc(HEAD_TIPS.cost)}" aria-label="About cost">i</button></div><div class="v">$${best.estimate.cost_usd.toFixed(3)}</div></div>
-      <div class="tile"><div class="k">Tokens <button class="tip" data-tip="${esc(HEAD_TIPS.tokens)}" aria-label="About tokens">i</button></div><div class="v">${Math.round(best.estimate.token_multiplier)}x<small>one call</small></div></div>
-      <div class="tile"><div class="k">Score <button class="tip" data-tip="${esc(HEAD_TIPS.score)}" aria-label="About score">i</button></div><div class="v">${best.score>0?'+':''}${best.score.toFixed(1)}</div></div>
+      <div class="tile" data-tip="${esc(HEAD_TIPS.latency)}" class="dn dl"><div class="k">Est. latency</div><div class="v">~${Math.round(best.estimate.latency_s)}s<small>of ${budget}s budget</small></div><div class="bar-h"><i class="${ratio>1?'bad':ratio>0.7?'warn':''}" style="width:${pct(best.estimate.latency_s,budget)}%"></i></div></div>
+      <div class="tile" data-tip="${esc(HEAD_TIPS.cost)}" class="dn"><div class="k">Cost / request</div><div class="v">$${best.estimate.cost_usd.toFixed(3)}</div></div>
+      <div class="tile" data-tip="${esc(HEAD_TIPS.tokens)}" class="dn"><div class="k">Tokens</div><div class="v">${Math.round(best.estimate.token_multiplier)}x<small>one call</small></div></div>
+      <div class="tile" data-tip="${esc(HEAD_TIPS.score)}" class="dn dr"><div class="k">Score</div><div class="v">${best.score>0?'+':''}${best.score.toFixed(1)}</div></div>
     </div>
     <p>${md(rec.headline)}</p>
-    <h3>Why this architecture</h3><ul class="why">${pos.slice(0,6).map(s=>`<li><span class="d">+${s.delta.toFixed(1)}</span>${esc(s.rationale)} ${cite(s.citation)}</li>`).join('')||'<li>No rule specifically favours it; it wins on viability, latency and cost. Treat the runners-up as close calls.</li>'}</ul>
-    ${neg.length?`<details><summary class="muted" style="cursor:pointer">Counter-signals to keep in mind (${neg.length})</summary><ul class="why">${neg.map(s=>`<li><span class="d neg">${s.delta.toFixed(1)}</span>${esc(s.rationale)} ${cite(s.citation)}</li>`).join('')}</ul></details>`:''}
+    <h3 data-tip="Every rule that favoured this architecture, with its weight and the source it comes from. Hover a source chip for the reference." class="dn dl">Why this architecture</h3><ul class="why">${pos.slice(0,6).map(s=>`<li><span class="d">+${s.delta.toFixed(1)}</span>${esc(s.rationale)} ${cite(s.citation)}</li>`).join('')||'<li>No rule specifically favours it; it wins on viability, latency and cost. Treat the runners-up as close calls.</li>'}</ul>
+    ${neg.length?`<details><summary class="muted" style="cursor:pointer" data-tip="Rules that count against the winner; worth knowing before you commit." class="dn dl">Counter-signals to keep in mind (${neg.length})</summary><ul class="why">${neg.map(s=>`<li><span class="d neg">${s.delta.toFixed(1)}</span>${esc(s.rationale)} ${cite(s.citation)}</li>`).join('')}</ul></details>`:''}
   </div>`;
 
   if(scan){
     const cur = byId[scan.current_topology];
-    h += `<div class="card"><h2>What the scan found</h2><p class="lede">${scan.files_scanned} files read. Inferences below are starting points; anything you set in step 2 overrides them.</p>
-      <div class="chips">${scan.frameworks.map(f=>`<span class="chip red">${esc(f)}</span>`).join('')}<span class="chip">${scan.tools.length} tools</span><span class="chip">${scan.knowledge_sources.length? 'sources: '+esc(scan.knowledge_sources.join(', ')) : 'no retrieval'}</span>${scan.side_effects.map(s=>`<span class="chip">${esc(s)}</span>`).join('')}</div>
-      ${scan.warnings.map(w=>`<div class="badge warn" style="margin:4px 0">${esc(w)}</div>`).join('')}
-      ${cur && cur.topology!==best.topology ? `<h3>Current vs. recommended</h3><div class="gap">
+    h += `<div class="card" id="r-scan">${h2('scan','What the scan found')}<p class="lede">${scan.files_scanned} files read. Inferences below are starting points; anything you set in step 2 overrides them.</p>
+      <div class="chips">${scan.frameworks.map(f=>`<span class="chip red" data-tip="Framework or SDK detected in the code." class="dn">${esc(f)}</span>`).join('')}<span class="chip" data-tip="Tool definitions found (decorators, schemas, MCP tools, OpenAPI operations)." class="dn">${scan.tools.length} tools</span><span class="chip" data-tip="Retrieval integrations found (vector stores, search, SQL, web)." class="dn">${scan.knowledge_sources.length? 'sources: '+esc(scan.knowledge_sources.join(', ')) : 'no retrieval'}</span>${scan.side_effects.map(s=>`<span class="chip" data-tip="Side-effecting integration and its worst-case reversibility." class="dn">${esc(s)}</span>`).join('')}</div>
+      ${scan.warnings.map(w=>`<div class="badge warn" style="margin:4px 0;white-space:normal">${esc(w)}</div>`).join('')}
+      <p>Current topology as implemented: <b>${esc(scan.current_topology)}</b> <span class="muted">${esc(scan.current_topology_reason)}</span></p>
+      ${cur && cur.topology!==best.topology ? `<h3 data-tip="Side by side: what the code does today versus the recommendation, on the same estimates." class="dn dl">Current vs. recommended</h3><div class="gap">
         <div class="col"><div class="t">As implemented</div><div class="n">${esc(cur.name)}</div><dl><dt>Score</dt><dd>${cur.score.toFixed(1)}</dd><dt>Latency</dt><dd>~${Math.round(cur.estimate.latency_s)}s</dd><dt>Cost / req</dt><dd>$${cur.estimate.cost_usd.toFixed(3)}</dd><dt>Tokens</dt><dd>${Math.round(cur.estimate.token_multiplier)}x</dd></dl></div>
         <div class="col rec"><div class="t">Recommended</div><div class="n">${esc(best.name)}</div><dl><dt>Score</dt><dd>${best.score.toFixed(1)}</dd><dt>Latency</dt><dd>~${Math.round(best.estimate.latency_s)}s</dd><dt>Cost / req</dt><dd>$${best.estimate.cost_usd.toFixed(3)}</dd><dt>Tokens</dt><dd>${Math.round(best.estimate.token_multiplier)}x</dd></dl></div></div>` : ''}
-      <h3>Inferred profile</h3><div class="wrap"><table><tr><th>Field</th><th>Value</th><th data-tip="How sure the scanner is. Under 50% is a guess to confirm." tabindex="0">Confidence</th><th>Reason</th></tr>
-      ${scan.inferred.map(i=>`<tr><td><b>${esc(title(i.field))}</b></td><td>${esc(i.value)}</td><td><span class="conf"><i class="${i.confidence<0.5?'lo':''}" style="width:${Math.round(i.confidence*100)}%"></i></span>${Math.round(i.confidence*100)}%</td><td class="muted">${esc(i.reason)}</td></tr>`).join('')}</table></div>
-      <details style="margin-top:10px"><summary class="muted" style="cursor:pointer">Evidence (${scan.evidence.length} locations)</summary><div class="wrap"><table><tr><th>Category</th><th>Label</th><th>Location</th><th>Snippet</th></tr>${scan.evidence.map(e=>`<tr><td>${esc(e.category)}</td><td>${esc(e.label)}</td><td style="font-family:var(--mono);font-size:12px">${esc(e.path)}:${e.line}</td><td class="muted">${esc(e.snippet)}</td></tr>`).join('')}</table></div></details></div>`;
+      <h3 data-tip="Fields the scanner inferred from the code, with how confident it is. Under 50% is a guess to confirm." class="dn dl">Inferred profile</h3><div class="wrap"><table><thead><tr><th data-tip="The profile field." tabindex="0">Field</th><th data-tip="The inferred value now in step 2." tabindex="0">Value</th><th data-tip="How sure the scanner is. Under 50% is a guess to confirm." tabindex="0">Confidence</th><th data-tip="What in the code led to this value." tabindex="0">Reason</th></tr></thead><tbody>
+      ${scan.inferred.map(i=>`<tr><td><b>${esc(title(i.field))}</b></td><td>${esc(i.value)}</td><td><span class="conf"><i class="${i.confidence<0.5?'lo':''}" style="width:${Math.round(i.confidence*100)}%"></i></span>${Math.round(i.confidence*100)}%</td><td class="muted">${esc(i.reason)}</td></tr>`).join('')}</tbody></table></div>
+      <details style="margin-top:10px"><summary class="muted" style="cursor:pointer" data-tip="The exact files and lines behind each inference." class="dn dl">Evidence (${scan.evidence.length} locations)</summary><div class="wrap"><table><thead><tr><th>Category</th><th>Label</th><th>Location</th><th>Snippet</th></tr></thead><tbody>${scan.evidence.map(e=>`<tr><td>${esc(e.category)}</td><td>${esc(e.label)}</td><td style="font-family:var(--mono);font-size:12px">${esc(e.path)}:${e.line}</td><td class="muted">${esc(e.snippet)}</td></tr>`).join('')}</tbody></table></div></details></div>`;
   }
 
-  if(rec.report_card){
-    const rc=rec.report_card, L={1:'trivial',2:'simple',3:'moderate',4:'complex',5:'open-ended'};
-    const gcls=g=>({A:'ok',B:'ok',C:'warn',D:'bad',F:'bad'})[g]||'neutral';
-    h += `<div class="card"><h2>Agent report card <span class="badge ${gcls(rc.overall_grade)}" style="font-size:14px;margin-left:8px">${esc(rc.overall_grade)}${rc.overall_score!=null?' · '+rc.overall_score:''}</span> <span class="badge neutral">${esc(rc.mode)}</span></h2>
-      <p class="lede">${md(rc.summary)}</p>
+  if(rc){
+    const L={1:'trivial',2:'simple',3:'moderate',4:'complex',5:'open-ended'};
+    h += `<div class="card" id="r-card">${h2('card','Agent report card', `<span class="badge neutral" data-tip="${rc.mode==='full'?'Graded from code and traces.':'Graded from code only; add traces to grade behaviour.'}" class="dn">${esc(rc.mode)}</span>`)}
+      <div class="top" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:8px"><div class="ring ${rc.overall_grade==='n/a'?'na':esc(rc.overall_grade)}" data-tip="Overall grade: weighted mean of the graded dimensions (A ≥ 90, B ≥ 80, C ≥ 70, D ≥ 60, F below)." class="dn dl">${esc(rc.overall_grade)}</div><div style="flex:1"><p class="lede" style="margin:0">${md(rc.summary)}</p></div></div>
       <div class="tiles">
-        <div class="tile"><div class="k">Task complexity <button class="tip" data-tip="From the profile: complexity, breadth, sources, parallel sub-tasks, context pressure." aria-label="About task complexity">i</button></div><div class="v">${rc.complexity.task.level}<small>${esc(rc.complexity.task.label)}</small></div></div>
-        <div class="tile"><div class="k">Design complexity <button class="tip" data-tip="From the code: tools and overlap, delegation depth, handoffs, loops, prompt load." aria-label="About design complexity">i</button></div><div class="v">${rc.complexity.design.level}<small>${esc(rc.complexity.design.label)}</small></div></div>
-        <div class="tile"><div class="k">Behaviour complexity <button class="tip" data-tip="From traces: steps per run and their spread, branching factor, spawns and handoffs." aria-label="About behaviour complexity">i</button></div><div class="v">${rc.complexity.behaviour? rc.complexity.behaviour.level+'<small>'+esc(rc.complexity.behaviour.label)+'</small>':'<small>add traces</small>'}</div></div>
+        <div class="tile" data-tip="From the profile: complexity, breadth, sources, parallel sub-tasks, context pressure." class="dn dl"><div class="k">Task complexity</div><div class="v">${rc.complexity.task.level}<small>${esc(rc.complexity.task.label)}</small></div></div>
+        <div class="tile" data-tip="From the code: tools and overlap, delegation depth, handoffs, loops, prompt load." class="dn"><div class="k">Design complexity</div><div class="v">${rc.complexity.design.level}<small>${esc(rc.complexity.design.label)}</small></div></div>
+        <div class="tile" data-tip="From traces: steps per run and their spread, branching factor, spawns and handoffs." class="dn dr"><div class="k">Behaviour complexity</div><div class="v">${rc.complexity.behaviour? rc.complexity.behaviour.level+'<small>'+esc(rc.complexity.behaviour.label)+'</small>':'<small>add traces</small>'}</div></div>
       </div>
-      <div class="wrap"><table><tr><th>Dimension</th><th>Grade</th><th>Score</th><th>Findings</th></tr>
-      ${rc.dimensions.map(d=>`<tr><td><b>${esc(d.name)}</b><div class="muted">weight ${d.weight}</div></td><td><span class="badge ${gcls(d.grade)}">${esc(d.grade)}</span></td><td>${d.score!=null?d.score:'n/a'}</td><td>${d.findings.length?'<ul style="margin:0;padding-left:16px">'+d.findings.map(f=>`<li>${esc(f)}</li>`).join('')+'</ul>':'<span class="muted">no issues</span>'}</td></tr>`).join('')}</table></div>
-      ${rc.mismatches.length?`<h3>Mismatches</h3><ul>${rc.mismatches.map(m=>`<li><span class="badge ${m.severity==='high'?'bad':m.severity==='warn'?'warn':'info'}">${esc(m.severity)}</span> <b>${esc(m.title)}.</b> ${esc(m.detail)} <span class="muted">Action: ${esc(m.action)}</span></li>`).join('')}</ul>`:''}
-      ${rc.behaviour?`<details><summary class="muted" style="cursor:pointer">Behavioural metrics (${rc.behaviour.runs} runs, ${rc.behaviour.tasks} tasks)</summary><div class="wrap"><table>
-        <tr><th>Success</th><th>Consistency</th><th>Steps p50/p95/CV</th><th>Tool calls</th><th>Tool errors</th><th>Loops</th><th>Limit hits</th><th>Branching</th><th>Tokens/run</th><th>Peak ctx</th><th>Latency p50/p95</th><th>$/completed</th></tr>
-        <tr><td>${rc.behaviour.success_rate!=null?Math.round(rc.behaviour.success_rate*100)+'%':'n/a'}</td><td>${rc.behaviour.consistency!=null?Math.round(rc.behaviour.consistency*100)+'%':'n/a'}</td><td>${rc.behaviour.steps.p50}/${rc.behaviour.steps.p95}/${rc.behaviour.steps.cv}</td><td>${rc.behaviour.tool_calls.mean}</td><td>${Math.round(rc.behaviour.tool_error_rate*100)}%</td><td>${Math.round(rc.behaviour.repetition_rate*100)}%</td><td>${Math.round(rc.behaviour.termination_limit_rate*100)}%</td><td>${rc.behaviour.branching_factor}</td><td>${Math.round(rc.behaviour.tokens_per_run.mean).toLocaleString()}</td><td>${Math.round(rc.behaviour.peak_context.max).toLocaleString()}</td><td>${(rc.behaviour.latency_ms.p50/1000).toFixed(1)}s/${(rc.behaviour.latency_ms.p95/1000).toFixed(1)}s</td><td>${rc.behaviour.cost_per_completed_task!=null?'$'+rc.behaviour.cost_per_completed_task.toFixed(4):'n/a'}</td></tr></table></div></details>`:''}
-      ${rc.agents.length?`<h3>Per-agent cards</h3><div class="wrap"><table><tr><th>Agent</th><th>Role</th><th>Model</th><th>Grade</th><th>Steps p50/p95</th><th>Tool calls</th><th>Errors</th><th>Loops</th><th>Tokens/run</th><th>Latency p50</th><th>Findings</th></tr>
-        ${rc.agents.map(a=>`<tr><td><b>${esc(a.agent)}</b></td><td>${esc(a.role||'-')}</td><td class="pill">${esc(a.model||'-')}</td><td><span class="badge ${gcls(a.grade)}">${esc(a.grade)}</span></td><td>${a.behaviour.steps.p50}/${a.behaviour.steps.p95}</td><td>${a.behaviour.tool_calls.mean}</td><td>${Math.round(a.behaviour.tool_error_rate*100)}%</td><td>${Math.round(a.behaviour.repetition_rate*100)}%</td><td>${Math.round(a.behaviour.tokens_per_run.mean).toLocaleString()}</td><td>${(a.behaviour.latency_ms.p50/1000).toFixed(1)}s</td><td class="muted">${esc(a.findings.join('; '))}</td></tr>`).join('')}</table></div>`:''}
+      <div class="dims">${rc.dimensions.map(d=>`<div class="dim" data-tip="Weight ${d.weight} of 100 in the overall grade." class="dn dl"><div class="k">${esc(d.name)}</div><div class="g ${d.grade==='n/a'?'na':esc(d.grade)}">${esc(d.grade)}<small style="font-size:12px;color:var(--ink-3);font-weight:600;margin-left:6px">${d.score!=null?d.score:'not measurable'}</small></div>${d.findings.length?'<ul>'+d.findings.map(f=>`<li>${esc(f)}</li>`).join('')+'</ul>':'<div class="muted" style="margin-top:6px">no issues found</div>'}</div>`).join('')}</div>
+      ${rc.mismatches.length?`<h3 data-tip="Gaps between what the task needs, what was built, and what the agent actually does. Start here." class="dn dl">Mismatches</h3><ul>${rc.mismatches.map(m=>`<li><span class="badge ${m.severity==='high'?'bad':m.severity==='warn'?'warn':'info'}">${esc(m.severity)}</span> <b>${esc(m.title)}.</b> ${esc(m.detail)} <span class="muted">Action: ${esc(m.action)}</span></li>`).join('')}</ul>`:''}
+      ${rc.behaviour?`<details><summary class="muted" style="cursor:pointer" data-tip="All behavioural metrics computed from the traces." class="dn dl">Behavioural metrics (${rc.behaviour.runs} runs, ${rc.behaviour.tasks} tasks)</summary><div class="wrap"><table><thead>
+        <tr><th data-tip="Share of runs marked successful." tabindex="0">Success</th><th data-tip="Share of repeated tasks whose runs agree on the outcome." tabindex="0">Consistency</th><th data-tip="Steps per run: median, 95th percentile, coefficient of variation." tabindex="0">Steps p50/p95/CV</th><th data-tip="Mean tool calls per run." tabindex="0">Tool calls</th><th data-tip="Share of tool calls that errored." tabindex="0">Tool errors</th><th data-tip="Runs that repeated an identical tool call (loop signal)." tabindex="0">Loops</th><th data-tip="Runs ended by a step or recursion limit." tabindex="0">Limit hits</th><th data-tip="Mean number of distinct next actions after an action." tabindex="0">Branching</th><th data-tip="Mean tokens per run." tabindex="0">Tokens/run</th><th data-tip="Largest model input seen." tabindex="0">Peak ctx</th><th data-tip="Median and 95th percentile run latency." tabindex="0">Latency p50/p95</th><th data-tip="Total cost divided by successful runs." tabindex="0">$/completed</th></tr></thead>
+        <tbody><tr><td>${rc.behaviour.success_rate!=null?Math.round(rc.behaviour.success_rate*100)+'%':'n/a'}</td><td>${rc.behaviour.consistency!=null?Math.round(rc.behaviour.consistency*100)+'%':'n/a'}</td><td>${rc.behaviour.steps.p50}/${rc.behaviour.steps.p95}/${rc.behaviour.steps.cv}</td><td>${rc.behaviour.tool_calls.mean}</td><td>${Math.round(rc.behaviour.tool_error_rate*100)}%</td><td>${Math.round(rc.behaviour.repetition_rate*100)}%</td><td>${Math.round(rc.behaviour.termination_limit_rate*100)}%</td><td>${rc.behaviour.branching_factor}</td><td>${Math.round(rc.behaviour.tokens_per_run.mean).toLocaleString()}</td><td>${Math.round(rc.behaviour.peak_context.max).toLocaleString()}</td><td>${(rc.behaviour.latency_ms.p50/1000).toFixed(1)}s/${(rc.behaviour.latency_ms.p95/1000).toFixed(1)}s</td><td>${rc.behaviour.cost_per_completed_task!=null?'$'+rc.behaviour.cost_per_completed_task.toFixed(4):'n/a'}</td></tr></tbody></table></div></details>`:''}
+      ${rc.agents.length?`<h3 data-tip="One row per agent seen in the traces, matched to its role and model." class="dn dl">Per-agent cards</h3><div class="wrap"><table><thead><tr><th>Agent</th><th data-tip="Matching role in the plan, when the name matches." tabindex="0">Role</th><th>Model</th><th data-tip="Graded on tool errors, loops, step variance, context growth and peak context." tabindex="0">Grade</th><th data-tip="Steps this agent takes per run: median / 95th percentile." tabindex="0">Steps p50/p95</th><th>Tool calls</th><th>Errors</th><th>Loops</th><th>Tokens/run</th><th>Latency p50</th><th>Findings</th></tr></thead><tbody>
+        ${rc.agents.map(a=>`<tr><td><b>${esc(a.agent)}</b></td><td>${esc(a.role||'-')}</td><td class="pill">${esc(a.model||'-')}</td><td><span class="badge ${gcls(a.grade)}">${esc(a.grade)}</span></td><td>${a.behaviour.steps.p50}/${a.behaviour.steps.p95}</td><td>${a.behaviour.tool_calls.mean}</td><td>${Math.round(a.behaviour.tool_error_rate*100)}%</td><td>${Math.round(a.behaviour.repetition_rate*100)}%</td><td>${Math.round(a.behaviour.tokens_per_run.mean).toLocaleString()}</td><td>${(a.behaviour.latency_ms.p50/1000).toFixed(1)}s</td><td class="muted">${esc(a.findings.join('; '))}</td></tr>`).join('')}</tbody></table></div>`:''}
       ${rc.trace_warnings.length?`<p class="muted">Trace notes: ${esc(rc.trace_warnings.join('; '))}</p>`:''}
     </div>`;
   }
-  h += `<div class="card"><h2>Compare the options</h2><p class="lede">Ranked by score. Expand a row to see every rule that fired. Struck-through options cannot do the job.</p>
-    <div class="wrap"><table id="cmp"><tr><th>#</th><th>Architecture</th><th data-tip="${esc(HEAD_TIPS.score)}" tabindex="0">Score</th><th data-tip="${esc(HEAD_TIPS.fit)}" tabindex="0">Fit</th><th data-tip="${esc(HEAD_TIPS.latency)}" tabindex="0">Latency</th><th data-tip="${esc(HEAD_TIPS.budget)}" tabindex="0">Budget</th><th data-tip="${esc(HEAD_TIPS.cost)}" tabindex="0">Cost</th><th data-tip="${esc(HEAD_TIPS.tokens)}" tabindex="0">Tokens</th><th data-tip="${esc(HEAD_TIPS.calls)}" tabindex="0">Calls</th><th></th></tr>`;
+
+  h += `<div class="card" id="r-compare">${h2('compare','Compare the options')}<p class="lede">Ranked by score. Press <b>Why</b> to see every rule that fired. Struck-through options cannot do the job.</p>
+    <div class="wrap"><table id="cmp"><thead><tr><th>#</th><th data-tip="One of the ten topologies." tabindex="0">Architecture</th><th data-tip="${esc(HEAD_TIPS.score)}" tabindex="0">Score</th><th data-tip="${esc(HEAD_TIPS.fit)}" tabindex="0">Fit</th><th data-tip="${esc(HEAD_TIPS.latency)}" tabindex="0">Latency</th><th data-tip="${esc(HEAD_TIPS.budget)}" tabindex="0">Budget</th><th data-tip="${esc(HEAD_TIPS.cost)}" tabindex="0">Cost</th><th data-tip="${esc(HEAD_TIPS.tokens)}" tabindex="0">Tokens</th><th data-tip="${esc(HEAD_TIPS.calls)}" tabindex="0">Calls</th><th></th></tr></thead><tbody>`;
   const maxScore = Math.max(...rec.candidates.map(c=>Math.abs(c.score)), 1);
   rec.candidates.forEach((c,i)=>{
     const sigs = c.signals.slice().sort((a,b)=>b.delta-a.delta);
     h += `<tr class="${i===0?'primary':''} ${c.viable?'':'nv'}"><td>${i+1}</td><td><span class="nm"><b>${esc(c.name)}</b></span>${c.viable?'':`<div class="muted">Not viable: ${esc(c.infeasible_reason)}</div>`}</td>
       <td><span class="scorebar"><i style="left:${c.score>=0?50:50-50*Math.abs(c.score)/maxScore}%;width:${50*Math.abs(c.score)/maxScore}%"></i></span>${c.score>0?'+':''}${c.score.toFixed(1)}</td>
       <td>${c.fit>0?'+':''}${c.fit.toFixed(1)}</td><td>~${Math.round(c.estimate.latency_s)}s</td><td><span class="badge ${verdictClass(c.latency_verdict)}">${esc(c.latency_verdict)}</span></td><td>$${c.estimate.cost_usd.toFixed(3)}</td><td>${Math.round(c.estimate.token_multiplier)}x</td><td>${c.estimate.llm_calls}</td>
-      <td><button class="exp" data-row="${i}" aria-expanded="false">Why</button></td></tr>
-      <tr class="sig" id="sig-${i}"><td colspan="10"><ul>${sigs.length? sigs.map(s=>`<li><span class="${s.delta>0?'':'d neg'}" style="font-family:var(--mono);font-weight:700;color:${s.delta>0?'var(--ok)':'var(--bad)'}">${s.delta>0?'+':''}${s.delta.toFixed(1)}</span> ${esc(s.rationale)} ${cite(s.citation)}</li>`).join('') : '<li class="muted">No rules fired for this topology.</li>'}<li class="muted">${esc(c.estimate.assumptions.join(' '))}</li></ul></td></tr>`;
+      <td><button class="exp" data-row="${i}" aria-expanded="false" data-tip="Show every rule that fired for this option and the estimate assumptions." class="dn dr">Why</button></td></tr>
+      <tr class="sig" id="sig-${i}"><td colspan="10"><ul>${sigs.length? sigs.map(s=>`<li><span style="font-family:var(--mono);font-weight:800;color:${s.delta>0?'var(--ok)':'var(--bad)'}">${s.delta>0?'+':''}${s.delta.toFixed(1)}</span> ${esc(s.rationale)} ${cite(s.citation)}</li>`).join('') : '<li class="muted">No rules fired for this topology.</li>'}<li class="muted">${esc(c.estimate.assumptions.join(' '))}</li></ul></td></tr>`;
   });
-  h += `</table></div>
-    <h3>Latency vs. structural fit</h3><p class="lede">Each dot is a viable option. Up is a better evidence fit; left is faster. The dashed line is your budget. The highlighted dot is the recommendation.</p>
+  h += `</tbody></table></div>
+    <h3 data-tip="Each dot is a viable option. Up is a better evidence fit; left is faster. The dashed line is your budget. The highlighted dot is the recommendation." class="dn dl">Latency vs. structural fit</h3>
     <svg class="chart" id="chart" role="img" aria-label="Latency versus fit chart"></svg>
-    <div class="legend"><span><i style="background:var(--vg-red)"></i>Recommended</span><span><i style="background:var(--info)"></i>On the frontier (no option is both faster and a better fit)</span><span><i style="background:#B5B0AA"></i>Other viable options</span></div>
+    <div class="legend"><span data-tip="The winning option." class="dn dl"><i style="background:var(--vg-red)"></i>Recommended</span><span data-tip="No other option is both faster and a better fit." class="dn"><i style="background:var(--info)"></i>On the frontier</span><span data-tip="Viable but dominated by another option." class="dn"><i style="background:#B5B0AA"></i>Other viable options</span></div>
     <p class="muted">Fastest viable within budget: <b>${esc(rec.fastest_viable? byId[rec.fastest_viable].name : 'none')}</b> · Strongest structural fit: <b>${esc(byId[rec.most_accurate]?.name||'')}</b></p></div>`;
 
   if(rec.selection){
     const sel=rec.selection, se=rec.selected_estimate;
-    h += `<div class="card"><h2>Model selection per role</h2><p class="lede">Each role's needs are derived from the plan and matched against the catalog <b>${esc(sel.catalog)}</b> under your policy (${sel.policy.require_verified?'verified entries only':'illustrative entries allowed'}${sel.policy.allowed_providers?'; providers '+esc(sel.policy.allowed_providers.join(', ')):''}${sel.policy.regions?'; regions '+esc(sel.policy.regions.join(', ')):''}). Data class: <b>${esc(rec.profile.data_sensitivity||'internal')}</b>. Providers used: <b>${esc(sel.providers_used.join(', ')||'none')}</b>.${se?` On the chosen models this request is estimated at <b>~${Math.round(se.latency_s)}s</b> and <b>$${se.cost_usd.toFixed(3)}</b>.`:''}</p>
+    h += `<div class="card" id="r-models">${h2('models','Model selection per role')}<p class="lede">Each role's needs are derived from the plan and matched against the catalog <b>${esc(sel.catalog)}</b> under your policy (${sel.policy.require_verified?'verified entries only':'illustrative entries allowed'}${sel.policy.allowed_providers?'; providers '+esc(sel.policy.allowed_providers.join(', ')):''}${sel.policy.regions?'; regions '+esc(sel.policy.regions.join(', ')):''}). Data class: <b>${esc(rec.profile.data_sensitivity||'internal')}</b>. Providers used: <b>${esc(sel.providers_used.join(', ')||'none')}</b>.${se?` On the chosen models this request is estimated at <b>~${Math.round(se.latency_s)}s</b> and <b>$${se.cost_usd.toFixed(3)}</b>.`:''}</p>
       ${sel.warnings.map(w=>`<div class="badge warn" style="white-space:normal;margin:3px 0">${esc(w)}</div>`).join('')}
-      <div class="wrap"><table><tr><th>Role</th><th data-tip="Derived requirement: minimum capability tier, latency share of the budget, context to hold, tools/structured output." tabindex="0">Needs</th><th data-tip="Best-scoring catalog model passing the hard filters (approval, data class, context, tools, structured output, modality, capability floor)." tabindex="0">Chosen</th><th>Effort</th><th data-tip="Next-best model, preferably on another provider, for outages or refusals." tabindex="0">Fallback</th><th data-tip="This role's own latency and cost per call on the chosen model." tabindex="0">Est. / call</th><th>Alternatives</th><th></th></tr>
+      <div class="wrap"><table><thead><tr><th data-tip="A component of the plan and its role type." tabindex="0">Role</th><th data-tip="Derived requirement: minimum capability tier, latency share of the budget, context to hold, tools/structured output." tabindex="0">Needs</th><th data-tip="Best-scoring catalog model passing the hard filters (approval, data class, context, tools, structured output, modality, capability floor)." tabindex="0">Chosen</th><th data-tip="Reasoning effort requested for this role when the model supports it." tabindex="0">Effort</th><th data-tip="Next-best model, preferably on another provider, for outages or refusals." tabindex="0">Fallback</th><th data-tip="This role's own latency and cost per call on the chosen model." tabindex="0">Est. / call</th><th data-tip="Runners-up with their scores." tabindex="0">Alternatives</th><th></th></tr></thead><tbody>
       ${sel.choices.map((c,i)=>{ const r=c.requirements; const needs=`tier ≥${r.reasoning_level} · ${Math.round(r.latency_share_s)}s · ${(r.context_tokens/1000).toFixed(0)}k ctx${r.needs_tools?' · tools':''}${r.needs_structured_output?' · structured':''}`;
-        return `<tr class="${c.model_id?'':'nv'}"><td><b>${esc(c.component_id)}</b><div class="muted">${esc(c.role_type)}</div></td><td class="muted">${esc(needs)}</td><td>${c.model_id?`<span class="pill">${esc(c.model_id)}</span>`:'<span class="badge bad">unfilled</span>'}</td><td>${esc(c.effort)}</td><td>${c.fallback_model_id?`<span class="pill">${esc(c.fallback_model_id)}</span>`:'-'}</td><td>${c.model_id?`~${c.est_latency_s.toFixed(1)}s<br><span class="muted">$${c.est_cost_per_call.toFixed(4)}</span>`:'-'}</td><td class="muted">${c.alternatives.slice(0,3).map(a=>`${esc(a.model_id)} (${a.score>0?'+':''}${a.score.toFixed(1)})`).join('<br>')||'-'}</td><td><button class="exp" data-sel="${i}" aria-expanded="false">Why</button></td></tr>
-        <tr class="sig" id="sel-${i}"><td colspan="8"><ul>${c.rationale.map(x=>`<li>${esc(x)}</li>`).join('')}${c.rejected.length?`<li class="muted">Rejected: ${c.rejected.slice(0,6).map(j=>esc(j.model_id)+' ('+esc(j.reason)+')').join('; ')}${c.rejected.length>6?' …':''}</li>`:''}</ul></td></tr>`; }).join('')}</table></div></div>`;
+        return `<tr class="${c.model_id?'':'nv'}"><td><b>${esc(c.component_id)}</b><div class="muted">${esc(c.role_type)}</div></td><td class="muted">${esc(needs)}</td><td>${c.model_id?`<span class="pill">${esc(c.model_id)}</span>`:'<span class="badge bad" data-tip="No catalog model passed the filters for this role; see Why." class="dn">unfilled</span>'}</td><td>${esc(c.effort)}</td><td>${c.fallback_model_id?`<span class="pill">${esc(c.fallback_model_id)}</span>`:'-'}</td><td>${c.model_id?`~${c.est_latency_s.toFixed(1)}s<br><span class="muted">$${c.est_cost_per_call.toFixed(4)}</span>`:'-'}</td><td class="muted">${c.alternatives.slice(0,3).map(a=>`${esc(a.model_id)} (${a.score>0?'+':''}${a.score.toFixed(1)})`).join('<br>')||'-'}</td><td><button class="exp" data-sel="${i}" aria-expanded="false" data-tip="Rationale and every rejected model with its reason." class="dn dr">Why</button></td></tr>
+        <tr class="sig" id="sel-${i}"><td colspan="8"><ul>${c.rationale.map(x=>`<li>${esc(x)}</li>`).join('')}${c.rejected.length?`<li class="muted">Rejected: ${c.rejected.slice(0,6).map(j=>esc(j.model_id)+' ('+esc(j.reason)+')').join('; ')}${c.rejected.length>6?' …':''}</li>`:''}</ul></td></tr>`; }).join('')}</tbody></table></div></div>`;
   }
-  h += `<div class="card"><h2>Build plan</h2><p class="lede">${esc(best.name)}: who does what, on which model, and what runs in parallel.</p>
-    <div class="comps">${rec.plan.components.map(c=>`<div class="comp ${esc(c.tier)}"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.model_id)}${c.provider?' · '+esc(c.provider):''}${c.effort!=='n/a'?' · effort '+esc(c.effort):''}${c.fallback_model?'<br>fallback: '+esc(c.fallback_model):''}</div><div class="r">${esc(c.role)}</div>${c.tools?`<div class="muted" style="margin-top:4px">Tools: ${esc(c.tools)}</div>`:''}${c.parallel_group?`<div class="pg">runs in parallel · ${esc(c.parallel_group)}</div>`:''}</div>`).join('')}</div>
-    <div class="diagram">${rec.svg||''}</div>
-    ${rec.plan.briefing_rules.length?`<h3>Briefing and coordination rules</h3><ul>${rec.plan.briefing_rules.map(b=>`<li>${esc(b)}</li>`).join('')}</ul>`:''}
-    <details><summary class="muted" style="cursor:pointer">Mermaid source for wikis and docs</summary><pre>${esc(rec.mermaid)}</pre></details></div>`;
 
-  h += `<div class="card"><h2>Next steps</h2><p class="lede">Cross-cutting recommendations the evidence ties to success, regardless of topology. Tick them off in your design review.</p>
-    <div class="check"><ul>${rec.plan.augmentations.map((a,i)=>`<li><input type="checkbox" id="aug${i}"><label for="aug${i}"><b>${esc(a.title)}.</b> ${esc(a.why)} ${cite(a.citation)}</label></li>`).join('')}</ul></div></div>`;
+  h += `<div class="card" id="r-plan">${h2('plan','Build plan')}<p class="lede">${esc(best.name)}: who does what, on which model, and what runs in parallel.</p>
+    <div class="comps">${rec.plan.components.map(c=>`<div class="comp ${esc(c.tier)}" data-tip="${esc(c.role)}" class="dn dl"><div class="n">${esc(c.name)}</div><div class="m">${esc(c.model_id)}${c.provider?' · '+esc(c.provider):''}${c.effort!=='n/a'?' · effort '+esc(c.effort):''}${c.fallback_model?'<br>fallback: '+esc(c.fallback_model):''}</div><div class="r">${esc(c.role)}</div>${c.tools?`<div class="muted" style="margin-top:4px">Tools: ${esc(c.tools)}</div>`:''}${c.parallel_group?`<div class="pg">runs in parallel · ${esc(c.parallel_group)}</div>`:''}</div>`).join('')}</div>
+    <div class="diagram" data-tip="Roles by capability tier (dark: top tier, blue: mid, light blue: small, grey: code). Dashed frames run in parallel." class="dn dl">${rec.svg||''}</div>
+    ${rec.plan.briefing_rules.length?`<h3 data-tip="What every subagent brief must contain and how the lead should coordinate." class="dn dl">Briefing and coordination rules</h3><ul>${rec.plan.briefing_rules.map(b=>`<li>${esc(b)}</li>`).join('')}</ul>`:''}
+    <details><summary class="muted" style="cursor:pointer" data-tip="Paste into a wiki that renders Mermaid." class="dn dl">Mermaid source for wikis and docs</summary><pre>${esc(rec.mermaid)}</pre></details></div>`;
 
-  h += `<div class="card"><h2>Assumptions behind the numbers</h2><ul>${best.estimate.assumptions.map(a=>`<li>${esc(a)}</li>`).join('')}<li>Latency is the critical path (parallel branches count once); cost sums every call at list prices without caching. Treat both as order-of-magnitude for ranking, not as measurements.</li></ul></div>`;
+  h += `<div class="card" id="r-next">${h2('next','Next steps')}<p class="lede">Cross-cutting recommendations the evidence ties to success, regardless of topology. Tick them off in your design review.</p>
+    <div class="check"><ul>${rec.plan.augmentations.map((a,i)=>`<li><input type="checkbox" id="aug${i}" data-tip="Tick when done (not saved)." class="dn dl"><label for="aug${i}"><b>${esc(a.title)}.</b> ${esc(a.why)} ${cite(a.citation)}</label></li>`).join('')}</ul></div></div>`;
+
+  h += `<div class="card" id="r-assume">${h2('assume','Assumptions behind the numbers')}<ul>${best.estimate.assumptions.map(a=>`<li>${esc(a)}</li>`).join('')}<li>Latency is the critical path (parallel branches count once); cost sums every call at list prices without caching. Treat both as order-of-magnitude for ranking, not as measurements.</li></ul></div>`;
 
   $('#results').innerHTML=h;
+  $('#ts3').classList.add('done');
   document.querySelectorAll('.exp').forEach(b=>b.addEventListener('click',()=>{ const r=b.dataset.sel!==undefined? $('#sel-'+b.dataset.sel) : $('#sig-'+b.dataset.row); const on=!r.classList.contains('on'); r.classList.toggle('on',on); b.setAttribute('aria-expanded',String(on)); b.textContent=on?'Hide':'Why'; }));
   $('#dl-md').addEventListener('click',()=>download('vgselect-recommendation.md', rec.report_markdown||'', 'text/markdown'));
+  $('#dl-json').addEventListener('click',()=>download('vgselect-recommendation.json', JSON.stringify(rec,null,2), 'application/json'));
   $('#dl-pdf').addEventListener('click',()=>deliverable('/api/v1/recommend/pdf', `${rec.profile.name||'app'}-architecture.pdf`, 'Building the PDF…'));
   $('#dl-skel').addEventListener('click',()=>deliverable('/api/v1/recommend/skeleton', `${rec.profile.name||'app'}-langgraph-skeleton.zip`, 'Generating the skeleton…'));
-  $('#dl-json').addEventListener('click',()=>download('vgselect-recommendation.json', JSON.stringify(rec,null,2), 'application/json'));
   drawChart(rec, budget);
   const grading = document.querySelector('.seg [role=tab][data-pane="grade"]')?.getAttribute('aria-selected')==='true';
-  const rcCard=[...document.querySelectorAll('#results .card')].find(c=>c.querySelector('h2')?.textContent.startsWith('Agent report card'));
-  if(grading && rcCard) rcCard.scrollIntoView({behavior:'smooth', block:'start'});
-  else if(window.innerWidth<=1040) $('#results').scrollIntoView({behavior:'smooth'}); else window.scrollTo({top:0, behavior:'smooth'});
+  const target = grading && rc ? $('#r-card') : null;
+  if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+  else if(window.innerWidth<=1080) $('#results').scrollIntoView({behavior:'smooth'}); else window.scrollTo({top:0, behavior:'smooth'});
 }
 
 function drawChart(rec, budget){
@@ -579,7 +684,7 @@ function drawChart(rec, budget){
   const lx = v=>Math.log10(Math.max(0.5,v)); const xmin=lx(Math.min(...xs))-0.1, xmax=lx(Math.max(...xs))+0.15;
   const ys = pts.map(c=>c.quality_proxy); const ymin=Math.min(...ys,0)-1, ymax=Math.max(...ys,1)+1;
   const X=v=>L+(lx(v)-xmin)/(xmax-xmin)*(W-L-R), Y=v=>T+(ymax-v)/(ymax-ymin)*(H-T-B);
-  let s=`<rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>`;
+  let s=`<rect x="0" y="0" width="${W}" height="${H}" fill="#fff" rx="10"/>`;
   for(const t of [1,3,10,30,100,300,1000,3000]){ if(t<Math.pow(10,xmin)||t>Math.pow(10,xmax)) continue; s+=`<line x1="${X(t)}" y1="${T}" x2="${X(t)}" y2="${H-B}" stroke="#ECEAE6"/><text x="${X(t)}" y="${H-B+16}" font-size="11" text-anchor="middle" fill="#6F6F6F">${t}s</text>`; }
   s+=`<line x1="${L}" y1="${Y(0)}" x2="${W-R}" y2="${Y(0)}" stroke="#D9D6D2"/><text x="${L-6}" y="${Y(0)+4}" font-size="11" text-anchor="end" fill="#6F6F6F">0</text>`;
   s+=`<line x1="${X(budget)}" y1="${T}" x2="${X(budget)}" y2="${H-B}" stroke="#96151D" stroke-dasharray="5 4"/><text x="${X(budget)+4}" y="${T+10}" font-size="11" fill="#96151D" font-weight="700">budget ${budget}s</text>`;
@@ -595,16 +700,6 @@ function drawChart(rec, budget){
   }
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`); svg.innerHTML=s;
 }
-function helpCard(){
-  return `<div class="card"><h2>How VG Select: 3A decides</h2>
-  <ol><li><b>Profile.</b> Twenty-six fields describe the workload. A repository scan pre-fills what code can reveal; you supply the latency budget, how costly errors are, cost sensitivity and volume.</li>
-  <li><b>Rules.</b> Forty-one rules from published guidance (Anthropic, OpenAI, Google, Microsoft, LangChain, and the MAST and agent-scaling studies) add or subtract fit for each of ten architectures. Every rule shows its citation.</li>
-  <li><b>Viability.</b> Options that cannot do the job (a single call with tools, a fixed chain on an open-ended task) are ranked last.</li>
-  <li><b>Estimates.</b> A call tree per architecture gives critical-path latency and list-price cost. Order-of-magnitude, assumptions shown.</li>
-  <li><b>Balance.</b> Score = fit + latency adjustment + cost adjustment. Higher accuracy priority tolerates lateness; higher cost sensitivity penalises expensive designs.</li>
-  <li><b>Plan.</b> The winner becomes components (orchestrator, workers, routers, evaluators), model per role, parallel groups, briefing rules, and next steps.</li></ol>
-  <p class="muted">Full write-up: docs/METHODOLOGY.html. Evidence: docs/industry_guidance.html.</p></div>`;
-}
 async function deliverable(url, filename, msg){
   const b=$('#dl-pdf'), k=$('#dl-skel'); [b,k].forEach(x=>x.disabled=true); toast(msg);
   try{
@@ -613,6 +708,17 @@ async function deliverable(url, filename, msg){
     const blob=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); toast('Downloaded '+filename);
   }catch(err){ showError('Download failed: '+err.message); }
   finally{ [b,k].forEach(x=>x.disabled=false); }
+}
+function helpCard(){
+  return `<div class="card"><h2>How VG Select: 3A decides</h2>
+  <ol><li><b>Profile.</b> Twenty-six fields describe the workload. A repository scan pre-fills what code can reveal; you supply the latency budget, how costly errors are, cost sensitivity and volume.</li>
+  <li><b>Rules.</b> Forty-one rules from published guidance (Anthropic, OpenAI, Google, Microsoft, LangChain, and the MAST and agent-scaling studies) add or subtract fit for each of ten architectures. Every rule shows its citation.</li>
+  <li><b>Viability.</b> Options that cannot do the job (a single call with tools, a fixed chain on an open-ended task) are ranked last.</li>
+  <li><b>Estimates.</b> A call tree per architecture gives critical-path latency and list-price cost, on reference models from your catalog. Order-of-magnitude, assumptions shown.</li>
+  <li><b>Balance.</b> Score = fit + latency adjustment + cost adjustment. Higher accuracy priority tolerates lateness; higher cost sensitivity penalises expensive designs.</li>
+  <li><b>Model per role.</b> Each role's needs are matched against the catalog under your policy: approval, data class, region, capability, latency share, cost; with a fallback on another provider.</li>
+  <li><b>Plan and report card.</b> The winner becomes components, parallel groups, briefing rules and next steps; an existing agent is graded from its code and traces.</li></ol>
+  <p class="muted">Full write-up in the <a href="/guide" target="_blank" rel="noopener">User guide</a>.</p></div>`;
 }
 function download(name, text, type){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; a.click(); }
 init();

@@ -46,14 +46,14 @@
 
 <h2 id="tour">3. A five-minute tour</h2>
 <ol>
-  <li>Open the application. The left panel is the <b>input</b> side with three numbered steps; the right panel shows <b>results</b>.</li>
+  <li>Open the application. Under the red bar, a <b>progress tracker</b> shows the three steps (Start, Describe, Results) and lights up as you go. The left panel is the <b>input</b> side with three numbered steps; the right panel shows <b>results</b>.</li>
   <li>In <b>Step 1</b>, pick <kbd>Example</kbd> and choose a scenario, for example "Deep research". The form in Step 2 fills in.</li>
   <li>Press <kbd>Recommend architecture</kbd> in <b>Step 3</b>.</li>
   <li>Read the verdict card at the top of the results: the recommended architecture, whether it fits your latency budget, estimated cost and tokens, and the reasons with their sources.</li>
   <li>Scroll down: options compared, a latency-versus-fit chart, the model chosen for each role, the build plan with a diagram, and next steps.</li>
   <li>Press <kbd>Architecture doc (PDF)</kbd> to download the document, or <kbd>LangGraph skeleton (.zip)</kbd> to download the project.</li>
 </ol>
-<p>Every field, table header and citation has an <b>i</b> button or dotted underline; hover or focus it for an explanation.</p>
+<p>Every field, button, tab, chip, tile, table header and citation has a tooltip: hover it, or focus it with the keyboard, for an explanation. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd> runs the recommendation from anywhere. Your inputs are remembered in this browser until you press <kbd>Reset</kbd>.</p>
 
 <h2 id="step1">4. Step 1: Start from</h2>
 <p>Step 1 is optional and you can start anywhere. It decides how the form in Step 2 gets filled; you can always edit the form before recommending.</p>
@@ -80,7 +80,7 @@
 <p>On the Scan tab, the "Run-time traces (optional)" field accepts a file of recorded runs. With it, the report card grades the agent's real behaviour (success, loops, latency, tokens, per-agent rows). See section 9 for the format and how to get one.</p>
 
 <h2 id="step2">5. Step 2: Describe the workload</h2>
-<p>Twenty-six fields in six groups. Each has a default, an <b>i</b> explanation, and the eight that most change the answer are marked <span class="badge ok">key</span>. A sentence under the form restates what you are asking for as you edit; the counter shows how many fields differ from defaults.</p>
+<p>Twenty-six fields in six groups. Each has a default, an <b>i</b> explanation, and the nine that most change the answer are marked <span class="badge ok">key</span>. Group headers show how many fields you have set. Numeric fields that people find hardest to estimate (latency budget, context tokens, requests per day) offer <b>presets</b> under the box, for example "Chat · 5s" or "A long report · 50k". A sentence under the form restates what you are asking for as you edit.</p>
 
 <h3>About the application</h3>
 <table>
@@ -148,7 +148,7 @@
 <p>The status line at the bottom of the input panel shows which catalog is loaded and how many models it contains. Ask your platform team to add or clear models; you cannot change the catalog from the UI.</p>
 
 <h2 id="step3">7. Step 3: Read the results</h2>
-<p>Press <kbd>Recommend architecture</kbd>. Results appear on the right (or below on a narrow screen), top to bottom:</p>
+<p>Press <kbd>Recommend architecture</kbd>. Results appear on the right (or below on a narrow screen). A sticky <b>summary strip</b> at the top shows the recommended architecture, latency against budget, cost per request, the report-card grade when there is one, and the providers used, with jump links to every section. Then, top to bottom:</p>
 
 <h3>7.1 Verdict card</h3>
 <ul>
@@ -163,7 +163,7 @@
 <p>Frameworks, tool count, knowledge sources and side effects as chips; the topology implemented today; a table of inferred fields with confidence and reason; and an expandable evidence table with file and line. When the recommendation differs from what is implemented, a <b>Current vs. recommended</b> comparison shows score, latency, cost and tokens side by side.</p>
 
 <h3>7.3 Agent report card (after a scan or traces)</h3>
-<p>Explained in section 9.</p>
+<p>A grade ring, three complexity tiles, one tile per graded dimension with its findings, the mismatches, and per-agent rows. Explained in section 9.</p>
 
 <h3>7.4 Compare the options</h3>
 <p>All ten architectures ranked. Columns: <b>Score</b> (fit plus latency and cost adjustments), <b>Fit</b> (the evidence-based rules alone), <b>Latency</b>, <b>Budget</b> verdict, <b>Cost</b>, <b>Tokens</b>, <b>Calls</b>. Struck-through rows cannot do the job at all (for example a single call cannot make tool calls). Press <kbd>Why</kbd> on any row to see every rule that fired for it and the estimate's assumptions.</p>
