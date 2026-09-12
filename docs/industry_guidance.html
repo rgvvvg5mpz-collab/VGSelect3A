@@ -129,5 +129,23 @@
 <tr><td>Handoffs</td><td>-</td><td>Decentralised handoffs</td><td>LLM-driven <code>transfer_to_agent</code></td><td>Handoffs (swarm)</td><td>Handoff</td></tr>
 </table></div>
 <p>Group chat / debate (Microsoft) is not a separate topology here; its read-only-deliberation use cases are covered by parallel voting (independent perspectives merged by a judge) and the evaluator-optimizer loop.</p>
+<hr>
+<h2 id="4-report-card-metrics-and-their-sources">4. Report-card metrics and their sources</h2>
+<p>The agent report card (<a href="REPORT_CARD.html">docs/REPORT_CARD.html</a>) grades an existing agent. Each metric family traces back to a source above.</p>
+<div class="wrap"><table>
+<tr><th>Metric family</th><th>Source and rationale</th></tr>
+<tr><td>Task success on a fixed eval set; ~20-query starting set; single-agent baseline</td><td>Anthropic research system (start with ~20 representative queries); Google/MIT scaling study (baseline above ~45% means added agents hurt)</td></tr>
+<tr><td>Consistency across repeated runs; all-runs-pass</td><td>Galileo benchmark round-up (reliability 60% single-run to 25% over eight runs)</td></tr>
+<tr><td>Tokens per task; tokens versus the topology estimate; successes per 1,000 tokens; cost per completed task</td><td>Anthropic research system (token usage explains ~80% of variance; agents ~4x, multi-agent ~15x chat); scaling study (successes per 1k tokens); Claude API cost guidance (judge cost per completed task)</td></tr>
+<tr><td>Repeated identical tool calls; runs ended by a step limit; termination limits present in code</td><td>MAST: step repetition 15.7% and unaware of termination 12.4% of failures; Microsoft and Agent Framework round/stall caps</td></tr>
+<tr><td>Verification steps per run; evaluator present in code</td><td>MAST: task-verification failures 24.5%; Anthropic evaluator-optimizer pattern</td></tr>
+<tr><td>Spawns per run versus planned workers; handoffs per run</td><td>Anthropic research system (over-spawning, e.g. 50 subagents for simple queries; 1 / 2-4 / 10+ heuristic); Microsoft handoff loop caution; LangGraph handoff guidance</td></tr>
+<tr><td>Branching factor; trajectory diversity; step-count variance</td><td>Anthropic "Building effective agents" (workflows are predictable code paths, agents decide at run time); Cognition (actions carry implicit decisions)</td></tr>
+<tr><td>Peak context; context growth per step</td><td>Anthropic context engineering (context rot; compaction, tool-result clearing, sub-agent isolation)</td></tr>
+<tr><td>Tool overlap; tool count</td><td>OpenAI practical guide (overlap, not count, is the split trigger); Anthropic tool-writing guidance</td></tr>
+<tr><td>Design complexity: delegation depth, handoffs, loops, prompt load</td><td>Microsoft complexity ladder; LangGraph pattern comparison; Claude Code subagent limits (depth, concurrency)</td></tr>
+<tr><td>Approval gates for irreversible actions; human steps in traces</td><td>OpenAI and Google ADK human-in-the-loop guidance for irreversible actions</td></tr>
+<tr><td>Tracing present</td><td>MAST and Anthropic research system: non-deterministic runs cannot be debugged without full traces</td></tr>
+</table></div>
 </body>
 </html>

@@ -67,7 +67,8 @@ Full write-up: [docs/METHODOLOGY.html](docs/METHODOLOGY.html) and [docs/MODEL_CA
 | Audience | Document |
 |---|---|
 | Executives | [Executive brief](docs/EXECUTIVE_BRIEF.html) - what it is and why it helps the enterprise (one page, print-ready) |
-| Engineers deploying the service | [Deployment guide](docs/DEPLOYMENT.html) - install, Docker, configuration, security model, operations |
+| People using the deployed app | [User guide](docs/USER_GUIDE.html) - every step, field and result panel explained; also served by the app at `/guide` |
+| Engineers deploying the service | [Deployment guide](docs/DEPLOYMENT.html) - architecture, install (VM, systemd, Docker, Compose, Kubernetes), configuration, model catalog management, security, proxy and auth, operations, troubleshooting, CI/CD, go-live checklist |
 | Engineers consuming the service, CLI or skill | [Consumer guide](docs/CONSUMER_GUIDE.html) - endpoints, profile fields, policy, reading results, PDF and skeleton, CI use |
 | Architects and reviewers | [Methodology](docs/METHODOLOGY.html) - how the recommendation, estimates, plan, model selection and skeleton are computed |
 | Platform teams | [Model catalog](docs/MODEL_CATALOG.html) - catalog schema, per-role requirements, the selection procedure, policy, maintenance |
@@ -75,7 +76,7 @@ Full write-up: [docs/METHODOLOGY.html](docs/METHODOLOGY.html) and [docs/MODEL_CA
 | Everyone | [Industry guidance](docs/industry_guidance.html) - the evidence behind every rule and how vendor patterns map to topologies |
 | API consumers | [OpenAPI spec](openapi/vgselect-3a.openapi.json) - also live at `/openapi.json`, Swagger at `/docs` |
 | Claude Code users | [Skill](.claude/skills/vg-select-3a/SKILL.md) - scan, recommend, and produce both deliverables from the editor |
-| Everyone | [Case studies](case_study/README.md) - three fictional applications run end to end: scan, recommendation, PDF, skeleton, model per role |
+| Everyone | [Case studies](case_study/README.md) - three fictional applications run end to end: scan, recommendation, model per role, report card, PDF, skeleton |
 | Maintainers | [Changelog](CHANGELOG.md) |
 
 ## Quick start
@@ -225,8 +226,8 @@ src/vgselect3a/
   examples/         eight canonical profiles
 docs/               executive brief, deployment guide, consumer guide, methodology, model catalog, industry guidance
 openapi/            exported OpenAPI 3 document (scripts/export_openapi.py)
-scripts/            OpenAPI export, Markdown-to-HTML converter
-case_study/         three mock applications with every 3A output (scan, recommendation, PDF, skeleton) and a runner
+scripts/            OpenAPI export, Markdown-to-HTML converter, user-guide sync into the package
+case_study/         three mock applications with fictional traces and every 3A output (scan, recommendation, report card, PDF, skeleton) and a runner
 .claude/skills/     Claude Code skill
 .claude/launch.json dev-server config for the Claude Code browser preview
 tests/              engine, scanner (fixture repo), catalog and selection, API, PDF and skeleton tests
@@ -239,12 +240,14 @@ Dockerfile          production image (non-root, healthcheck)
 pip install -e '.[dev]' && pytest
 ```
 
-68 tests: eight canonical scenarios, monotonicity of the latency/accuracy
+77 tests: eight canonical scenarios, monotonicity of the latency/accuracy
 balance, viability, the scanner against a fixture repository, catalog
 validation, per-role requirements, model selection under policies (providers,
 regions, data class, evidence, verifier independence, orchestrator floor),
-every API endpoint, PDF generation, and syntax checks of the generated
-skeleton for all ten topologies and for mixed-provider plans. To exercise the
+trace parsing (native, LangSmith, OpenTelemetry), behavioural metrics, report
+card grading and mismatch flags, every API endpoint, PDF generation, and
+syntax checks of the generated skeleton for all ten topologies and for
+mixed-provider plans. To exercise the
 skeletons against the real library, unzip one and run its own `pytest` with
 `langgraph`, `langchain` and the provider integration packages installed.
 

@@ -5,103 +5,230 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>VG Select: 3A — Deployment Guide</title>
 <style>
-  body{font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1c2128;max-width:920px;margin:0 auto;padding:32px 24px;background:#fff}
-  h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:36px 0 10px;border-bottom:1px solid #e1e5ea;padding-bottom:6px}h3{font-size:16px;margin:22px 0 6px}
+  body{font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1c2128;max-width:980px;margin:0 auto;padding:32px 24px;background:#fff}
+  h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:36px 0 10px;border-bottom:1px solid #e1e5ea;padding-bottom:6px}h3{font-size:16px;margin:22px 0 6px;color:#96151D}h4{font-size:14.5px;margin:16px 0 4px}
   .sub{color:#5b6470;margin-bottom:24px}
   code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#f1f3f6;padding:1px 5px;border-radius:4px}
-  pre{background:#0f1a33;color:#e6ecff;padding:14px;border-radius:8px;overflow:auto;font-size:13px}pre code{background:none;color:inherit;padding:0}
-  table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #e1e5ea;vertical-align:top}th{color:#5b6470;font-size:13px}
+  pre{background:#0f1a33;color:#e6ecff;padding:14px;border-radius:8px;overflow:auto;font-size:13px;line-height:1.45}pre code{background:none;color:inherit;padding:0}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #e1e5ea;vertical-align:top}th{color:#5b6470;font-size:13px;background:#faf9f7}
   .warn{border-left:4px solid #b7791f;background:#fff8e8;padding:10px 14px;border-radius:6px;margin:14px 0}
   .ok{border-left:4px solid #1a7f4b;background:#eaf7ef;padding:10px 14px;border-radius:6px;margin:14px 0}
-  nav{background:#f6f7f9;border:1px solid #e1e5ea;border-radius:8px;padding:12px 18px;margin-bottom:24px}nav a{margin-right:14px}
+  .note{border-left:4px solid #96151D;background:#f8eced;padding:10px 14px;border-radius:6px;margin:14px 0}
+  nav{background:#f6f7f9;border:1px solid #e1e5ea;border-radius:8px;padding:12px 18px;margin-bottom:24px;display:flex;flex-wrap:wrap;gap:6px 16px}nav a{color:#96151D;white-space:nowrap}
+  a{color:#96151D}
+  ul li,ol li{margin:4px 0}
+  .kv td:first-child{white-space:nowrap;font-family:ui-monospace,Menlo,monospace;font-size:13px}
 </style>
 </head>
 <body>
 <h1>VG Select: 3A — Deployment Guide</h1>
-<p class="sub">For the engineer deploying <b>VG Select: 3A (Automated Agentic Architecture)</b> as an internal service. Consumers of the running service should read <code>docs/CONSUMER_GUIDE.html</code>.</p>
+<p class="sub">For the engineer who deploys and operates <b>VG Select: 3A (Automated Agentic Architecture)</b> as an internal service. People who use the deployed application should read the <a href="USER_GUIDE.html">User guide</a>; engineers integrating with the API or CLI should read the <a href="CONSUMER_GUIDE.html">Consumer guide</a>. Version 0.4.0.</p>
 
 <nav>
-  <a href="#what">What you are deploying</a><a href="#prereq">Prerequisites</a><a href="#local">Run locally</a><a href="#docker">Docker</a><a href="#config">Configuration</a><a href="#models">Models catalog</a><a href="#security">Security</a><a href="#ops">Operations</a><a href="#verify">Verify</a><a href="#upgrade">Upgrade</a>
+  <a href="#what">1 What you are deploying</a><a href="#arch">2 Architecture</a><a href="#prereq">3 Prerequisites and sizing</a><a href="#install">4 Installation</a><a href="#config">5 Configuration</a><a href="#models">6 Managing the available models</a><a href="#describe">7 Optional Claude intake</a><a href="#security">8 Security</a><a href="#proxy">9 Reverse proxy, TLS and authentication</a><a href="#ops">10 Operations and monitoring</a><a href="#verify">11 Verify the deployment</a><a href="#troubleshoot">12 Troubleshooting</a><a href="#upgrade">13 Upgrades, rollbacks and tuning</a><a href="#cicd">14 CI/CD</a><a href="#checklist">15 Go-live checklist</a>
 </nav>
 
 <h2 id="what">1. What you are deploying</h2>
-<p>A single stateless Python process (FastAPI + Uvicorn) that serves:</p>
+<p>A single, stateless Python web application (FastAPI on Uvicorn) that:</p>
+<ul>
+  <li>serves the <b>web UI</b> at <code>/</code> and the <b>user guide</b> at <code>/guide</code>;</li>
+  <li>exposes a <b>REST API</b> under <code>/api/v1/</code> with an OpenAPI document at <code>/openapi.json</code>, Swagger UI at <code>/docs</code> and ReDoc at <code>/redoc</code>;</li>
+  <li>scans uploaded or mounted repositories, ranks agent topologies, staffs each role from the model catalog, grades existing agents from traces, and renders the architecture PDF and the LangGraph skeleton.</li>
+</ul>
 <table>
 <tr><th>Path</th><th>Purpose</th></tr>
-<tr><td><code>/</code></td><td>Web UI: guided three-step flow (start from scenario / scan / description, describe the workload, get the recommendation), model-ecosystem policy controls, tooltips on every field, verdict card, comparison table, latency-versus-fit chart, model selection per role, plan and diagram, next steps, and download buttons for the PDF and the LangGraph skeleton</td></tr>
-<tr><td><code>/api/v1/recommend</code></td><td>Rank topologies for a workload profile; returns the plan and a Markdown report</td></tr>
-<tr><td><code>/api/v1/scan</code>, <code>/api/v1/scan/upload</code></td><td>Scan a repository (server path, git URL, or uploaded zip) and infer the profile, then recommend</td></tr>
-<tr><td><code>/api/v1/recommend/pdf</code>, <code>/api/v1/recommend/skeleton</code></td><td>Architecture document (PDF, needs reportlab) and downloadable LangGraph project skeleton (zip)</td></tr>
-<tr><td><code>/api/v1/describe</code></td><td>Optional: infer the profile from prose with Claude (needs Anthropic credentials)</td></tr>
-<tr><td><code>/api/v1/report-card</code></td><td>Agent report card from a profile, optional scan object and run-time traces (traces are also accepted on recommend, scan and upload requests)</td></tr>
+<tr><td><code>/</code>, <code>/guide</code></td><td>Web UI (three-step flow, tooltips, report card, downloads) and the built-in user guide</td></tr>
+<tr><td><code>/api/v1/recommend</code></td><td>Rank topologies for a workload profile; returns the plan, model per role, report card (when traces are supplied) and a Markdown report</td></tr>
+<tr><td><code>/api/v1/scan</code>, <code>/api/v1/scan/upload</code></td><td>Scan a repository (server path, git URL, or uploaded zip; optional traces) and infer the profile, then recommend</td></tr>
+<tr><td><code>/api/v1/report-card</code></td><td>Agent report card from a profile, optional scan object and run-time traces</td></tr>
+<tr><td><code>/api/v1/recommend/pdf</code>, <code>/api/v1/recommend/skeleton</code></td><td>Architecture document (PDF) and downloadable LangGraph project skeleton (zip)</td></tr>
 <tr><td><code>/api/v1/catalog</code>, <code>/api/v1/catalog/validate</code></td><td>The model ecosystem catalog and a validator for new entries</td></tr>
-<tr><td><code>/api/v1/fields</code>, <code>/api/v1/examples</code>, <code>/api/v1/topologies</code>, <code>/api/v1/citations</code></td><td>Reference data (profile fields, bundled scenarios, topology catalog, citation keys)</td></tr>
-<tr><td><code>/health</code>, <code>/docs</code>, <code>/redoc</code>, <code>/openapi.json</code></td><td>Health, Swagger UI, ReDoc, OpenAPI 3 document</td></tr>
+<tr><td><code>/api/v1/describe</code></td><td>Optional: infer the profile from prose with Claude (needs the <code>llm</code> extra and Anthropic credentials)</td></tr>
+<tr><td><code>/api/v1/fields</code>, <code>/api/v1/examples</code>, <code>/api/v1/topologies</code>, <code>/api/v1/citations</code></td><td>Reference data</td></tr>
+<tr><td><code>/health</code></td><td>Liveness/readiness plus the effective configuration (scan roots, catalog, feature flags)</td></tr>
 </table>
-<p>The recommendation engine is deterministic and pure Python; the service adds FastAPI/Pydantic and reportlab (PDF generation, installed by the <code>service</code> extra; <code>/health</code> reports <code>pdf_enabled</code>). There is no database. Nothing is persisted; uploaded archives and git clones are extracted to a temporary directory and deleted after the request.</p>
+<p>There is <b>no database and no persistent state</b>. Uploaded archives, cloned repositories and traces are processed in memory or a temporary directory and deleted when the request finishes. The only configuration artefact is the model catalog JSON.</p>
 
-<h2 id="prereq">2. Prerequisites</h2>
-<ul>
-  <li>Python 3.11+ (3.12 recommended) or Docker.</li>
-  <li>reportlab (pure Python, installed by the <code>service</code> and <code>pdf</code> extras) for the architecture PDF. Without it the PDF endpoint returns 503 and <code>/health</code> shows <code>pdf_enabled: false</code>; everything else works.</li>
-  <li><code>git</code> on the host only if you enable git-URL scanning.</li>
-  <li>Outbound network access is <b>not</b> required, except for git cloning (if enabled) and the optional Claude-powered <code>describe</code> endpoint (<code>api.anthropic.com</code>). The UI and API have no external front-end dependencies: diagrams are rendered server-side as SVG.</li>
-</ul>
+<h2 id="arch">2. Architecture</h2>
+<pre><code>            browser / CLI / CI / Claude Code skill
+                         │  HTTPS
+                ┌────────▼─────────┐
+                │ reverse proxy /   │  TLS, authentication (SSO / API gateway), size limits, timeouts
+                │ API gateway       │
+                └────────┬─────────┘
+                         │  HTTP :8080
+        ┌────────────────▼───────────────────┐
+        │ vgselect-service (FastAPI/Uvicorn)   │  N identical replicas, no shared state
+        │  ├─ scanner   (regex over files)     │
+        │  ├─ engine    (rules, estimates)     │
+        │  ├─ selector  (catalog + policy)     │
+        │  ├─ report card (traces)             │
+        │  ├─ pdf       (reportlab)            │
+        │  └─ scaffold  (LangGraph zip)        │
+        └───────┬───────────────┬─────────────┘
+                │ read-only     │ optional, outbound
+        ┌───────▼──────┐  ┌─────▼────────────────┐
+        │ catalog.json │  │ api.anthropic.com     │  only when /api/v1/describe is enabled
+        │ scan roots   │  │ git remotes           │  only when git cloning is enabled
+        └──────────────┘  └──────────────────────┘</code></pre>
+<p>All computation is CPU-bound Python. A single replica handles interactive use for a team; add replicas for concurrency, not for memory.</p>
 
-<h2 id="local">3. Run locally</h2>
-<pre><code>git clone &lt;this repository&gt; vgselect && cd vgselect
-python -m venv .venv && source .venv/bin/activate
-pip install -e '.[service]'
-export VGSELECT_SCAN_ROOTS=/path/to/repos      # optional: allow scanning by server path
-vgselect-service                               # http://localhost:8080</code></pre>
-<p>Equivalent: <code>uvicorn vgselect3a.service.app:app --host 0.0.0.0 --port 8080 --workers 2</code>.</p>
-<p>Enable the Claude-powered intake (optional):</p>
-<pre><code>pip install -e '.[service,llm]'
-export ANTHROPIC_API_KEY=...                   # or an `ant auth login` profile plus VGSELECT_DESCRIBE_ENABLED=1</code></pre>
-
-<h2 id="docker">4. Docker</h2>
-<pre><code>docker build -t vgselect-3a:0.4.0 .
-docker run --rm -p 8080:8080 \
-  -v /srv/repos:/scan:ro \
-  -e VGSELECT_SCAN_ROOTS=/scan \
-  -e VGSELECT_ALLOW_GIT_CLONE=0 \
-  vgselect-3a:0.4.0</code></pre>
-<p>The image runs as a non-root user, exposes 8080, and has a <code>HEALTHCHECK</code> on <code>/health</code>. Mount repositories read-only under <code>/scan</code>. To add the <code>describe</code> endpoint, uncomment the <code>[service,llm]</code> line in the <code>Dockerfile</code> and pass <code>ANTHROPIC_API_KEY</code> as a secret.</p>
-
-<h3>Kubernetes sketch</h3>
-<pre><code>resources: { requests: { cpu: "250m", memory: "256Mi" }, limits: { cpu: "2", memory: "1Gi" } }
-readinessProbe:  { httpGet: { path: /health, port: 8080 } }
-livenessProbe:   { httpGet: { path: /health, port: 8080 }, periodSeconds: 30 }</code></pre>
-<p>Scans of large repositories are CPU-bound (regex over up to 20,000 files, 1 MB per file). Size the CPU limit accordingly or front the scan endpoints with a queue if you expect monorepos.</p>
-
-<h2 id="config">5. Configuration (environment variables)</h2>
+<h2 id="prereq">3. Prerequisites and sizing</h2>
 <table>
-<tr><th>Variable</th><th>Default</th><th>Meaning</th></tr>
-<tr><td><code>VGSELECT_HOST</code> / <code>VGSELECT_PORT</code></td><td><code>0.0.0.0</code> / <code>8080</code></td><td>Bind address for <code>vgselect-service</code>.</td></tr>
-<tr><td><code>VGSELECT_SCAN_ROOTS</code></td><td>empty (path scanning disabled)</td><td>Colon-separated directories that <code>POST /api/v1/scan {path}</code> may read. Paths outside these roots return 403.</td></tr>
-<tr><td><code>VGSELECT_ALLOW_GIT_CLONE</code></td><td><code>0</code></td><td>Set to <code>1</code> to allow <code>POST /api/v1/scan {git_url}</code> (shallow clone into a temp dir, deleted afterwards). Only https://, ssh:// and git@ URLs are accepted.</td></tr>
-<tr><td><code>VGSELECT_MAX_UPLOAD_MB</code></td><td><code>50</code></td><td>Maximum zip size for <code>/api/v1/scan/upload</code>.</td></tr>
-<tr><td><code>VGSELECT_CATALOG</code></td><td>bundled default</td><td>Path to your model ecosystem catalog JSON (schema in <code>docs/MODEL_CATALOG.html</code>; how to maintain it in section 5a). Read at start-up; restart after changes.</td></tr>
-<tr><td><code>VGSELECT_CORS_ORIGINS</code></td><td>empty</td><td>Comma-separated origins allowed to call the API from a browser on another host.</td></tr>
-<tr><td><code>ANTHROPIC_API_KEY</code></td><td>unset</td><td>Enables <code>/api/v1/describe</code> when the <code>llm</code> extra is installed. <code>VGSELECT_DESCRIBE_ENABLED=1</code> enables it when credentials come from an <code>ant auth login</code> profile instead.</td></tr>
+<tr><th>Item</th><th>Requirement</th></tr>
+<tr><td>Runtime</td><td>Python 3.11 or newer (3.12 recommended), or Docker. No compiled extensions beyond what pip wheels provide.</td></tr>
+<tr><td>Python packages</td><td>Installed by the <code>service</code> extra: FastAPI, Uvicorn, Pydantic, python-multipart, reportlab. The <code>llm</code> extra adds the Anthropic SDK for the optional describe endpoint.</td></tr>
+<tr><td>Git</td><td>Only if you enable scanning by git URL (<code>VGSELECT_ALLOW_GIT_CLONE=1</code>).</td></tr>
+<tr><td>Network</td><td>Inbound from your users to the proxy. Outbound is not required, except to git remotes (if cloning is enabled) and to <code>api.anthropic.com</code> (if describe is enabled). The UI has no external front-end dependencies.</td></tr>
+<tr><td>CPU / memory</td><td>Baseline ~120 MB RSS per replica. A recommendation takes milliseconds; a PDF 0.1-0.5 s; a scan 0.1-10 s of CPU depending on repository size (cap: 20,000 files, 1 MB each); a report card is linear in trace steps. Start with 0.25-1 vCPU and 512 MB per replica; give scan-heavy deployments 2 vCPU.</td></tr>
+<tr><td>Disk</td><td>Temporary space for uploads and clones: reserve at least 2× <code>VGSELECT_MAX_UPLOAD_MB</code> per concurrent scan in the temp directory.</td></tr>
+<tr><td>Browser</td><td>Any current browser; the UI is plain HTML/CSS/JS.</td></tr>
 </table>
 
-<h2 id="models">5a. Managing the available models</h2>
+<h2 id="install">4. Installation</h2>
+
+<h3>4.1 Bare metal or virtual machine</h3>
+<pre><code>git clone https://github.com/rgvvvg5mpz-collab/VGSelect3A.git vgselect && cd vgselect
+python3 -m venv .venv && source .venv/bin/activate
+pip install --upgrade pip
+pip install -e '.[service]'               # add ',llm' to enable the Claude-powered describe endpoint
+
+export VGSELECT_SCAN_ROOTS=/srv/repos      # optional: directories that may be scanned by server path
+export VGSELECT_CATALOG=/etc/vgselect/catalog.json   # optional: your model catalog (section 6)
+vgselect-service                           # listens on 0.0.0.0:8080</code></pre>
+<p>Equivalent explicit form, with multiple worker processes:</p>
+<pre><code>uvicorn vgselect3a.service.app:app --host 0.0.0.0 --port 8080 --workers 2 --log-level info</code></pre>
+
+<h4>systemd unit</h4>
+<pre><code># /etc/systemd/system/vgselect.service
+[Unit]
+Description=VG Select: 3A
+After=network.target
+
+[Service]
+User=vgselect
+WorkingDirectory=/opt/vgselect
+Environment=VGSELECT_SCAN_ROOTS=/srv/repos
+Environment=VGSELECT_CATALOG=/etc/vgselect/catalog.json
+Environment=VGSELECT_PORT=8080
+ExecStart=/opt/vgselect/.venv/bin/uvicorn vgselect3a.service.app:app --host 127.0.0.1 --port 8080 --workers 2
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+<pre><code>sudo systemctl daemon-reload && sudo systemctl enable --now vgselect && systemctl status vgselect</code></pre>
+
+<h3>4.2 Docker</h3>
+<pre><code>docker build -t vgselect-3a:0.4.0 .
+docker run -d --name vgselect -p 8080:8080 \
+  -v /srv/repos:/scan:ro \
+  -v /etc/vgselect/catalog.json:/catalog.json:ro \
+  -e VGSELECT_SCAN_ROOTS=/scan \
+  -e VGSELECT_CATALOG=/catalog.json \
+  -e VGSELECT_ALLOW_GIT_CLONE=0 \
+  --restart unless-stopped \
+  vgselect-3a:0.4.0</code></pre>
+<p>The image runs as a non-root user, exposes 8080, and has a <code>HEALTHCHECK</code> on <code>/health</code>. To add the describe endpoint, uncomment the <code>[service,llm]</code> line in the <code>Dockerfile</code> and pass <code>ANTHROPIC_API_KEY</code> as a secret, never as a build argument.</p>
+
+<h4>Docker Compose</h4>
+<pre><code>services:
+  vgselect:
+    build: .
+    image: vgselect-3a:0.4.0
+    ports: ["8080:8080"]
+    environment:
+      VGSELECT_SCAN_ROOTS: /scan
+      VGSELECT_CATALOG: /catalog.json
+      VGSELECT_MAX_UPLOAD_MB: "50"
+    volumes:
+      - /srv/repos:/scan:ro
+      - /etc/vgselect/catalog.json:/catalog.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3</code></pre>
+
+<h3>4.3 Kubernetes</h3>
+<pre><code>apiVersion: v1
+kind: ConfigMap
+metadata: { name: vgselect-catalog }
+data:
+  catalog.json: |
+    { "name": "enterprise-catalog", "models": [ ... ] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: vgselect }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: vgselect } }
+  template:
+    metadata: { labels: { app: vgselect } }
+    spec:
+      securityContext: { runAsNonRoot: true }
+      containers:
+        - name: vgselect
+          image: registry.internal/vgselect-3a:0.4.0
+          ports: [{ containerPort: 8080 }]
+          env:
+            - { name: VGSELECT_CATALOG, value: /config/catalog.json }
+            - { name: VGSELECT_MAX_UPLOAD_MB, value: "50" }
+          volumeMounts:
+            - { name: catalog, mountPath: /config, readOnly: true }
+          resources:
+            requests: { cpu: "250m", memory: "256Mi" }
+            limits:   { cpu: "2",    memory: "1Gi" }
+          readinessProbe: { httpGet: { path: /health, port: 8080 }, periodSeconds: 10 }
+          livenessProbe:  { httpGet: { path: /health, port: 8080 }, periodSeconds: 30 }
+      volumes:
+        - name: catalog
+          configMap: { name: vgselect-catalog }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: vgselect }
+spec:
+  selector: { app: vgselect }
+  ports: [{ port: 80, targetPort: 8080 }]</code></pre>
+<p>Expose the Service through your ingress with authentication (section 9). Because the catalog is read at start-up, roll the Deployment after changing the ConfigMap.</p>
+
+<h2 id="config">5. Configuration reference</h2>
+<p>Everything is configured through environment variables. None is required for a first run.</p>
+<table class="kv">
+<tr><th>Variable</th><th>Default</th><th>Meaning</th></tr>
+<tr><td>VGSELECT_HOST</td><td>0.0.0.0</td><td>Bind address used by <code>vgselect-service</code>. Bind to 127.0.0.1 when a local reverse proxy fronts the service.</td></tr>
+<tr><td>VGSELECT_PORT</td><td>8080</td><td>Listen port used by <code>vgselect-service</code>.</td></tr>
+<tr><td>VGSELECT_SCAN_ROOTS</td><td>empty (disabled)</td><td>Colon-separated directories that <code>POST /api/v1/scan {"path": ...}</code> may read. Paths are resolved (symlinks followed) and must be inside a root; anything else returns 403. Leave empty to allow only zip uploads.</td></tr>
+<tr><td>VGSELECT_ALLOW_GIT_CLONE</td><td>0</td><td>Set to <code>1</code> to allow <code>POST /api/v1/scan {"git_url": ...}</code>: a shallow clone into a temporary directory with a 5-minute timeout, deleted afterwards. Only <code>https://</code>, <code>ssh://</code> and <code>git@</code> URLs are accepted. Requires <code>git</code> and outbound access.</td></tr>
+<tr><td>VGSELECT_MAX_UPLOAD_MB</td><td>50</td><td>Maximum size of a zip accepted by <code>/api/v1/scan/upload</code>. Larger uploads return 413.</td></tr>
+<tr><td>VGSELECT_CATALOG</td><td>bundled default</td><td>Path to the model ecosystem catalog JSON (section 6). Read once at start-up.</td></tr>
+<tr><td>VGSELECT_CORS_ORIGINS</td><td>empty</td><td>Comma-separated origins allowed to call the API from a browser on another host. Leave empty when the UI is served from the same origin.</td></tr>
+<tr><td>ANTHROPIC_API_KEY</td><td>unset</td><td>Enables <code>/api/v1/describe</code> when the <code>llm</code> extra is installed (section 7).</td></tr>
+<tr><td>VGSELECT_DESCRIBE_ENABLED</td><td>unset</td><td>Set to <code>1</code> to enable describe when Anthropic credentials come from an <code>ant auth login</code> profile instead of an API key.</td></tr>
+</table>
+<p><code>GET /health</code> echoes the effective scan roots, catalog name and model count, and whether git cloning, describe and PDF generation are enabled, so you can verify configuration after every deploy.</p>
+
+<h2 id="models">6. Managing the available models</h2>
 <p>The set of models a role can be staffed with is <b>data, not code</b>: a JSON catalog. Changing which models are available, their prices, limits, approval or data clearance never requires a code change or a new image.</p>
 
 <h3>Where the catalog lives</h3>
 <table>
 <tr><th>Situation</th><th>Location</th></tr>
 <tr><td>Nothing configured</td><td>The bundled default inside the package: <code>src/vgselect3a/catalogs/default.json</code>. It has <b>verified</b> entries for the current Anthropic models and <b>placeholder</b> entries (<code>"illustrative": true</code>) for OpenAI, Google, self-hosted open-weights and Mistral models. Placeholders are never selected until you replace their numbers and mark them verified.</td></tr>
-<tr><td>Production (recommended)</td><td>Your own file, kept in version control next to your model registry, and passed with <code>VGSELECT_CATALOG=/path/catalog.json</code>. In Docker: <code>-v /srv/vgselect/catalog.json:/catalog.json:ro -e VGSELECT_CATALOG=/catalog.json</code>. In Kubernetes: a ConfigMap mounted at that path.</td></tr>
-<tr><td>Per request (experiments)</td><td>Callers can send extra or overriding entries in <code>catalog_models</code> on any recommend, scan, PDF or skeleton request. These are merged over the server catalog for that request only and are never stored.</td></tr>
+<tr><td>Production (recommended)</td><td>Your own file, kept in version control next to your model registry, and passed with <code>VGSELECT_CATALOG=/path/catalog.json</code> (Docker: mount it read-only; Kubernetes: a ConfigMap).</td></tr>
+<tr><td>Per request (experiments)</td><td>Callers can send extra or overriding entries in <code>catalog_models</code> on any recommend, scan, PDF, skeleton or report-card request. These are merged over the server catalog for that request only and are never stored.</td></tr>
 </table>
 <div class="warn">The catalog is read once at process start. After editing the file, restart the service (rolling restart in Kubernetes). <code>GET /health</code> reports the active catalog name and model count, and <code>GET /api/v1/catalog</code> returns the full active catalog, so you can confirm the new version is live.</div>
 
 <h3>How to add, change or retire a model</h3>
 <ol>
   <li><b>Start from the bundled file</b> if you do not have one yet: <code>python -c "import importlib.resources as r; print(r.files('vgselect3a')/'catalogs'/'default.json')"</code> prints its path; copy it and edit the copy.</li>
-  <li><b>Add or edit an entry.</b> One object per model; the full schema is in <code>docs/MODEL_CATALOG.html</code>. The fields that decide selection:
+  <li><b>Add or edit an entry.</b> One object per model; the full schema is in <a href="MODEL_CATALOG.html">Model catalog</a>. The fields that decide selection:
     <ul>
       <li><code>approved</code>: false keeps the model in the catalog but rejects it for every role (the report shows "not approved by the platform team"). Use this to stage a model before clearance.</li>
       <li><code>data_classes</code>: which of <code>public</code>, <code>internal</code>, <code>confidential</code>, <code>restricted</code> the model may see. A role is only staffed by models cleared for the request's <code>data_sensitivity</code>.</li>
@@ -135,7 +262,7 @@ livenessProbe:   { httpGet: { path: /health, port: 8080 }, periodSeconds: 30 }</
 }</code></pre>
 <p>Restricted-data workloads will now be staffed by this model where its tier and evidence satisfy the role, and the generated skeleton will list <code>langchain-openai</code> and an <code>OPENAI_BASE_URL</code> line for it.</p>
 
-<h3>Operational checklist</h3>
+<h3>Operational checklist for the catalog</h3>
 <ul>
   <li>One catalog per environment; review changes like code (approval, data clearance and regions are governance decisions).</li>
   <li>Refresh prices and serving figures on a schedule; record <code>verified_on</code>.</li>
@@ -143,54 +270,170 @@ livenessProbe:   { httpGet: { path: /health, port: 8080 }, periodSeconds: 30 }</
   <li>Never rely on placeholder numbers: keep <code>illustrative: true</code> until verified, and keep the default policy (<code>require_verified</code>) on in production.</li>
 </ul>
 
-<h2 id="security">6. Security model</h2>
-<div class="warn"><b>The service ships without authentication.</b> Deploy it behind your API gateway, SSO proxy, or service mesh. Anyone who can reach the port can scan whatever the allow-list permits and, if git cloning is enabled, make the host clone arbitrary repositories.</div>
+<h2 id="describe">7. Optional: the Claude-powered describe endpoint</h2>
+<p><code>POST /api/v1/describe</code> and the UI's Describe tab send a prose description of the application to Claude and receive a filled-in profile; the recommendation itself stays deterministic. It is off unless all of the following hold:</p>
+<ol>
+  <li>The <code>llm</code> extra is installed (<code>pip install -e '.[service,llm]'</code>, or the commented line in the Dockerfile).</li>
+  <li>Credentials are available: <code>ANTHROPIC_API_KEY</code>, or an <code>ant auth login</code> profile plus <code>VGSELECT_DESCRIBE_ENABLED=1</code>.</li>
+  <li>Outbound HTTPS to <code>api.anthropic.com</code> is allowed from the service.</li>
+</ol>
+<p>What leaves the network: the prose description only, never code, traces or catalog data. The call uses <code>claude-opus-5</code> by default with refusal fallbacks enabled; the model can be overridden per request. <code>GET /health</code> shows <code>describe_enabled</code>. If you do not want any outbound calls, simply do not install the extra; the UI tab then reports the feature as unavailable.</p>
+
+<h2 id="security">8. Security model</h2>
+<div class="warn"><b>The service ships without authentication.</b> Deploy it behind your API gateway, SSO proxy, or service mesh (section 9). Anyone who can reach the port can scan whatever the allow-list permits and, if git cloning is enabled, make the host clone arbitrary repositories.</div>
 <ul>
-  <li><b>Path scanning is deny-by-default.</b> It only works for directories under <code>VGSELECT_SCAN_ROOTS</code>; the check resolves symlinks and rejects traversal.</li>
-  <li><b>Uploads</b> are size-limited, extracted with a zip-slip check, and deleted after the request. They are never executed. Treat uploaded code as untrusted data; the scanner only runs regular expressions over it.</li>
-  <li><b>Git cloning</b> is off by default; when on, it is a shallow clone with a 5-minute timeout. Do not enable it on hosts holding credentials you would not want used for cloning.</li>
-  <li><b>Data leaving the host:</b> nothing, unless <code>describe</code> is enabled, in which case the prose description (not code) is sent to the Anthropic API.</li>
-  <li><b>No secrets are logged.</b> Scan evidence contains file paths, line numbers and 160-character snippets from the scanned code; the response is returned to the caller only and not stored. The PDF and skeleton contain only the profile, the recommendation and (when supplied) the scan summary the caller sent back.</li>
+  <li><b>Path scanning is deny-by-default.</b> It only works for directories under <code>VGSELECT_SCAN_ROOTS</code>; the check resolves symlinks and rejects traversal. Mount scan roots read-only.</li>
+  <li><b>Uploads</b> are size-limited, extracted with a zip-slip check into a private temporary directory, and deleted after the request. They are never executed; the scanner only runs regular expressions over them.</li>
+  <li><b>Git cloning</b> is off by default; when on, it is a shallow clone with a timeout. Do not enable it on hosts holding credentials you would not want used for cloning; prefer zip uploads or mounted read-only checkouts.</li>
+  <li><b>Traces</b> may contain prompts or tool arguments from production. The report card only needs step types, agent names, token counts, latencies, tool names and an argument hash; strip payloads before upload (the native format has no field for them). Traces are parsed in memory and never stored.</li>
+  <li><b>Data leaving the host:</b> nothing, unless describe is enabled (prose only) or git cloning is enabled (clone traffic to your remotes).</li>
+  <li><b>Responses</b> contain file paths, line numbers and 160-character code snippets as scan evidence, the profile, the recommendation and (when supplied) the scan summary. Treat them with the same classification as the scanned code.</li>
+  <li><b>Secrets:</b> the service reads no secrets except the optional Anthropic credential; pass it through your secret manager, not the image.</li>
+  <li><b>Process hardening:</b> the image runs as a non-root user; the systemd unit above sets <code>NoNewPrivileges</code> and <code>PrivateTmp</code>; run with a read-only root filesystem and a writable <code>/tmp</code> if your platform supports it.</li>
+  <li><b>Dependencies:</b> pin the image tag and rebuild on a schedule to pick up security fixes for FastAPI, Uvicorn, Pydantic and reportlab.</li>
 </ul>
 
-<h2 id="ops">7. Operations</h2>
+<h2 id="proxy">9. Reverse proxy, TLS and authentication</h2>
+<p>Terminate TLS and enforce authentication at the proxy. The UI and API are same-origin, so no CORS configuration is needed in the common case.</p>
+<h4>nginx</h4>
+<pre><code>server {
+  listen 443 ssl;
+  server_name vgselect.internal.example.com;
+  ssl_certificate     /etc/ssl/vgselect.crt;
+  ssl_certificate_key /etc/ssl/vgselect.key;
+
+  client_max_body_size 60m;          # >= VGSELECT_MAX_UPLOAD_MB plus traces
+  proxy_read_timeout   120s;         # 300s if git cloning is enabled
+
+  # authentication: e.g. auth_request to your SSO proxy, or an allow-list
+  # include /etc/nginx/snippets/sso.conf;
+
+  location / {
+    proxy_pass         http://127.0.0.1:8080;
+    proxy_set_header   Host $host;
+    proxy_set_header   X-Forwarded-Proto https;
+    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+  }
+}</code></pre>
+<h4>Authentication options</h4>
 <ul>
-  <li><b>Stateless:</b> scale horizontally; any replica can serve any request. No sticky sessions.</li>
-  <li><b>Health:</b> <code>GET /health</code> returns <code>{"status":"ok", ...}</code> plus the effective scan roots and feature flags, which is useful for confirming configuration after deploy.</li>
-  <li><b>Logging:</b> Uvicorn access logs to stdout. Set <code>--log-level warning</code> in production if the access log is noisy.</li>
-  <li><b>Latency:</b> <code>/api/v1/recommend</code> is a few milliseconds; the PDF takes ~0.1-0.5 s; the skeleton zip is instant. Scans run 0.1-10 s depending on repository size.</li>
-  <li><b>Timeouts:</b> set your proxy's upstream timeout to at least 60 s for scan endpoints (5 min if git cloning is enabled).</li>
-  <li><b>OpenAPI:</b> the live document is at <code>/openapi.json</code>; a checked-in copy is in <code>openapi/vgselect-3a.openapi.json</code> (regenerate with <code>python scripts/export_openapi.py</code>). Publish it to your API catalog.</li>
+  <li><b>SSO proxy</b> (oauth2-proxy, Pomerium, your identity provider's gateway) in front of the whole site: simplest for the UI and the API alike; users authenticate once in the browser, CI uses a service token.</li>
+  <li><b>API gateway</b> with per-key quotas for the API paths and SSO for the UI.</li>
+  <li><b>Network-only</b> (VPN or private subnet) for a small team; still prefer SSO if the service can reach production repositories.</li>
+</ul>
+<p>Set <code>VGSELECT_CORS_ORIGINS</code> only if a separately hosted front end calls the API.</p>
+
+<h2 id="ops">10. Operations and monitoring</h2>
+<ul>
+  <li><b>Stateless:</b> scale horizontally; any replica can serve any request; no sticky sessions; rolling restarts are safe at any time.</li>
+  <li><b>Health:</b> <code>GET /health</code> returns <code>{"status":"ok", ...}</code> with version, scan roots, catalog name and model count, and feature flags. Use it for readiness and liveness and for post-deploy configuration checks.</li>
+  <li><b>Logging:</b> Uvicorn access and error logs go to stdout; ship them with your log agent. Use <code>--log-level warning</code> if access logs are noisy. Requests carry no user identity unless the proxy adds it; log at the proxy for audit.</li>
+  <li><b>Metrics:</b> the service does not export Prometheus metrics itself; collect request rate, latency and error rate at the proxy or add an ASGI metrics middleware if you need them in-process. Track: request count by path, p95 latency for scan and PDF paths, 4xx/5xx rate, upload sizes.</li>
+  <li><b>Latency expectations:</b> recommend: milliseconds; PDF: 0.1-0.5 s; skeleton: instant; scan: 0.1-10 s by repository size; report card: linear in trace steps.</li>
+  <li><b>Timeouts:</b> proxy upstream timeout at least 60 s for scan endpoints (300 s with git cloning). Uvicorn needs no special timeout settings.</li>
+  <li><b>Temporary files:</b> uploads and clones go to the system temp directory and are removed after each request; alert if the temp filesystem fills (a crash mid-request can leave a directory named <code>vgselect-*</code>; safe to delete).</li>
+  <li><b>Capacity:</b> CPU-bound. Under sustained scanning of large monorepos, add replicas or a queue in front of the scan endpoints; interactive recommendations are negligible.</li>
+  <li><b>Backups:</b> nothing to back up except your catalog file, which should already be in version control.</li>
+  <li><b>OpenAPI:</b> the live document is at <code>/openapi.json</code>; a checked-in copy is in <code>openapi/vgselect-3a.openapi.json</code> (regenerate with <code>python scripts/export_openapi.py</code>). Publish it to your API catalog so clients can be generated.</li>
 </ul>
 
-<h2 id="verify">8. Verify the deployment</h2>
-<pre><code>curl -s http://localhost:8080/health
-curl -s http://localhost:8080/api/v1/recommend \
-  -H 'content-type: application/json' \
+<h2 id="verify">11. Verify the deployment</h2>
+<pre><code># health and configuration
+curl -s http://localhost:8080/health | python -m json.tool
+
+# a recommendation
+curl -s http://localhost:8080/api/v1/recommend -H 'content-type: application/json' \
   -d '{"profile":{"task_complexity":"open_ended","steps_predictable":false,"parallel_subtasks":6,"knowledge_sources":4,"retrieval_depth":"exhaustive","tool_count":5,"tool_calls_per_task":40,"latency_budget_s":600},"include_markdown":false}' \
-  | python -c 'import sys,json; d=json.load(sys.stdin); print(d["primary"], d["headline"])'
-# expected: orchestrator_workers ...
+  | python -c 'import sys,json; d=json.load(sys.stdin); print(d["primary"], "|", d["headline"][:120])'
+# expected: orchestrator_workers | Recommended: **Orchestrator + worker subagents** ...
 
-# deliverables
+# the deliverables
 curl -s http://localhost:8080/api/v1/recommend/pdf -H 'content-type: application/json' \
   -d '{"profile":{"name":"smoke","task_complexity":"moderate","tool_count":3,"tool_calls_per_task":3}}' -o /tmp/smoke.pdf && file /tmp/smoke.pdf
 curl -s http://localhost:8080/api/v1/recommend/skeleton -H 'content-type: application/json' \
-  -d '{"profile":{"name":"smoke","task_complexity":"moderate","tool_count":3,"tool_calls_per_task":3}}' -o /tmp/smoke.zip && unzip -l /tmp/smoke.zip | tail -3</code></pre>
-<p>Run the test suite before promoting a build: <code>pip install -e '.[dev]' && pytest</code> (68 tests: engine, scanner, catalog and model selection, every endpoint, PDF generation, and syntax checks of the generated skeleton for all ten topologies).</p>
+  -d '{"profile":{"name":"smoke","task_complexity":"moderate","tool_count":3,"tool_calls_per_task":3}}' -o /tmp/smoke.zip && unzip -l /tmp/smoke.zip | tail -3
 
-<h2 id="upgrade">9. Upgrading and tuning</h2>
+# a scan by upload (any small repository)
+zip -qr /tmp/repo.zip tests/fixtures/sample_repo && curl -s http://localhost:8080/api/v1/scan/upload -F archive=@/tmp/repo.zip -F include_markdown=false \
+  | python -c 'import sys,json; d=json.load(sys.stdin); print(d["scan"]["current_topology"], "->", d["recommendation"]["primary"])'
+
+# the catalog
+curl -s http://localhost:8080/api/v1/catalog | python -c 'import sys,json; d=json.load(sys.stdin); print(d["name"], len(d["models"]), "models")'
+
+# the UI and the user guide
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/ ; curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/guide</code></pre>
+<p>Run the test suite before promoting a build: <code>pip install -e '.[dev]' && pytest</code> (77 tests: engine, scanner, catalog and model selection, traces and report card, every endpoint, PDF generation, and syntax checks of the generated skeleton for all ten topologies).</p>
+
+<h2 id="troubleshoot">12. Troubleshooting</h2>
+<table>
+<tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr>
+<tr><td>403 "Path scanning is disabled" or "outside the allowed scan roots"</td><td><code>VGSELECT_SCAN_ROOTS</code> unset, or the path resolves outside a root</td><td>Set the variable to the parent directory (colon-separated for several), restart; or use zip upload</td></tr>
+<tr><td>403 "Git cloning is disabled"</td><td><code>VGSELECT_ALLOW_GIT_CLONE</code> not <code>1</code></td><td>Enable it deliberately (section 8), ensure <code>git</code> is installed and outbound access exists</td></tr>
+<tr><td>502 "git clone failed"</td><td>Remote unreachable, authentication required, or timeout</td><td>Use an https URL with a read-only token, or mount a checkout under a scan root instead</td></tr>
+<tr><td>413 on upload</td><td>Zip larger than <code>VGSELECT_MAX_UPLOAD_MB</code>, or the proxy's body limit</td><td>Raise both limits, or zip without vendored dependencies and build outputs</td></tr>
+<tr><td>422 with a field name</td><td>Invalid profile value (unknown enum, out-of-range number, bad JSON in <code>overrides</code>/<code>policy</code>)</td><td>Read the detail; <code>GET /api/v1/fields</code> lists valid values</td></tr>
+<tr><td>422 "invalid catalog_models"</td><td>A per-request catalog entry violates the schema</td><td>Validate with <code>POST /api/v1/catalog/validate</code> first</td></tr>
+<tr><td>503 on the PDF endpoint; <code>pdf_enabled: false</code></td><td>reportlab not installed</td><td>Install the <code>service</code> or <code>pdf</code> extra and restart</td></tr>
+<tr><td>503 on describe; <code>describe_enabled: false</code></td><td>Missing <code>llm</code> extra or credentials</td><td>Section 7</td></tr>
+<tr><td>Every role "unfilled" in model selection</td><td>Policy or data class excludes all catalog models (for example restricted data with no cleared model, or only placeholder entries for a provider)</td><td>Register or clear a model for that data class (section 6), or relax the request policy; the rejected list gives the reason per model</td></tr>
+<tr><td>Recommendation estimates look far too high or low</td><td>Serving assumptions in the catalog do not match your environment</td><td>Update <code>ttft_s</code>, <code>tokens_per_s</code> and prices in your catalog from telemetry</td></tr>
+<tr><td>Report card says "design-time" only</td><td>No traces supplied, or none parsed</td><td>Add traces (see <a href="REPORT_CARD.html">Report card</a>); check <code>trace_warnings</code> in the response for unrecognised records</td></tr>
+<tr><td>Service starts but the UI is blank</td><td>Proxy rewrites paths or blocks <code>/api/v1/fields</code></td><td>Check the browser console; ensure the proxy passes <code>/api/</code> and <code>/health</code> unchanged</td></tr>
+<tr><td>Catalog edits not visible</td><td>Catalog is read at start-up</td><td>Restart; confirm with <code>/health</code></td></tr>
+</table>
+
+<h2 id="upgrade">13. Upgrades, rollbacks and tuning</h2>
 <ul>
-  <li>Bump <code>version</code> in <code>pyproject.toml</code> and <code>src/vgselect3a/__init__.py</code>; the value is reported by <code>/health</code> and in every recommendation.</li>
-  <li>Latency and cost estimates come from <code>MODEL_TIERS</code> in <code>src/vgselect3a/topologies.py</code> (prices, time-to-first-token, tokens/second) and the constants at the top of <code>src/vgselect3a/estimator.py</code>. Replace them with figures measured in your environment; rerun <code>pytest</code>.</li>
-  <li>Rules live in <code>src/vgselect3a/rules.py</code>; each carries a citation key resolved in <code>docs/industry_guidance.html</code>. Add a rule and its evidence together.</li>
-  <li>Scanner pattern tables are at the top of <code>src/vgselect3a/scanner.py</code>; extend them for in-house frameworks or tool conventions.</li>
-  <li>Skeleton templates live in <code>src/vgselect3a/scaffold/langgraph.py</code> (one function per topology). To adapt them to an in-house framework or house style, edit the templates and run <code>pytest</code>; the suite syntax-checks every generated file. To add another framework, register a generator in <code>src/vgselect3a/scaffold/__init__.py</code>.</li>
-  <li>The PDF layout is in <code>src/vgselect3a/pdf_report.py</code>; the colours and header band are constants at the top of the file.</li>
-  <li>The model catalog is data: keep it in version control next to your model registry, validate with <code>vgselect catalog --catalog file.json</code>, deploy with <code>VGSELECT_CATALOG</code>. Selection rules are in <code>src/vgselect3a/model_selector.py</code>; role requirements in <code>src/vgselect3a/requirements.py</code>.</li>
-  <li>Bump the version in the <code>Dockerfile</code> tag and <code>CHANGELOG.md</code> together with <code>pyproject.toml</code>.</li>
+  <li><b>Versioning:</b> the version in <code>pyproject.toml</code> and <code>src/vgselect3a/__init__.py</code> is reported by <code>/health</code>, in every recommendation and in the PDF footer. Tag images with it.</li>
+  <li><b>Upgrade:</b> build the new image, run <code>pytest</code>, deploy with a rolling restart, re-run the section-11 checks. No migrations exist.</li>
+  <li><b>Rollback:</b> redeploy the previous image tag. The catalog file is forward and backward compatible as long as it validates.</li>
+  <li><b>Tuning estimates:</b> latency and cost come from the catalog entries' serving figures and prices; for the bundled tiers also from <code>MODEL_TIERS</code> in <code>src/vgselect3a/topologies.py</code> and the constants at the top of <code>src/vgselect3a/estimator.py</code>. Replace them with measured figures and re-run the tests.</li>
+  <li><b>Tuning rules:</b> rules live in <code>src/vgselect3a/rules.py</code>; each carries a citation key resolved in <code>docs/industry_guidance.html</code>. Add a rule and its evidence together.</li>
+  <li><b>Scanner patterns:</b> the tables at the top of <code>src/vgselect3a/scanner.py</code>; extend them for in-house frameworks or tool conventions and add a fixture test.</li>
+  <li><b>Report card thresholds:</b> <code>src/vgselect3a/report_card.py</code> holds the level rubrics, dimension weights and penalty sizes; <a href="REPORT_CARD.html">Report card</a> documents them.</li>
+  <li><b>Skeleton templates:</b> <code>src/vgselect3a/scaffold/langgraph.py</code>, one function per topology; the suite syntax-checks every generated file.</li>
+  <li><b>PDF layout:</b> <code>src/vgselect3a/pdf_report.py</code>; colours and header band are constants at the top.</li>
+  <li><b>User guide:</b> edit <code>docs/USER_GUIDE.html</code> and run <code>python scripts/sync_docs.py</code> so the copy served at <code>/guide</code> matches; a test enforces this.</li>
 </ul>
 <h3>Developer preview</h3>
-<p><code>.claude/launch.json</code> starts the service on port 8765 for the Claude Code browser preview, using the project's <code>.venv</code> (create it with <code>python3 -m venv .venv && .venv/bin/pip install -e '.[service]'</code>) and the repository itself as the scan root.</p>
-<div class="ok">Also ship the Claude Code skill in <code>.claude/skills/vg-select-3a/</code> to engineering teams (copy it to <code>~/.claude/skills/</code> or their project's <code>.claude/skills/</code>) and set <code>VGSELECT_URL</code> to your deployment so the skill calls the service.</div>
+<p><code>.claude/launch.json</code> starts the service on port 8765 for the Claude Code browser preview from the project's <code>.venv</code> with the repository as the scan root. Create the venv with <code>python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'</code>.</p>
+
+<h2 id="cicd">14. CI/CD</h2>
+<h4>Build and test (GitHub Actions example)</h4>
+<pre><code>name: vgselect
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e '.[dev]'
+      - run: pytest -q
+      - run: python scripts/export_openapi.py && git diff --exit-code openapi/   # spec is up to date
+  image:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t registry.internal/vgselect-3a:${{ github.sha }} .
+      - run: docker push registry.internal/vgselect-3a:${{ github.sha }}</code></pre>
+<h4>Using the service in other teams' pipelines</h4>
+<p>Teams can fail a pull request when an agent's implemented topology drifts from the agreed design, or when its report-card grade drops; see the <a href="CONSUMER_GUIDE.html#ci">Consumer guide</a>. Give CI a service token at the proxy.</p>
+
+<h2 id="checklist">15. Go-live checklist</h2>
+<ol>
+  <li>Image built from a tagged commit; <code>pytest</code> green; OpenAPI export committed.</li>
+  <li>Catalog file validated (<code>vgselect catalog --catalog ...</code>), placeholders marked illustrative or verified, approval and data classes reviewed by the platform team.</li>
+  <li><code>VGSELECT_SCAN_ROOTS</code> limited to read-only mounts; git cloning off unless required.</li>
+  <li>TLS and authentication at the proxy; body size and timeouts set; CORS empty unless needed.</li>
+  <li>Describe endpoint deliberately on or off; if on, credential from the secret manager and egress allowed only to <code>api.anthropic.com</code>.</li>
+  <li>Readiness and liveness probes on <code>/health</code>; logs shipped; proxy metrics dashboards for rate, latency, errors.</li>
+  <li>Section-11 smoke checks pass against the deployed URL, including <code>/guide</code>.</li>
+  <li>User guide URL and the Claude Code skill (<code>.claude/skills/vg-select-3a/</code>, with <code>VGSELECT_URL</code> set) distributed to engineering teams.</li>
+</ol>
+<div class="ok">After go-live, the two documents to keep current are this guide (configuration and operations) and the <a href="USER_GUIDE.html">User guide</a> served at <code>/guide</code>.</div>
 </body>
 </html>

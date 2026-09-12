@@ -185,6 +185,11 @@ def ui() -> str:
     return (resources.files("vgselect3a") / "service" / "static" / "index.html").read_text(encoding="utf-8")
 
 
+@app.get("/guide", response_class=HTMLResponse, include_in_schema=False)
+def user_guide() -> str:
+    return (resources.files("vgselect3a") / "service" / "static" / "user_guide.html").read_text(encoding="utf-8")
+
+
 @app.get("/health", response_model=HealthOut, tags=["reference"])
 def health() -> HealthOut:
     try:

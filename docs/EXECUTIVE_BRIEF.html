@@ -51,13 +51,14 @@
   <li><b>Model governance enforced.</b> Only approved models cleared for the request's data class and region can staff a role; every rejection is recorded, and roles no model can staff are surfaced before anything is built.</li>
   <li><b>Governance built in.</b> Every recommendation carries the guardrails the literature ties to failure: evaluation sets before structure, termination limits, verification at the orchestrator, gated approval for irreversible actions, tracing. Irreversible integrations (payments, email, ticketing) are detected from code.</li>
   <li><b>Drift detection.</b> Run in CI, it reports when an implementation's topology no longer matches the agreed design.</li>
+  <li><b>A common yardstick for agents in production.</b> The report card grades every agent on the same six dimensions (outcome quality, reliability, cost efficiency, latency, governance, complexity fit) from its code and traces, flags the failure patterns the research ties to multi-agent breakdowns (loops without limits, over-spawning, missing verification), and shows which agent in a team needs attention.</li>
   <li><b>Auditable and self-hosted.</b> Deterministic rules, no data leaves the network, evidence down to file and line, and a methodology document. Assumptions are printed with every result and can be recalibrated from the enterprise's own traces.</li>
 </ul>
 
 <h2>How to adopt</h2>
 <p><b>Week 1:</b> deploy the container behind the internal gateway; publish the OpenAPI spec to the API catalog; distribute the Claude Code skill. <b>Weeks 2-4:</b> run it on the three to five agent initiatives in flight; require the 3A architecture PDF in each architecture review and start new implementations from the generated skeleton. <b>Quarter:</b> calibrate latency and cost assumptions from production traces; add in-house frameworks to the scanner and house conventions to the skeleton templates; track the metrics below.</p>
 <div class="grid">
-  <div class="box"><b>Metrics to track</b><ul><li>Cost per completed task before/after</li><li>p50/p95 latency vs budget</li><li>Share of agent projects with an eval set at design time</li><li>Architecture review cycle time</li></ul></div>
+  <div class="box"><b>Metrics to track</b><ul><li>Cost per completed task before/after</li><li>p50/p95 latency vs budget</li><li>Report-card grade per agent, quarter over quarter</li><li>Share of agent projects with an eval set at design time</li><li>Architecture review cycle time</li></ul></div>
   <div class="box"><b>What it is not</b><ul><li>Not a framework or vendor choice</li><li>Not a benchmark: estimates rank options, they do not predict production numbers</li><li>Not a substitute for evaluation: it tells you to build the eval first</li></ul></div>
 </div>
 <p class="foot">Sources: Anthropic (Building effective agents; multi-agent research system; context engineering), OpenAI (A practical guide to building agents), Google ADK, LangChain/LangGraph, Microsoft Azure Architecture Center, Cemri et al. "Why Do Multi-Agent LLM Systems Fail?", Google/MIT "Towards a Science of Scaling Agent Systems", Cognition. Full evidence: docs/industry_guidance.html.</p>

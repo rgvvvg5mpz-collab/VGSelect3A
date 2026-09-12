@@ -13,7 +13,7 @@
   table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #e1e5ea;vertical-align:top}th{color:#5b6470;font-size:13px;background:#faf9f7}
   .note{border-left:4px solid #96151D;background:#f8eced;padding:10px 14px;border-radius:6px;margin:14px 0}
   .ok{border-left:4px solid #1a7f4b;background:#eaf7ef;padding:10px 14px;border-radius:6px;margin:14px 0}
-  nav{background:#f6f7f9;border:1px solid #e1e5ea;border-radius:8px;padding:12px 18px;margin-bottom:24px}nav a{margin-right:14px;color:#96151D}
+  nav{background:#f6f7f9;border:1px solid #e1e5ea;border-radius:8px;padding:12px 18px;margin-bottom:24px;display:flex;flex-wrap:wrap;gap:6px 16px}nav a{color:#96151D;white-space:nowrap}
   a{color:#96151D}
   ul li,ol li{margin:4px 0}
 </style>
@@ -37,8 +37,9 @@ curl -s "$VGSELECT_URL/api/v1/scan/upload" \
   -F 'policy={"allowed_providers": ["anthropic", "self_hosted"]}' \
   > result.json
 
-# 2. Read the answer
+# 2. Read the answer (add -F traces=@runs.jsonl above to get the agent report card as well)
 python -c 'import json; d=json.load(open("result.json")); print(d["recommendation"]["headline"])'
+python -c 'import json; rc=json.load(open("result.json"))["recommendation"]["report_card"]; print(rc and (rc["overall_grade"], rc["summary"]))'
 
 # 3. Get the two deliverables (the PDF and the LangGraph skeleton) for that answer
 python -c 'import json; d=json.load(open("result.json")); json.dump({"profile": d["profile"], "scan": d["scan"]}, open("request.json","w"))'
@@ -50,9 +51,9 @@ curl -s "$VGSELECT_URL/api/v1/recommend/skeleton" -H 'content-type: application/
 <h2 id="ways">2. Ways to consume</h2>
 <table>
 <tr><th>Surface</th><th>When</th></tr>
-<tr><td>Web UI at <code>/</code></td><td>Design reviews and first looks. Three steps: start from a scenario, scan, description or blank; describe the workload and constrain the model ecosystem; get the verdict, comparison, chart, model per role, plan, next steps and both downloads.</td></tr>
+<tr><td>Web UI at <code>/</code></td><td>Design reviews and first looks. Three steps: start from a scenario, scan (zip, path or git URL, plus optional traces), description or blank; describe the workload and constrain the model ecosystem; get the verdict, report card, comparison, chart, model per role, plan, next steps and both downloads.</td></tr>
 <tr><td>REST API (<code>/api/v1/*</code>, OpenAPI at <code>/openapi.json</code>, Swagger at <code>/docs</code>, ReDoc at <code>/redoc</code>)</td><td>CI checks, architecture linting, internal tooling, generated clients</td></tr>
-<tr><td>CLI <code>vgselect</code> (<code>pip install -e '.[pdf]'</code> from the repository)</td><td>Local use without the service; the same reports, PDF and skeleton</td></tr>
+<tr><td>CLI <code>vgselect</code> (<code>pip install -e '.[pdf]'</code> from the repository)</td><td>Local use without the service; the same reports, report card, PDF and skeleton</td></tr>
 <tr><td>Claude Code skill <code>.claude/skills/vg-select-3a</code></td><td>Ask Claude Code "which architecture should this agent use?"; it scans, asks for the missing fields, recommends, and writes the PDF and skeleton</td></tr>
 <tr><td>Python API <code>from vgselect3a import WorkloadProfile, recommend</code></td><td>Embedding in your own tools; <code>rec.to_pdf()</code>, <code>rec.to_skeleton()</code>, <code>rec.selection</code></td></tr>
 </table>
@@ -60,9 +61,9 @@ curl -s "$VGSELECT_URL/api/v1/recommend/skeleton" -H 'content-type: application/
 <h2 id="endpoints">3. Endpoints</h2>
 <table>
 <tr><th>Method</th><th>Path</th><th>Body</th><th>Returns</th></tr>
-<tr><td>POST</td><td><code>/api/v1/recommend</code></td><td><code>{"profile": {...}, "include_markdown": true, "policy": {...}, "catalog_models": [...]}</code></td><td><code>RecommendationOut</code></td></tr>
+<tr><td>POST</td><td><code>/api/v1/recommend</code></td><td><code>{"profile": {...}, "include_markdown": true, "policy": {...}, "catalog_models": [...], "traces": [...]}</code></td><td><code>RecommendationOut</code></td></tr>
 <tr><td>POST</td><td><code>/api/v1/scan</code></td><td><code>{"path": "/scan/repo"}</code> or <code>{"git_url": "https://..."}</code> plus optional <code>overrides</code>, <code>policy</code>, <code>recommend</code>, <code>include_markdown</code></td><td><code>ScanOut</code> (<code>scan</code>, merged <code>profile</code>, <code>recommendation</code>)</td></tr>
-<tr><td>POST</td><td><code>/api/v1/scan/upload</code></td><td>multipart: <code>archive</code> (zip), <code>overrides</code> (JSON string), <code>policy</code> (JSON string), <code>recommend</code>, <code>include_markdown</code></td><td><code>ScanOut</code></td></tr>
+<tr><td>POST</td><td><code>/api/v1/scan/upload</code></td><td>multipart: <code>archive</code> (zip), <code>overrides</code> (JSON string), <code>policy</code> (JSON string), <code>traces</code> (file, optional), <code>recommend</code>, <code>include_markdown</code></td><td><code>ScanOut</code></td></tr>
 <tr><td>POST</td><td><code>/api/v1/recommend/pdf</code></td><td><code>{"profile": {...}, "scan": &lt;scan object, optional&gt;, "policy": {...}}</code></td><td><code>application/pdf</code> architecture document (503 if the server lacks reportlab)</td></tr>
 <tr><td>POST</td><td><code>/api/v1/recommend/skeleton</code></td><td><code>{"profile": {...}, "scan": &lt;optional&gt;, "policy": {...}, "framework": "langgraph"}</code></td><td><code>application/zip</code> runnable project skeleton</td></tr>
 <tr><td>POST</td><td><code>/api/v1/describe</code></td><td><code>{"text": "prose description", "model": "claude-opus-5", "overrides": {...}, "policy": {...}}</code></td><td><code>RecommendationOut</code> (503 if the server has no Anthropic credentials)</td></tr>
@@ -213,6 +214,7 @@ curl -s "$VGSELECT_URL/api/v1/scan/upload" -F archive=@repo.zip -F traces=@runs.
   <li><b>Everything "exceeds" my latency budget.</b> The headline names the fastest viable option. If nothing fits, the budget is incompatible with the tool calls and reading per request; the estimate assumptions list what to cut.</li>
   <li><b>Can I trust the scan?</b> Treat inferences below 50% confidence as guesses. Evidence rows show exactly which lines produced each inference.</li>
   <li><b>The PDF endpoint returns 503.</b> The server was installed without the <code>pdf</code>/<code>service</code> extra (reportlab). <code>GET /health</code> shows <code>pdf_enabled</code>.</li>
+  <li><b>My traces come from a framework you do not list.</b> Convert them to the native JSONL: one record per run with typed steps (<code>llm</code>, <code>tool</code>, <code>spawn</code>, <code>handoff</code>, <code>verify</code>, <code>human</code>), the agent name per step, token counts, latency, and per run <code>success</code> and <code>terminated_by</code>. Only these fields are needed; no prompts or payloads.</li>
   <li><b>Which LangGraph version does the skeleton target?</b> LangChain 1.x with LangGraph 1.x; it falls back to the older prebuilt agent on LangGraph 0.2/0.3. Other frameworks are not generated yet; the <code>framework</code> parameter exists so more can be added (<code>src/vgselect3a/scaffold/</code>).</li>
   <li><b>Which models does the plan assume?</b> Whatever the catalog and policy allow. With the bundled catalog and default policy that is Claude Opus 5 for orchestration/synthesis, Sonnet 5 for workers and Haiku 4.5 for routers, because only the Anthropic entries are verified. Register your OpenAI, Google, self-hosted or other models in the catalog (see <a href="MODEL_CATALOG.html">Model catalog</a>) and the selector will use them where they fit.</li>
   <li><b>A role is "unfilled".</b> No catalog model passed the hard filters (typically data class, approval, region or capability). The table lists the rejection reasons; clear a model for that data class, approve it, or lower the role's ambition by changing the topology or budget.</li>

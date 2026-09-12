@@ -67,6 +67,14 @@ def test_health_and_reference_endpoints(client):
     ex = client.get("/api/v1/examples").json()
     assert any(e["name"] == "deep_research" for e in ex)
     assert "<title>" in client.get("/").text
+    guide = client.get("/guide")
+    assert guide.status_code == 200 and "User Guide" in guide.text
+
+
+def test_served_user_guide_matches_docs():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    assert (root / "docs" / "USER_GUIDE.html").read_text() == (root / "src" / "vgselect3a" / "service" / "static" / "user_guide.html").read_text(), "run scripts/sync_docs.py"
 
 
 def test_recommend_endpoint_and_openapi(client):

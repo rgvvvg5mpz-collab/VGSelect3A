@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VG Select: 3A — User Guide</title>
+<style>
+  body{font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1c2128;max-width:980px;margin:0 auto;padding:32px 24px;background:#fff}
+  h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:36px 0 10px;border-bottom:1px solid #e1e5ea;padding-bottom:6px}h3{font-size:16px;margin:22px 0 6px;color:#96151D}h4{font-size:14.5px;margin:16px 0 4px}
+  .sub{color:#5b6470;margin-bottom:24px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#f1f3f6;padding:1px 5px;border-radius:4px}
+  pre{background:#0f1a33;color:#e6ecff;padding:14px;border-radius:8px;overflow:auto;font-size:13px;line-height:1.45}pre code{background:none;color:inherit;padding:0}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #e1e5ea;vertical-align:top}th{color:#5b6470;font-size:13px;background:#faf9f7}
+  .tip{border-left:4px solid #1a7f4b;background:#eaf7ef;padding:10px 14px;border-radius:6px;margin:14px 0}
+  .warn{border-left:4px solid #b7791f;background:#fff8e8;padding:10px 14px;border-radius:6px;margin:14px 0}
+  .note{border-left:4px solid #96151D;background:#f8eced;padding:10px 14px;border-radius:6px;margin:14px 0}
+  nav{background:#f6f7f9;border:1px solid #e1e5ea;border-radius:8px;padding:12px 18px;margin-bottom:24px;display:flex;flex-wrap:wrap;gap:6px 16px}nav a{color:#96151D;white-space:nowrap}
+  a{color:#96151D}
+  ul li,ol li{margin:4px 0}
+  .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:700}
+  .ok{background:#e6f4ec;color:#1b7f4c}.tight{background:#fbf1e2;color:#a6620a}.bad{background:#fbe9e7;color:#b3261e}
+  kbd{font-family:inherit;font-weight:600;background:#f1f3f6;border:1px solid #d9d6d2;border-radius:5px;padding:0 6px}
+</style>
+</head>
+<body>
+<h1>VG Select: 3A — User Guide</h1>
+<p class="sub">For everyone who uses the deployed <b>VG Select: 3A (Automated Agentic Architecture)</b> web application: architects, engineers, product owners and reviewers. No installation needed; open the URL your platform team gave you. Engineers who want the API, CLI or Claude Code skill should also read the <a href="CONSUMER_GUIDE.html">Consumer guide</a>.</p>
+
+<nav>
+  <a href="#what">1 What it does</a><a href="#when">2 When to use it</a><a href="#tour">3 A five-minute tour</a><a href="#step1">4 Step 1: Start from</a><a href="#step2">5 Step 2: Describe the workload</a><a href="#eco">6 Model ecosystem</a><a href="#step3">7 Step 3: Read the results</a><a href="#downloads">8 Downloads</a><a href="#existing">9 Grading an existing agent</a><a href="#walk">10 Worked examples</a><a href="#review">11 In a design review</a><a href="#privacy">12 What leaves your browser</a><a href="#glossary">13 Glossary</a><a href="#faq">14 FAQ</a>
+</nav>
+
+<h2 id="what">1. What it does</h2>
+<p>VG Select: 3A answers one question for an application built on LLM agents: <b>what shape should it have?</b> One model call, one agent with tools, a fixed workflow, or a team of agents with an orchestrator, and which model should run each part. It answers with evidence: every recommendation cites published industry guidance, shows the estimated latency and cost of each option against your budget, and hands you two things to take away: an <b>architecture document (PDF)</b> for your design review and a <b>runnable project skeleton</b> (LangGraph) for the chosen design.</p>
+<p>If you already have an agent, it can also <b>grade it</b>: a report card from the code and, if you provide run-time traces, from how the agent actually behaves.</p>
+<p>It is deterministic. The same inputs always produce the same answer, and every number comes with its assumptions. Nothing you enter is stored.</p>
+
+<h2 id="when">2. When to use it</h2>
+<ul>
+  <li><b>Before building</b> a new agentic application: to choose the topology and the models, and to produce the design document.</li>
+  <li><b>During a design review</b>: to replace opinion with a cited, comparable analysis; reviewers can see why the runner-up lost.</li>
+  <li><b>When an agent misbehaves or costs too much</b>: to see whether it is over-built, under-controlled, or simply on the wrong model, and what to change.</li>
+  <li><b>When a model catalog or governance rule changes</b>: to check which roles are still staffable under the new policy.</li>
+</ul>
+<div class="note">The estimates rank options; they are order-of-magnitude, not measurements. The tool will tell you when no option fits your budget rather than pretend one does.</div>
+
+<h2 id="tour">3. A five-minute tour</h2>
+<ol>
+  <li>Open the application. The left panel is the <b>input</b> side with three numbered steps; the right panel shows <b>results</b>.</li>
+  <li>In <b>Step 1</b>, pick <kbd>Example</kbd> and choose a scenario, for example "Deep research". The form in Step 2 fills in.</li>
+  <li>Press <kbd>Recommend architecture</kbd> in <b>Step 3</b>.</li>
+  <li>Read the verdict card at the top of the results: the recommended architecture, whether it fits your latency budget, estimated cost and tokens, and the reasons with their sources.</li>
+  <li>Scroll down: options compared, a latency-versus-fit chart, the model chosen for each role, the build plan with a diagram, and next steps.</li>
+  <li>Press <kbd>Architecture doc (PDF)</kbd> to download the document, or <kbd>LangGraph skeleton (.zip)</kbd> to download the project.</li>
+</ol>
+<p>Every field, table header and citation has an <b>i</b> button or dotted underline; hover or focus it for an explanation.</p>
+
+<h2 id="step1">4. Step 1: Start from</h2>
+<p>Step 1 is optional and you can start anywhere. It decides how the form in Step 2 gets filled; you can always edit the form before recommending.</p>
+<table>
+<tr><th>Choice</th><th>What it does</th><th>Use it when</th></tr>
+<tr><td><b>Example</b></td><td>Loads one of eight bundled scenarios (FAQ bot, moderation classifier, support agent, coding agent, deep research, document extraction, PR review, enterprise analyst) into the form.</td><td>You are new to the tool, or your application resembles one of them. Load it, then adjust.</td></tr>
+<tr><td><b>Scan code</b></td><td>Reads a repository and pre-fills the form from what the code does: tools, knowledge sources, side effects (payments, email, tickets), the serving surface, tests and evals, and the topology as implemented today. Optionally takes a traces file for the report card.</td><td>The application exists, even partially. This is the most accurate starting point.</td></tr>
+<tr><td><b>Describe</b></td><td>You write a paragraph; Claude fills in the form. The recommendation itself is still deterministic.</td><td>You have a description but no code yet. Only available if your deployment enabled it (the status line at the bottom of the input panel says "describe: on").</td></tr>
+<tr><td><b>From scratch</b></td><td>Leaves the defaults, which describe a moderate single-domain task.</td><td>You know the workload and prefer to type it in.</td></tr>
+</table>
+
+<h3>4.1 Scanning a repository</h3>
+<p>Three ways to point at the code:</p>
+<ul>
+  <li><b>Upload a zip.</b> Zip the project folder and drop it on the field (or click to choose). Dependency and build directories (<code>node_modules</code>, <code>.git</code>, <code>venv</code>, <code>dist</code>) are skipped automatically, so you do not need to exclude them, though smaller uploads are faster. Limit: 50 MB by default.</li>
+  <li><b>Server path.</b> If your platform team mounted repositories on the server, type the path. The status line lists the allowed roots.</li>
+  <li><b>Git URL.</b> If cloning is enabled on your deployment, paste an https URL of a repository the server can reach.</li>
+</ul>
+<p>Press <kbd>Scan and pre-fill profile</kbd>. The form fills in and the results show a "What the scan found" panel with each inferred field, a confidence percentage, the reason, and the evidence with file and line. Treat inferences under 50% as guesses and correct them in Step 2. The scan cannot see your latency budget, how costly errors are, cost sensitivity or volume; set those yourself.</p>
+<div class="tip">The scanner only reads code and configuration; prose files and generated outputs are ignored. Nothing is executed.</div>
+
+<h3>4.2 Adding run-time traces</h3>
+<p>On the Scan tab, the "Run-time traces (optional)" field accepts a file of recorded runs. With it, the report card grades the agent's real behaviour (success, loops, latency, tokens, per-agent rows). See section 9 for the format and how to get one.</p>
+
+<h2 id="step2">5. Step 2: Describe the workload</h2>
+<p>Twenty-six fields in six groups. Each has a default, an <b>i</b> explanation, and the eight that most change the answer are marked <span class="badge ok">key</span>. A sentence under the form restates what you are asking for as you edit; the counter shows how many fields differ from defaults.</p>
+
+<h3>About the application</h3>
+<table>
+<tr><th>Field</th><th>How to set it</th></tr>
+<tr><td>Name</td><td>Short name; it appears in the PDF title and the download file names.</td></tr>
+<tr><td>Description</td><td>One or two sentences; printed on the PDF cover.</td></tr>
+</table>
+
+<h3>Task shape</h3>
+<table>
+<tr><th>Field</th><th>How to set it</th></tr>
+<tr><td>Task complexity <span class="badge ok">key</span></td><td><b>trivial</b>: a lookup or classification with one obvious step. <b>simple</b>: one-step generation. <b>moderate</b>: a few dependent steps. <b>complex</b>: many dependent steps needing judgment. <b>open ended</b>: the steps cannot be listed in advance; the system must explore.</td></tr>
+<tr><td>Steps predictable <span class="badge ok">key</span></td><td><b>Yes</b> if you could write the sequence of steps as a fixed script (workflow). <b>No</b> if the model has to decide what to do next at run time (agent). This is the single most important switch.</td></tr>
+<tr><td>Scope breadth</td><td>How many distinct domains or skills one request can touch: a support bot covering billing, shipping and technical issues is 3.</td></tr>
+<tr><td>Parallel subtasks <span class="badge ok">key</span></td><td>Independent pieces of work in one request that could run at the same time (research across four sources: 4). Use 0 or 1 when there is none.</td></tr>
+<tr><td>Output type</td><td>short answer, structured data (JSON for a system), long document, code change, or action (the deliverable is something done).</td></tr>
+</table>
+
+<h3>Tools</h3>
+<table>
+<tr><th>Field</th><th>How to set it</th></tr>
+<tr><td>Tool count</td><td>Distinct functions the application can call. The scan counts them for you.</td></tr>
+<tr><td>Tool calls per task <span class="badge ok">key</span></td><td>Typical calls on one request. If unsure, look at a few real conversations and count. This drives latency more than anything else.</td></tr>
+<tr><td>Tool dependency</td><td><b>sequential</b> if each call depends on the last; <b>independent</b> if they could be issued together; <b>mixed</b> otherwise. Independent calls make everything faster.</td></tr>
+<tr><td>Tool side effects</td><td><b>read only</b>; <b>reversible writes</b> (drafts, files under version control); <b>irreversible</b> (sending email, moving money, deleting, opening tickets). Irreversible tools add an approval gate to the plan.</td></tr>
+<tr><td>Tool overlap</td><td>Yes when several tools do similar things (three different "search" tools). Overlap, more than count, is what confuses agents and argues for specialists.</td></tr>
+<tr><td>Tool latency (seconds)</td><td>Average time one tool call takes. Deterministic internal APIs are often 0.2-0.5 s; web search 1-3 s.</td></tr>
+</table>
+
+<h3>Knowledge and context</h3>
+<table>
+<tr><th>Field</th><th>How to set it</th></tr>
+<tr><td>Knowledge sources</td><td>Distinct places the application must look things up: vector stores, wikis, databases, the web.</td></tr>
+<tr><td>Retrieval depth <span class="badge ok">key</span></td><td><b>none</b>; <b>single lookup</b> (one query answers it; classic retrieval-augmented generation); <b>multi hop</b> (follow-up queries depend on earlier results); <b>exhaustive</b> (breadth-first coverage of a topic across many documents). Exhaustive is where subagents pay off.</td></tr>
+<tr><td>Context tokens per task</td><td>Roughly how much text must be read to answer one request. A few pages: 5,000. A long report: 50,000. A whole corpus: hundreds of thousands. This decides whether one context window is enough.</td></tr>
+</table>
+
+<h3>Quality and risk</h3>
+<table>
+<tr><th>Field</th><th>How to set it</th></tr>
+<tr><td>Accuracy priority <span class="badge ok">key</span></td><td>Slider from "best effort is fine" (1) to "errors are very costly" (5): money, safety, compliance. High values make the tool tolerate more latency and add verification.</td></tr>
+<tr><td>Single-agent baseline</td><td>If you have measured a plain single agent on your own evaluation set, enter its accuracy (0 to 1). Leave at -1 if not measured. Above about 0.45, adding agents tends to hurt, so this can change the answer.</td></tr>
+<tr><td>Verifiability</td><td><b>none</b> (subjective), <b>partial</b> (rubric or spot checks), <b>strong</b> (tests, schemas, ground truth). Strong verifiability enables evaluator loops and voting.</td></tr>
+<tr><td>Error recoverability</td><td>How easily a wrong action can be caught and undone: easy (review before commit), moderate, hard (acts on the world immediately).</td></tr>
+</table>
+
+<h3>Operating constraints</h3>
+<table>
+<tr><th>Field</th><th>How to set it</th></tr>
+<tr><td>Latency budget (seconds) <span class="badge ok">key</span></td><td>The end-to-end time one request may take, at the median. Chat: 3-10 s. Background job: minutes. The budget is the line every option is measured against.</td></tr>
+<tr><td>Interaction</td><td><b>single turn</b>; <b>multi turn</b> (conversational); <b>long running</b> (one task over many minutes or hours).</td></tr>
+<tr><td>Requests per day</td><td>Volume. It weights cost and decides whether batch processing is worth mentioning.</td></tr>
+<tr><td>Cost sensitivity <span class="badge ok">key</span></td><td>Slider from "cost is no concern" (1) to "cost dominates" (5). High values penalise designs that multiply tokens.</td></tr>
+<tr><td>Human in loop</td><td>Yes if a person can approve risky actions during a request.</td></tr>
+<tr><td>Data sensitivity <span class="badge ok">key</span></td><td><b>public</b>, <b>internal</b>, <b>confidential</b>, <b>restricted</b>: the most sensitive data a request can contain. Only models cleared for that class in your organisation's catalog can be chosen.</td></tr>
+</table>
+<div class="tip">If you only set five things, set: task complexity, steps predictable, tool calls per task, latency budget, and accuracy priority. Then data sensitivity, because it gates which models are allowed.</div>
+
+<h2 id="eco">6. Model ecosystem</h2>
+<p>Below the form, the collapsible <b>Model ecosystem</b> group constrains which models from your organisation's catalog may staff each role:</p>
+<ul>
+  <li><b>Allowed providers</b>, <b>platforms</b> and <b>regions</b>: tick to restrict; leave all unticked for no restriction. Typical uses: "EU only", "self-hosted only", "no provider X".</li>
+  <li><b>Allow illustrative entries</b>: some catalog entries are placeholders with example numbers. They are excluded by default; tick only for what-if exploration and never rely on their figures.</li>
+</ul>
+<p>The status line at the bottom of the input panel shows which catalog is loaded and how many models it contains. Ask your platform team to add or clear models; you cannot change the catalog from the UI.</p>
+
+<h2 id="step3">7. Step 3: Read the results</h2>
+<p>Press <kbd>Recommend architecture</kbd>. Results appear on the right (or below on a narrow screen), top to bottom:</p>
+
+<h3>7.1 Verdict card</h3>
+<ul>
+  <li><b>Recommended architecture</b> and its family (single, workflow, multi-agent).</li>
+  <li>A budget badge: <span class="badge ok">Fits the budget</span> (estimate at or under 70% of your budget), <span class="badge tight">Tight</span> (70-100%), <span class="badge bad">Exceeds</span> (up to 2×) or <span class="badge bad">Far over</span>.</li>
+  <li>Four tiles: estimated median latency with a bar against your budget, cost per request at list prices, tokens as a multiple of one plain model call, and the score.</li>
+  <li>A one-paragraph headline, which also names the fastest option that fits when the winner does not, and the most accurate option when it differs.</li>
+  <li><b>Why this architecture</b>: the rules that favoured it, each with a weight and a citation chip; hover the chip for the source. Counter-signals are collapsed underneath.</li>
+</ul>
+
+<h3>7.2 What the scan found (after a scan)</h3>
+<p>Frameworks, tool count, knowledge sources and side effects as chips; the topology implemented today; a table of inferred fields with confidence and reason; and an expandable evidence table with file and line. When the recommendation differs from what is implemented, a <b>Current vs. recommended</b> comparison shows score, latency, cost and tokens side by side.</p>
+
+<h3>7.3 Agent report card (after a scan or traces)</h3>
+<p>Explained in section 9.</p>
+
+<h3>7.4 Compare the options</h3>
+<p>All ten architectures ranked. Columns: <b>Score</b> (fit plus latency and cost adjustments), <b>Fit</b> (the evidence-based rules alone), <b>Latency</b>, <b>Budget</b> verdict, <b>Cost</b>, <b>Tokens</b>, <b>Calls</b>. Struck-through rows cannot do the job at all (for example a single call cannot make tool calls). Press <kbd>Why</kbd> on any row to see every rule that fired for it and the estimate's assumptions.</p>
+<p>Under the table, the <b>latency versus structural fit</b> chart: each dot is a viable option; higher is a better evidence fit, further left is faster; the dashed line is your budget; the highlighted dot is the recommendation; blue dots are on the frontier, meaning no option is both faster and a better fit.</p>
+
+<h3>7.5 Model selection per role</h3>
+<p>One row per role in the plan: what the role needs (minimum capability tier, its share of the latency budget, context to hold, tools, structured output), the chosen model and effort setting, a fallback on another provider where possible, this role's own estimated latency and cost per call, and scored alternatives. Press <kbd>Why</kbd> for the rationale and the list of rejected models with reasons. Roles no model can staff are marked <b>unfilled</b>; the reasons (not approved, not cleared for the data class, region, capability) tell you what to ask the platform team for.</p>
+
+<h3>7.6 Build plan</h3>
+<p>Cards for each component (orchestrator, workers, router, evaluator, code steps) with the model, effort, tools and whether it runs in parallel; a diagram; briefing rules for subagents when the design has them; and the Mermaid source for wikis.</p>
+
+<h3>7.7 Next steps</h3>
+<p>A checklist of cross-cutting recommendations the evidence ties to success regardless of topology: build a small evaluation set first, set termination limits on every loop, verify at the orchestrator, gate irreversible actions, cache prompts, stream, manage context. Each has a citation. Tick them off in your review.</p>
+
+<h3>7.8 Assumptions behind the numbers</h3>
+<p>The serving assumptions, reading load and output size the estimates used. If they do not match your environment, the numbers will not either; tell your platform team, who can update the catalog.</p>
+
+<h2 id="downloads">8. Downloads</h2>
+<table>
+<tr><th>Button</th><th>What you get</th><th>What to do with it</th></tr>
+<tr><td><kbd>Architecture doc (PDF)</kbd></td><td>An A4 document: summary, why (cited), scan findings and gap, options compared, plan with diagram, model per role, report card (when available), next steps, assumptions, the profile used, sources.</td><td>Attach it to the design review or the architecture decision record. It is the artefact reviewers should read.</td></tr>
+<tr><td><kbd>LangGraph skeleton (.zip)</kbd></td><td>A runnable Python project for the recommended design: the graph wired for the topology, one agent per role on the chosen model and provider with a fallback, tool stubs named after your tools, termination limits, a smoke test, and a README that says exactly what to fill in.</td><td>Hand it to the engineer starting the build. Everything marked <code>TODO</code> needs product-specific work (tool bodies, prompts, acceptance criteria); the structure, limits and model choices are done.</td></tr>
+<tr><td><kbd>Markdown</kbd></td><td>The full report as text.</td><td>Paste into a wiki or pull request.</td></tr>
+<tr><td><kbd>JSON</kbd></td><td>Every number, rule and choice.</td><td>For tooling and comparisons over time.</td></tr>
+</table>
+
+<h2 id="existing">9. Grading an agent you already run</h2>
+<p>Scan its repository (section 4.1). You immediately get a <b>design-time report card</b>: design complexity from the code (tools and overlap, delegation, handoffs, loops, prompt load), governance checks (evaluation harness, approval gates, termination limits, tracing, structured output), and mismatch flags against the task complexity you described.</p>
+<p>Add a <b>traces file</b> and the card becomes a <b>full report card</b> with behaviour graded from real runs:</p>
+<ul>
+  <li><b>Three complexity tiles</b>: task (what you described), design (what the code is), behaviour (what the agent does). Big gaps between them are the story: over-built, under-built, or improvising structure at run time.</li>
+  <li><b>Six graded dimensions</b> with letter grades and findings: outcome quality, reliability and control, cost and token efficiency, latency, governance and guardrails, complexity fit. An overall grade weights them.</li>
+  <li><b>Mismatches</b> with severity and a concrete action, for example "Loops without limits: repetition in 31% of runs, 9% hit a limit, and no termination limits are in code. Action: add max turns and explicit stop criteria; cache identical tool calls."</li>
+  <li><b>Behavioural metrics</b> (expandable): success and consistency across repeated runs, steps per run and their spread, tool calls and errors, repeated identical calls, runs ended by a limit, branching factor, tokens, peak context, latency, cost per completed task.</li>
+  <li><b>Per-agent cards</b> for multi-agent systems: every agent seen in the traces gets its own row and grade, matched to its role and model, so you can see which agent loops, errors or carries the token load.</li>
+</ul>
+<h3>Getting a traces file</h3>
+<p>Ask the engineers who run the agent to export runs in one of three shapes: the native JSON Lines format (one record per run with typed steps, agent name, token counts, latency, success and how the run ended), a LangSmith run export, or OpenTelemetry GenAI spans. The <a href="REPORT_CARD.html">Report card reference</a> has the exact format. Only counts, names, timings and a hash of tool arguments are needed; no prompts or customer data should be in the file. A few dozen runs, ideally with each task run twice, give meaningful consistency figures.</p>
+<div class="warn">Grades are relative to the budget and stakes you entered in Step 2. Set those honestly before judging the grade.</div>
+
+<h2 id="walk">10. Worked examples</h2>
+<p>These mirror the case studies shipped with the tool.</p>
+<h3>10.1 Call summarisation (batch, structured output)</h3>
+<p>A contact centre summarises 50,000 calls a day into the CRM within a minute. Scan shows a single model call posting to Salesforce; you set complexity moderate, steps predictable, structured data, accuracy 4, budget 60 s, cost sensitivity 4, data confidential, a measured baseline of 0.78. Result: a <b>prompt chain</b> (extract, validate in code, finalise) at about 26 s, on a mid-tier model for both stages. The gap table shows the current single call scores lower because predictable steps with gates beat one big prompt. The report card grades the pipeline well, with a note that the eval harness exists but tests should cover compliance flags.</p>
+<h3>10.2 Robo-advisor (multi-domain conversation)</h3>
+<p>A chat adviser across planning, tax, risk and products with ten tools and three knowledge bases, budget 15 s, accuracy 5, data confidential, baseline 0.61. Scan detects an evaluator loop and overlapping search tools. Result: a <b>router</b> to four domain specialists, each with its own small tool set, on a small model for the router and a cleared mid-tier model for the specialists, with a fallback on another provider. The tool is honest that even this exceeds the 15 s budget and points at the tool rounds. With traces, the report card is an F: 48% success, loops without limits, p95 three times the budget, and the single "agent" row flagged while the evaluator row is stable. The mismatches list says what to fix first.</p>
+<h3>10.3 Account balances assistant (restricted data)</h3>
+<p>An in-app assistant answering balance and cost-basis questions from deterministic APIs, budget 5 s, accuracy 5, cost sensitivity 5, data <b>restricted</b>, baseline 0.88. Result: keep the <b>single agent</b>; the ranking is estimated on the only model cleared for restricted data (an on-premises model), and the cloud models appear in the rejected list with "not cleared for restricted data". The headline says the topology already matches and to focus on the next steps (caching, streaming) because the budget is tight.</p>
+
+<h2 id="review">11. Using it in a design review</h2>
+<ol>
+  <li>Scan the repository (or load the closest example) and agree the five key fields with the product owner: complexity, predictability, tool calls, budget, stakes. Add data sensitivity.</li>
+  <li>Download the PDF and circulate it before the meeting.</li>
+  <li>In the meeting, walk the verdict card, then the <b>Compare the options</b> table: ask what would have to be true for the runner-up to win (usually a different budget or stakes) and try it live by changing the field.</li>
+  <li>Go through <b>Model selection per role</b>: confirm the platform team agrees with the data class and any unfilled roles.</li>
+  <li>Turn the <b>Next steps</b> checklist into tickets; the first one is always the evaluation set.</li>
+  <li>Record the decision with the profile JSON so future scans can be compared against it.</li>
+</ol>
+
+<h2 id="privacy">12. What leaves your browser</h2>
+<ul>
+  <li>Profile values, policy choices, uploaded zips and traces go to your organisation's VG Select server, are processed in memory or a temporary directory, and are deleted when the request finishes. Nothing is stored.</li>
+  <li>Nothing goes to any third party, with one exception: the <b>Describe</b> tab sends your prose description (only that) to the Claude API, and only if your deployment enabled it.</li>
+  <li>Scan results include file paths and short code snippets as evidence; treat downloaded reports with the same classification as the code.</li>
+</ul>
+
+<h2 id="glossary">13. Glossary</h2>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td>Topology / architecture</td><td>The shape of the system: how many model calls or agents, and how they are connected.</td></tr>
+<tr><td>Single call</td><td>One prompt, one response; retrieval done in code beforehand.</td></tr>
+<tr><td>Single agent</td><td>One model in a loop deciding which tools to call until the task is done.</td></tr>
+<tr><td>Prompt chain</td><td>Fixed sequence of model steps defined in code with checks between them.</td></tr>
+<tr><td>Router</td><td>A cheap classification step sends each request to one specialist.</td></tr>
+<tr><td>Parallel sectioning</td><td>Code splits the task into independent parts run at the same time, then merges.</td></tr>
+<tr><td>Parallel voting</td><td>The same task run several times; answers are voted or judged.</td></tr>
+<tr><td>Evaluator-optimizer</td><td>A generator and a separate evaluator loop until the output is accepted.</td></tr>
+<tr><td>Orchestrator + workers</td><td>A lead agent plans, briefs subagents that run in parallel, then verifies and synthesises.</td></tr>
+<tr><td>Hierarchical</td><td>Two levels of delegation: orchestrator, domain leads, workers.</td></tr>
+<tr><td>Handoffs</td><td>Specialists pass the conversation to one another; no central manager.</td></tr>
+<tr><td>Fit</td><td>The sum of evidence-based rules that favour or disfavour an option, before latency and cost.</td></tr>
+<tr><td>Score</td><td>Fit plus a latency adjustment against your budget and a cost adjustment weighted by your cost sensitivity.</td></tr>
+<tr><td>Frontier</td><td>The options for which no other option is both faster and a better fit.</td></tr>
+<tr><td>Tier</td><td>A model's capability level, 1 (trivial) to 5 (frontier), from the catalog.</td></tr>
+<tr><td>Effort</td><td>How much reasoning a model is asked to spend on a role (low to max) when the model supports it.</td></tr>
+<tr><td>Fallback</td><td>A second model for a role, preferably on another provider, used on outages or refusals.</td></tr>
+<tr><td>Data class</td><td>public, internal, confidential, restricted; models are cleared per class.</td></tr>
+<tr><td>Traces</td><td>Recorded runs of an agent: steps, tools, tokens, timings, outcome.</td></tr>
+<tr><td>Report card</td><td>Grades for an existing agent from its code (design) and traces (behaviour).</td></tr>
+</table>
+
+<h2 id="faq">14. FAQ</h2>
+<ul>
+  <li><b>Everything says it exceeds my budget.</b> The tool is telling you the budget is incompatible with the tool calls and reading per request. Reduce tool calls, make them independent, shorten outputs, or relax the budget, and watch the table update.</li>
+  <li><b>I expected multi-agent and got a single agent.</b> Multi-agent only scores with independent sub-tasks, breadth-first research, or reading that overflows one context window; and above a measured baseline of about 45% it is penalised. Check parallel subtasks, retrieval depth and context tokens.</li>
+  <li><b>A role is unfilled.</b> No model in your catalog passed the filters for it, usually the data class or approval. The "Why" expander lists each rejection; forward it to the platform team.</li>
+  <li><b>Can I change the models offered?</b> Not from the UI. The catalog is managed by the platform team.</li>
+  <li><b>Why are the cost numbers different from my bill?</b> They are list-price estimates without caching, meant for ranking. Your report card, from traces, shows measured cost per completed task.</li>
+  <li><b>Is my code stored?</b> No. See section 12.</li>
+  <li><b>Where do the rules come from?</b> Published guidance from Anthropic, OpenAI, Google, Microsoft, LangChain and peer-reviewed failure studies; every citation chip names its source, and the full evidence is in the Industry guidance document shipped with the tool.</li>
+  <li><b>Can I use this without the UI?</b> Yes: the same engine is available as an API, a command-line tool and a Claude Code skill; see the Consumer guide.</li>
+</ul>
+</body>
+</html>
