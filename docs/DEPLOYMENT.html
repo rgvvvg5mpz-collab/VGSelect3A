@@ -33,6 +33,7 @@
 <tr><td><code>/api/v1/scan</code>, <code>/api/v1/scan/upload</code></td><td>Scan a repository (server path, git URL, or uploaded zip) and infer the profile, then recommend</td></tr>
 <tr><td><code>/api/v1/recommend/pdf</code>, <code>/api/v1/recommend/skeleton</code></td><td>Architecture document (PDF, needs reportlab) and downloadable LangGraph project skeleton (zip)</td></tr>
 <tr><td><code>/api/v1/describe</code></td><td>Optional: infer the profile from prose with Claude (needs Anthropic credentials)</td></tr>
+<tr><td><code>/api/v1/report-card</code></td><td>Agent report card from a profile, optional scan object and run-time traces (traces are also accepted on recommend, scan and upload requests)</td></tr>
 <tr><td><code>/api/v1/catalog</code>, <code>/api/v1/catalog/validate</code></td><td>The model ecosystem catalog and a validator for new entries</td></tr>
 <tr><td><code>/api/v1/fields</code>, <code>/api/v1/examples</code>, <code>/api/v1/topologies</code>, <code>/api/v1/citations</code></td><td>Reference data (profile fields, bundled scenarios, topology catalog, citation keys)</td></tr>
 <tr><td><code>/health</code>, <code>/docs</code>, <code>/redoc</code>, <code>/openapi.json</code></td><td>Health, Swagger UI, ReDoc, OpenAPI 3 document</td></tr>
@@ -59,12 +60,12 @@ vgselect-service                               # http://localhost:8080</code></p
 export ANTHROPIC_API_KEY=...                   # or an `ant auth login` profile plus VGSELECT_DESCRIBE_ENABLED=1</code></pre>
 
 <h2 id="docker">4. Docker</h2>
-<pre><code>docker build -t vgselect-3a:0.3.0 .
+<pre><code>docker build -t vgselect-3a:0.4.0 .
 docker run --rm -p 8080:8080 \
   -v /srv/repos:/scan:ro \
   -e VGSELECT_SCAN_ROOTS=/scan \
   -e VGSELECT_ALLOW_GIT_CLONE=0 \
-  vgselect-3a:0.3.0</code></pre>
+  vgselect-3a:0.4.0</code></pre>
 <p>The image runs as a non-root user, exposes 8080, and has a <code>HEALTHCHECK</code> on <code>/health</code>. Mount repositories read-only under <code>/scan</code>. To add the <code>describe</code> endpoint, uncomment the <code>[service,llm]</code> line in the <code>Dockerfile</code> and pass <code>ANTHROPIC_API_KEY</code> as a secret.</p>
 
 <h3>Kubernetes sketch</h3>

@@ -10,7 +10,7 @@
     "license": {
       "name": "MIT"
     },
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "paths": {
     "/health": {
@@ -323,6 +323,49 @@
         }
       }
     },
+    "/api/v1/report-card": {
+      "post": {
+        "tags": [
+          "report-card"
+        ],
+        "summary": "Agent report card from a profile, optional scan object and run-time traces",
+        "operationId": "api_report_card_api_v1_report_card_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliverableRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Api Report Card Api V1 Report Card Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/scan": {
       "post": {
         "tags": [
@@ -506,6 +549,19 @@
             "title": "Policy",
             "description": "JSON SelectionPolicy object.",
             "default": "{}"
+          },
+          "traces": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traces",
+            "description": "Optional run-time traces file (JSONL, JSON array, LangSmith export or OTel spans)."
           }
         },
         "type": "object",
@@ -723,6 +779,22 @@
             ],
             "title": "Catalog Models",
             "description": "Extra or overriding model catalog entries (ModelSpec objects) merged over the server's catalog for this request."
+          },
+          "traces": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traces",
+            "description": "Run-time trace records (vgselect-trace/1, LangSmith runs, or OTel GenAI spans) to add the agent report card."
           },
           "scan": {
             "anyOf": [
@@ -1013,6 +1085,22 @@
             ],
             "title": "Catalog Models",
             "description": "Extra or overriding model catalog entries (ModelSpec objects) merged over the server's catalog for this request."
+          },
+          "traces": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traces",
+            "description": "Run-time trace records (vgselect-trace/1, LangSmith runs, or OTel GenAI spans) to add the agent report card."
           }
         },
         "type": "object",
@@ -1131,6 +1219,19 @@
             "title": "Selected Estimate",
             "description": "Topology estimate re-run on the chosen models."
           },
+          "report_card": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Card",
+            "description": "Agent report card: task/design/behaviour complexity, graded dimensions, mismatches, per-agent cards. Design-time when no traces are supplied."
+          },
           "tiers": {
             "anyOf": [
               {
@@ -1231,6 +1332,21 @@
               }
             ],
             "title": "Catalog Models"
+          },
+          "traces": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traces"
           },
           "path": {
             "anyOf": [
@@ -1921,6 +2037,10 @@
     {
       "name": "deliverables",
       "description": "Architecture document (PDF) and downloadable agent skeleton (zip) for the recommendation."
+    },
+    {
+      "name": "report-card",
+      "description": "Grade an existing agent: design complexity from code, behavioural complexity from traces."
     },
     {
       "name": "reference",

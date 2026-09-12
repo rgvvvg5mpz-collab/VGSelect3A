@@ -59,6 +59,7 @@ class RecommendRequest(BaseModel):
     include_markdown: bool = Field(True, description="Include the full Markdown report in the response.")
     policy: SelectionPolicyIn | None = Field(None, description="Model selection policy; default policy uses the whole catalog, verified and approved entries only.")
     catalog_models: list[dict[str, Any]] | None = Field(None, description="Extra or overriding model catalog entries (ModelSpec objects) merged over the server's catalog for this request.")
+    traces: list[dict[str, Any]] | None = Field(None, description="Run-time trace records (vgselect-trace/1, LangSmith runs, or OTel GenAI spans) to add the agent report card.")
 
 
 class DeliverableRequest(RecommendRequest):
@@ -69,6 +70,7 @@ class DeliverableRequest(RecommendRequest):
 class ScanRequest(BaseModel):
     policy: SelectionPolicyIn | None = None
     catalog_models: list[dict[str, Any]] | None = None
+    traces: list[dict[str, Any]] | None = None
     path: str | None = Field(None, description="Server-side directory to scan. Must be under one of VGSELECT_SCAN_ROOTS.")
     git_url: str | None = Field(None, description="Git URL to clone (shallow) and scan. Requires VGSELECT_ALLOW_GIT_CLONE=1.")
     overrides: WorkloadProfileIn | None = Field(None, description="Profile fields that override scan inferences.")  # type: ignore[valid-type]
@@ -169,6 +171,7 @@ class RecommendationOut(BaseModel):
     scan: dict[str, Any] | None = None
     selection: dict[str, Any] | None = Field(None, description="Model selection per role: requirements, chosen model, effort, fallback, alternatives, rejections, warnings.")
     selected_estimate: dict[str, Any] | None = Field(None, description="Topology estimate re-run on the chosen models.")
+    report_card: dict[str, Any] | None = Field(None, description="Agent report card: task/design/behaviour complexity, graded dimensions, mismatches, per-agent cards. Design-time when no traces are supplied.")
     tiers: dict[str, str] | None = Field(None, description="Reference model per capability level used for the ranking estimates.")
     report_markdown: str | None = None
 

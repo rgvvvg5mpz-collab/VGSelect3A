@@ -230,6 +230,46 @@
     }
   ],
   "warnings": [],
+  "design": {
+    "tool_count": 7,
+    "tool_overlap_count": 5,
+    "overlapping_tools": [
+      "get_balances",
+      "get_contributions_ytd",
+      "get_cost_basis",
+      "get_positions",
+      "get_transactions"
+    ],
+    "prompt_definitions": 1,
+    "prompt_files": 1,
+    "prompt_chars": 166,
+    "loop_patterns": {
+      "tool runner": 2
+    },
+    "delegation_depth": 0,
+    "parallel_fanout": false,
+    "handoffs": false,
+    "router": false,
+    "evaluator_loop": false,
+    "tool_loop": true,
+    "termination_limits": false,
+    "memory": false,
+    "context_management": false,
+    "structured_output": false,
+    "prompt_caching": false,
+    "approval_gate": false,
+    "evals": false,
+    "tests": true,
+    "tracing": false,
+    "side_effect_kinds": [],
+    "irreversible_side_effects": false,
+    "frameworks": [
+      "anthropic-sdk"
+    ],
+    "languages": {
+      "python": 3
+    }
+  },
   "inferred_profile": {
     "tool_count": 7,
     "tool_calls_per_task": 4,

@@ -78,6 +78,7 @@ def to_dict(rec: "Recommendation") -> dict:
             "token_multiplier": rec.selected_estimate.token_multiplier, "tiers_used": rec.selected_estimate.tiers_used,
         } if rec.selected_estimate else None,
         "tiers": {k: v.model_id for k, v in rec.tiers.items()},
+        "report_card": rec.report_card.to_dict() if rec.report_card else None,
     }
 
 
@@ -218,6 +219,9 @@ def to_markdown(rec: "Recommendation") -> str:
 
     if rec.selection is not None:
         out.append(selection_markdown(rec))
+
+    if rec.report_card is not None:
+        out.append(rec.report_card.to_markdown())
 
     out.append("## Cross-cutting recommendations\n")
     for a in rec.plan.augmentations:

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VG Select: 3A — Agent Report Card</title>
+<style>
+  body{font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1c2128;max-width:960px;margin:0 auto;padding:32px 24px;background:#fff}
+  h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:36px 0 10px;border-bottom:1px solid #e1e5ea;padding-bottom:6px}h3{font-size:16px;margin:22px 0 6px;color:#96151D}h4{font-size:15px;margin:18px 0 4px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#f1f3f6;padding:1px 5px;border-radius:4px}
+  pre{background:#0f1a33;color:#e6ecff;padding:14px;border-radius:8px;overflow:auto;font-size:13px;line-height:1.45}pre code{background:none;color:inherit;padding:0}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}th,td{text-align:left;padding:7px 9px;border-bottom:1px solid #e1e5ea;vertical-align:top}th{color:#5b6470;font-size:13px;background:#faf9f7}
+  .wrap{overflow-x:auto}
+  a{color:#96151D}
+  ul li,ol li{margin:4px 0}
+  hr{border:0;border-top:1px solid #e1e5ea;margin:28px 0}
+  blockquote{border-left:4px solid #96151D;background:#f8eced;padding:10px 14px;border-radius:6px;margin:14px 0}
+  .sub{color:#5b6470;margin-bottom:24px}
+</style>
+</head>
+<body>
+<h1 id="vg-select-3a-agent-report-card">VG Select: 3A — Agent Report Card</h1>
+<p>The report card grades an existing agent, or every agent in a multi-agent system, on what the code is (design complexity) and what it does at run time (behavioural complexity), against what the task needs (task complexity). It is produced by <code>vgselect report-card</code>, by <code>POST /api/v1/report-card</code>, by the UI when traces are added on the Scan tab, and it is embedded in the Markdown report and the architecture PDF whenever a scan or traces are supplied.</p>
+<h2 id="1-three-complexity-axes">1. Three complexity axes</h2>
+<div class="wrap"><table><tr><th>Axis</th><th>Source</th><th>Level 1 to 5</th></tr>
+<tr><td>Task</td><td>Workload profile</td><td>complexity ordinal + 1; +1 when breadth ≥ 3 domains, ≥ 3 sources, ≥ 3 parallel sub-tasks, or high context pressure</td></tr>
+<tr><td>Design</td><td>Repository scan (static)</td><td>tools: 0 → 1, ≤ 5 → 2, ≤ 15 → 3, more → 4; +1 per delegation level (max +2); +1 for handoffs; +1 when ≥ 3 tools overlap</td></tr>
+<tr><td>Behaviour</td><td>Run-time traces</td><td>steps p95: ≤ 2 → 1, ≤ 6 → 2, ≤ 15 → 3, ≤ 40 → 4, more → 5; +1 when branching factor &gt; 2; +1 when step-count CV &gt; 0.6; +1 when runs spawn subagents or hand off</td></tr>
+</table></div>
+<p>The three levels are compared to produce <b>mismatch flags</b>:</p>
+<div class="wrap"><table><tr><th>Flag</th><th>Condition</th><th>Meaning</th></tr>
+<tr><td>Over-built</td><td>design ≥ task + 2</td><td>More structure than the task needs; multi-agent costs ~15x chat tokens</td></tr>
+<tr><td>Under-built</td><td>task ≥ design + 2 and success &lt; 60% (or no traces)</td><td>Missing routing, verification or breadth</td></tr>
+<tr><td>Unpredictable path</td><td>step-count CV &gt; 0.8 or trajectory diversity &gt; 0.5</td><td>Same task, different route every run</td></tr>
+<tr><td>Loops without limits</td><td>repetition or limit hits in traces and no termination limits in code</td><td>The two largest MAST failure modes</td></tr>
+<tr><td>Behaviour exceeds design</td><td>behaviour ≥ design + 2</td><td>The agent improvises structure the design does not provide</td></tr>
+<tr><td>Coordination waste</td><td>spawns per run &gt; 1.5 × planned workers</td><td>Over-spawning subagents</td></tr>
+<tr><td>Frequent handoffs</td><td>&gt; 2 handoffs per run</td><td>Ping-pong between specialists</td></tr>
+<tr><td>Under-verified</td><td>stakes ≥ 4 and verification in &lt; 50% of runs (or none in code)</td><td>Verification failures are ~25% of multi-agent failures</td></tr>
+<tr><td>Overlapping tools</td><td>≥ 3 tools share a name stem</td><td>Overlap, not count, confuses agents</td></tr>
+</table></div>
+<h2 id="2-design-metrics-from-the-scan">2. Design metrics (from the scan)</h2>
+<p>Tool count and overlapping tools; prompt definitions, prompt files and total prompt characters; loop patterns found (tool loops, routers, evaluator loops, fan-out, subagents, handoffs); delegation depth; and the presence of termination limits, memory, context management, structured output, prompt caching, approval gates, evals, tests, tracing, and irreversible side effects. They are listed in <code>scan.design</code> and drive the Governance dimension.</p>
+<h2 id="3-behavioural-metrics-from-traces">3. Behavioural metrics (from traces)</h2>
+<p>Per run and per agent: steps, LLM calls and tool calls (mean, p50, p95, CV), distinct tools, tool error rate, repeated identical tool calls (loop signal), runs ended by a limit, by error or timeout, handoffs and spawns per run, verification and human-approval rates, branching factor (distinct next actions per state), trajectory diversity and outcome consistency across repeated runs of the same task, tokens per run, peak context and context growth per step, latency p50/p95, cost per run, cost per completed task, and successes per thousand tokens.</p>
+<h2 id="4-graded-dimensions">4. Graded dimensions</h2>
+<div class="wrap"><table><tr><th>Dimension</th><th>Weight</th><th>Score</th></tr>
+<tr><td>Outcome quality</td><td>30</td><td>success rate, blended 70/30 with outcome consistency across repeated runs when available</td></tr>
+<tr><td>Reliability and control</td><td>20</td><td>100 minus penalties for loops (≤ 30), limit hits (≤ 25), errors/timeouts (≤ 20), tool errors (≤ 15); minus 10 for long or looping runs with no limits in code; minus 10 for high stakes with little verification and no evals</td></tr>
+<tr><td>Cost and token efficiency</td><td>15</td><td>100 minus penalties when tokens per run exceed 1.5× the topology estimate, when token use varies widely, when context grows &gt; 3,000 tokens per step</td></tr>
+<tr><td>Latency</td><td>15</td><td>100 minus penalties for p50 and p95 above the budget</td></tr>
+<tr><td>Governance and guardrails</td><td>10</td><td>design-time: evals/tests, approval gate for irreversible tools, termination limits, tracing, structured output for high stakes, human approvals seen in traces</td></tr>
+<tr><td>Complexity fit</td><td>10</td><td>100 minus 25 per high, 12 per warn, 4 per info mismatch</td></tr>
+</table></div>
+<p>Letter grades: A ≥ 90, B ≥ 80, C ≥ 70, D ≥ 60, F below. The overall score is the weighted mean of the dimensions that could be measured; without traces only Governance and Complexity fit are graded and the card is marked design-time.</p>
+<p><b>Per-agent cards</b> (multi-agent systems): every agent name seen in the traces gets its own behaviour metrics, is matched to a plan role and its chosen model, and is graded on tool errors, loops, step variance, context growth and peak context.</p>
+<h2 id="5-trace-format">5. Trace format</h2>
+<p>Native format is JSON Lines, one record per task run:</p>
+<pre><code class="lang-json">{&quot;schema&quot;: &quot;vgselect-trace/1&quot;, &quot;task_id&quot;: &quot;t-42&quot;, &quot;run_id&quot;: &quot;r-1&quot;, &quot;success&quot;: true, &quot;terminated_by&quot;: &quot;end_turn&quot;,
+ &quot;latency_ms&quot;: 8400, &quot;cost_usd&quot;: 0.031,
+ &quot;steps&quot;: [
+   {&quot;agent&quot;: &quot;lead&quot;, &quot;type&quot;: &quot;llm&quot;, &quot;input_tokens&quot;: 3100, &quot;output_tokens&quot;: 220, &quot;latency_ms&quot;: 1800},
+   {&quot;agent&quot;: &quot;lead&quot;, &quot;type&quot;: &quot;spawn&quot;, &quot;name&quot;: &quot;worker_1&quot;},
+   {&quot;agent&quot;: &quot;worker_1&quot;, &quot;type&quot;: &quot;tool&quot;, &quot;name&quot;: &quot;search_kb&quot;, &quot;args_hash&quot;: &quot;a1&quot;, &quot;latency_ms&quot;: 300, &quot;error&quot;: false},
+   {&quot;agent&quot;: &quot;worker_1&quot;, &quot;type&quot;: &quot;llm&quot;, &quot;input_tokens&quot;: 4800, &quot;output_tokens&quot;: 500, &quot;latency_ms&quot;: 2600},
+   {&quot;agent&quot;: &quot;lead&quot;, &quot;type&quot;: &quot;verify&quot;, &quot;passed&quot;: true}
+ ]}</code></pre>
+<ul><li><code>type</code>: <code>llm</code>, <code>tool</code>, <code>spawn</code>, <code>handoff</code>, <code>verify</code>, <code>human</code>, <code>other</code>.</li><li><code>agent</code>: the role or agent that took the step; omit for single-agent systems.</li><li><code>task_id</code> repeated across runs enables consistency and trajectory-diversity metrics; <code>success</code> enables quality grading; <code>terminated_by</code> (<code>end_turn</code>, <code>limit</code>, <code>error</code>, <code>timeout</code>, <code>human</code>) enables termination metrics.</li><li><code>args_hash</code>: any stable hash of tool arguments, used to detect repeated identical calls.</li></ul>
+<p>Also accepted: a JSON array of such records; a LangSmith-style run export (nested <code>child_runs</code> with <code>run_type</code> llm/tool/chain); OpenTelemetry GenAI spans (<code>gen_ai.operation.name</code>, <code>gen_ai.usage.*</code>, <code>gen_ai.tool.name</code>, <code>trace_id</code>). Adapters are best effort: success and termination are unknown unless present. Fictional traces for demos: <code>vgselect3a.traces.synthesize_traces</code>.</p>
+<h2 id="6-using-it">6. Using it</h2>
+<pre><code class="lang-bash">vgselect report-card --scan . --traces runs.jsonl --set latency_budget_s=8 --set accuracy_priority=4
+vgselect recommend  --scan . --traces runs.jsonl --format pdf --out architecture.pdf   # card inside the PDF
+curl -s $VGSELECT_URL/api/v1/report-card -H &#x27;content-type: application/json&#x27; -d &#x27;{&quot;profile&quot;: {...}, &quot;scan&quot;: {...}, &quot;traces&quot;: [...]}&#x27;</code></pre>
+<p>In the UI, add a traces file on the Scan tab; the report card appears above the options comparison, with per-agent rows for multi-agent systems.</p>
+<h2 id="7-reading-it">7. Reading it</h2>
+<p>Start with the mismatches: they are the actionable gap between what the task needs, what was built, and what the agent actually does. Then the weakest dimension. For multi-agent systems, the per-agent rows show which role loops, errors, or carries the token load. Grades are relative to your budget and stakes as stated in the profile, so set those honestly.</p>
+</body>
+</html>

@@ -159,6 +159,41 @@
     }
   ],
   "warnings": [],
+  "design": {
+    "tool_count": 0,
+    "tool_overlap_count": 0,
+    "overlapping_tools": [],
+    "prompt_definitions": 1,
+    "prompt_files": 1,
+    "prompt_chars": 143,
+    "loop_patterns": {},
+    "delegation_depth": 0,
+    "parallel_fanout": false,
+    "handoffs": false,
+    "router": false,
+    "evaluator_loop": false,
+    "tool_loop": false,
+    "termination_limits": false,
+    "memory": false,
+    "context_management": false,
+    "structured_output": true,
+    "prompt_caching": false,
+    "approval_gate": false,
+    "evals": false,
+    "tests": false,
+    "tracing": false,
+    "side_effect_kinds": [
+      "external-post",
+      "ticket/crm"
+    ],
+    "irreversible_side_effects": true,
+    "frameworks": [
+      "anthropic-sdk"
+    ],
+    "languages": {
+      "python": 3
+    }
+  },
   "inferred_profile": {
     "tool_count": 0,
     "tool_calls_per_task": 0,

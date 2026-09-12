@@ -5,6 +5,8 @@
     vgselect recommend --profile app.json [--format md|json|mermaid|svg|pdf] [--out FILE]
     vgselect scaffold --scan PATH --out my-agent.zip [--framework langgraph]
     vgselect catalog [--catalog models.json]            (list the model ecosystem)
+    vgselect report-card --scan PATH [--traces runs.jsonl] [--profile overrides.json] [--format md|json]
+    (recommend also accepts --traces to add the report card to the report/PDF)
     (recommend/scaffold accept --catalog, --providers, --platforms, --regions, --allow-unverified, --prefer-provider)
     vgselect recommend --example deep_research
     vgselect recommend --set task_complexity=open_ended --set latency_budget_s=600 ...
@@ -27,6 +29,7 @@ from .model_selector import SelectionPolicy
 from .profile import FIELD_SPECS, SPEC_BY_NAME, WorkloadProfile
 from .recommender import recommend
 from .scanner import merge_profile, scan_markdown, scan_repository
+from .traces import load_traces
 
 
 def _load_example(name: str) -> dict:
@@ -112,10 +115,32 @@ def _profile_and_scan(args: argparse.Namespace):
     return WorkloadProfile.from_dict(data), scan
 
 
+def _traces(args: argparse.Namespace):
+    path = getattr(args, "traces", None)
+    return load_traces(path) if path else None
+
+
 def cmd_recommend(args: argparse.Namespace) -> None:
     profile, scan = _profile_and_scan(args)
     catalog, policy = _catalog_and_policy(args)
-    _emit(recommend(profile, scan=scan, catalog=catalog, policy=policy), args.format, getattr(args, "out", None))
+    _emit(recommend(profile, scan=scan, catalog=catalog, policy=policy, traces=_traces(args)), args.format, getattr(args, "out", None))
+
+
+def cmd_report_card(args: argparse.Namespace) -> None:
+    profile, scan = _profile_and_scan(args)
+    catalog, policy = _catalog_and_policy(args)
+    traces = _traces(args)
+    rec = recommend(profile, scan=scan, catalog=catalog, policy=policy, traces=traces)
+    card = rec.report_card
+    if card is None:
+        from .report_card import build_report_card
+        card = build_report_card(profile, scan=scan, traces=traces, rec=rec)
+    text = json.dumps(card.to_dict(), indent=2) if args.format == "json" else card.to_markdown()
+    if args.out:
+        Path(args.out).write_text(text)
+        print(f"Wrote report card to {args.out}", file=sys.stderr)
+    else:
+        print(text)
 
 
 def cmd_scaffold(args: argparse.Namespace) -> None:
@@ -219,8 +244,20 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--set", action="append", metavar="KEY=VALUE", help="Override a field (repeatable).")
     r.add_argument("--format", choices=("md", "json", "mermaid", "svg", "pdf"), default="md")
     r.add_argument("--out", help="Write the output to this file (required for pdf).")
+    r.add_argument("--traces", metavar="FILE", help="Run-time traces (JSONL, see docs/REPORT_CARD.html) to add the agent report card.")
     _add_policy_args(r)
     r.set_defaults(fn=cmd_recommend)
+
+    rc = sub.add_parser("report-card", help="Grade an existing agent: design complexity from the code, behavioural complexity from traces.")
+    rc.add_argument("--scan", metavar="PATH", help="Repository to scan for design metrics.")
+    rc.add_argument("--traces", metavar="FILE", help="Run-time traces (JSONL / JSON array / LangSmith export / OTel spans).")
+    rc.add_argument("--profile")
+    rc.add_argument("--example")
+    rc.add_argument("--set", action="append", metavar="KEY=VALUE")
+    rc.add_argument("--format", choices=("md", "json"), default="md")
+    rc.add_argument("--out")
+    _add_policy_args(rc)
+    rc.set_defaults(fn=cmd_report_card)
 
     sk = sub.add_parser("scaffold", help="Generate a downloadable agent project skeleton for the recommended topology.")
     sk.add_argument("--scan", metavar="PATH")

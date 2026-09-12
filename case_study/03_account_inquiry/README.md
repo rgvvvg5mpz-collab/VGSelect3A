@@ -47,6 +47,27 @@ is 88%.
 |---|---|---|---|
 | agent | acme-onprem-70b | n/a | - |
 
+## Agent report card
+
+Overall **D** (63.8/100) from 160 fictional trace runs (`traces.jsonl`). Complexity: task 2, design 4, behaviour 5.
+
+| Dimension | Grade | Score |
+|---|---|---|
+| Outcome quality | **B** | 80.4 |
+| Reliability and control | **F** | 57.9 |
+| Cost and token efficiency | **B** | 89.0 |
+| Latency | **F** | 10.0 |
+| Governance and guardrails | **D** | 60.0 |
+| Complexity fit | **C** | 72.0 |
+
+Mismatches: Over-built for the task (warn); High stakes, little verification (warn); Overlapping tools (info).
+
+| Agent | Grade | Note |
+|---|---|---|
+| agent | **A** | stable: no loops, low variance, no tool errors |
+
+Full card: `output/report_card.md`.
+
 ## Files
 
 | File | What it is |
@@ -56,7 +77,8 @@ is 88%.
 | `output/scan.md`, `output/scan.json` | What the scanner found: inferred fields with confidence, evidence with file:line |
 | `output/profile.json` | The merged profile the recommendation ran on |
 | `output/recommendation.md`, `output/recommendation.json` | The full report and structured result (ranked options, plan, model selection, next steps) |
-| `output/architecture.pdf` | The architecture document for the design review |
+| `output/architecture.pdf` | The architecture document for the design review (includes the report card) |
+| `traces.jsonl`, `output/report_card.md`, `output/report_card.json` | Fictional run-time traces in the vgselect-trace format, and the agent report card graded from them |
 | `output/plan.svg`, `output/plan.mmd` | The plan diagram |
 | `output/skeleton.zip`, `output/skeleton/` | The generated LangGraph project for the recommended topology |
 | `output/summary.json` | The key numbers used in this README |

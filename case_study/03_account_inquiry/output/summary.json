@@ -52,5 +52,66 @@
   "scan_frameworks": [
     "anthropic-sdk"
   ],
-  "files": 7
+  "files": 7,
+  "card": {
+    "grade": "D",
+    "score": 63.8,
+    "task": 2,
+    "design": 4,
+    "behaviour": 5,
+    "dims": [
+      [
+        "Outcome quality",
+        "B",
+        80.4
+      ],
+      [
+        "Reliability and control",
+        "F",
+        57.9
+      ],
+      [
+        "Cost and token efficiency",
+        "B",
+        89.0
+      ],
+      [
+        "Latency",
+        "F",
+        10.0
+      ],
+      [
+        "Governance and guardrails",
+        "D",
+        60.0
+      ],
+      [
+        "Complexity fit",
+        "C",
+        72.0
+      ]
+    ],
+    "mismatches": [
+      [
+        "warn",
+        "Over-built for the task"
+      ],
+      [
+        "warn",
+        "High stakes, little verification"
+      ],
+      [
+        "info",
+        "Overlapping tools"
+      ]
+    ],
+    "agents": [
+      [
+        "agent",
+        "A",
+        "stable: no loops, low variance, no tool errors"
+      ]
+    ],
+    "runs": 160
+  }
 }

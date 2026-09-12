@@ -16,6 +16,14 @@ from vgselect3a import WorkloadProfile, recommend
 from vgselect3a.catalog import Catalog
 from vgselect3a.model_selector import SelectionPolicy
 from vgselect3a.scanner import merge_profile, scan_markdown, scan_repository
+from vgselect3a.traces import load_traces, synthesize_traces, traces_to_jsonl
+
+# Fictional trace settings per case (quality, chaos, workers): plausible behaviour for the narrative.
+TRACE_SETTINGS = {
+    "01_call_summarization": dict(topology="prompt_chain", n_tasks=60, runs_per_task=2, quality=0.9, chaos=0.05, tools=["post_call_summary"], seed=11),
+    "02_robo_advisor": dict(topology="evaluator_optimizer", n_tasks=40, runs_per_task=2, quality=0.62, chaos=0.35, tools=["get_portfolio", "risk_score", "search_policy", "search_methodology", "suitability_check"], seed=22, tokens_scale=3.0),
+    "03_account_inquiry": dict(topology="single_agent", n_tasks=80, runs_per_task=2, quality=0.9, chaos=0.08, tools=["get_balances", "get_cost_basis", "get_transactions", "faq_lookup"], seed=33),
+}
 
 ROOT = Path(__file__).resolve().parent
 CATALOG = Catalog.load(ROOT / "catalog.json")
@@ -30,10 +38,17 @@ def run(case: Path) -> dict:
     overrides = json.loads((case / "overrides.json").read_text())
     profile_data = merge_profile(scan, overrides)
     profile = WorkloadProfile.from_dict(profile_data)
-    rec = recommend(profile, scan=scan, catalog=CATALOG, policy=POLICY)
-    rec._catalog = CATALOG
     out = case / "output"
     out.mkdir()
+    # traces: fictional, generated once per case (kept next to the app so a developer can see the format)
+    tpath = case / "traces.jsonl"
+    if not tpath.exists():
+        cfg = dict(TRACE_SETTINGS.get(case.name, dict(topology="single_agent")))
+        topo = cfg.pop("topology")
+        tpath.write_text(traces_to_jsonl(synthesize_traces(topo, **cfg)))
+    traces = load_traces(tpath)
+    rec = recommend(profile, scan=scan, catalog=CATALOG, policy=POLICY, traces=traces)
+    rec._catalog = CATALOG
     (out / "scan.md").write_text(scan_markdown(scan))
     (out / "scan.json").write_text(scan.to_json())
     (out / "profile.json").write_text(profile.to_json())
@@ -42,6 +57,8 @@ def run(case: Path) -> dict:
     (out / "plan.svg").write_text(rec.to_svg())
     (out / "plan.mmd").write_text(rec.to_mermaid())
     (out / "architecture.pdf").write_bytes(rec.to_pdf())
+    (out / "report_card.md").write_text(rec.report_card.to_markdown())
+    (out / "report_card.json").write_text(json.dumps(rec.report_card.to_dict(), indent=2))
     zip_bytes = rec.to_skeleton("langgraph")
     (out / "skeleton.zip").write_bytes(zip_bytes)
     skel = out / "skeleton"
@@ -64,6 +81,12 @@ def run(case: Path) -> dict:
         "top_reasons": [s.rationale for s in sorted(best.signals, key=lambda s: -s.delta) if s.delta > 0][:4],
         "scan_tools": scan.tools, "scan_sources": scan.knowledge_sources, "scan_side_effects": scan.side_effects,
         "scan_frameworks": scan.frameworks, "files": scan.files_scanned,
+        "card": {"grade": rec.report_card.overall_grade, "score": rec.report_card.overall_score, "task": rec.report_card.task_level,
+                 "design": rec.report_card.design_level, "behaviour": rec.report_card.behaviour_level,
+                 "dims": [(d.name, d.grade, d.score) for d in rec.report_card.dimensions],
+                 "mismatches": [(m.severity, m.title) for m in rec.report_card.mismatches],
+                 "agents": [(a.agent, a.grade, a.findings[0] if a.findings else "") for a in rec.report_card.agents],
+                 "runs": rec.report_card.behaviour.runs if rec.report_card.behaviour else 0},
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2))
     write_readme(case, summary)
@@ -88,6 +111,15 @@ def write_readme(case: Path, s: dict) -> None:
         lines += [f"Unfilled roles: {', '.join(s['unfilled'])}.", ""]
     if s["warnings"]:
         lines += ["Warnings:", *[f"- {w}" for w in s["warnings"]], ""]
+    c = s["card"]
+    lines += ["## Agent report card", "",
+              f"Overall **{c['grade']}** ({c['score']}/100) from {c['runs']} fictional trace runs (`traces.jsonl`). Complexity: task {c['task']}, design {c['design']}, behaviour {c['behaviour']}.", "",
+              "| Dimension | Grade | Score |", "|---|---|---|", *[f"| {n} | **{g}** | {sc if sc is not None else 'n/a'} |" for n, g, sc in c["dims"]], ""]
+    if c["mismatches"]:
+        lines += ["Mismatches: " + "; ".join(f"{t} ({sev})" for sev, t in c["mismatches"]) + ".", ""]
+    if c["agents"]:
+        lines += ["| Agent | Grade | Note |", "|---|---|---|", *[f"| {a} | **{g}** | {f} |" for a, g, f in c["agents"]], ""]
+    lines += ["Full card: `output/report_card.md`.", ""]
     lines += ["## Files", "",
               "| File | What it is |", "|---|---|",
               "| `scenario.md`, `overrides.json` | The narrative and the hand-authored profile fields the code cannot reveal |",
@@ -95,7 +127,8 @@ def write_readme(case: Path, s: dict) -> None:
               "| `output/scan.md`, `output/scan.json` | What the scanner found: inferred fields with confidence, evidence with file:line |",
               "| `output/profile.json` | The merged profile the recommendation ran on |",
               "| `output/recommendation.md`, `output/recommendation.json` | The full report and structured result (ranked options, plan, model selection, next steps) |",
-              "| `output/architecture.pdf` | The architecture document for the design review |",
+              "| `output/architecture.pdf` | The architecture document for the design review (includes the report card) |",
+              "| `traces.jsonl`, `output/report_card.md`, `output/report_card.json` | Fictional run-time traces in the vgselect-trace format, and the agent report card graded from them |",
               "| `output/plan.svg`, `output/plan.mmd` | The plan diagram |",
               "| `output/skeleton.zip`, `output/skeleton/` | The generated LangGraph project for the recommended topology |",
               "| `output/summary.json` | The key numbers used in this README |", ""]
@@ -116,7 +149,9 @@ for the case studies (their numbers are fixtures, not vendor facts). It exists
 to show restricted-data staffing and rejection reasons; do not reuse it in
 production.
 
-Regenerate everything with:
+Each case also carries fictional run-time traces (`traces.jsonl`, generated by
+`vgselect3a.traces.synthesize_traces`) so the **agent report card** can grade
+behaviour as well as design. Regenerate everything with:
 
 ```bash
 .venv/bin/python case_study/run_case_studies.py
@@ -126,10 +161,10 @@ Regenerate everything with:
 
 def write_index(rows: list[dict]) -> None:
     lines = [INDEX_INTRO, "## Results at a glance", "",
-             "| Case | Current topology | Recommended | Est. latency / budget | Cost / request | Models per role |", "|---|---|---|---|---|---|"]
+             "| Case | Current topology | Recommended | Est. latency / budget | Cost / request | Models per role | Report card |", "|---|---|---|---|---|---|---|"]
     for s in rows:
         models = ", ".join(sorted({m[1] for m in s["models"] if m[1]})) or "unfilled"
-        lines.append(f"| [{s['case']}]({s['case']}/README.md) | {s['current_topology']} | **{s['recommended_name']}** | ~{s['latency_s']:.0f}s / {s['budget_s']:.0f}s ({s['verdict']}) | ${s['cost_usd']:.3f} | {models} |")
+        lines.append(f"| [{s['case']}]({s['case']}/README.md) | {s['current_topology']} | **{s['recommended_name']}** | ~{s['latency_s']:.0f}s / {s['budget_s']:.0f}s ({s['verdict']}) | ${s['cost_usd']:.3f} | {models} | **{s['card']['grade']}** ({s['card']['score']}) |")
     lines += ["", "Each case README explains the scenario, the scan findings, why the topology was chosen, the model per role, and where every file is.", ""]
     (ROOT / "README.md").write_text("\n".join(lines))
 

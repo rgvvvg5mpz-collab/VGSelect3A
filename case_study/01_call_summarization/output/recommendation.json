@@ -676,6 +676,41 @@
       }
     ],
     "warnings": [],
+    "design": {
+      "tool_count": 0,
+      "tool_overlap_count": 0,
+      "overlapping_tools": [],
+      "prompt_definitions": 1,
+      "prompt_files": 1,
+      "prompt_chars": 143,
+      "loop_patterns": {},
+      "delegation_depth": 0,
+      "parallel_fanout": false,
+      "handoffs": false,
+      "router": false,
+      "evaluator_loop": false,
+      "tool_loop": false,
+      "termination_limits": false,
+      "memory": false,
+      "context_management": false,
+      "structured_output": true,
+      "prompt_caching": false,
+      "approval_gate": false,
+      "evals": false,
+      "tests": false,
+      "tracing": false,
+      "side_effect_kinds": [
+        "external-post",
+        "ticket/crm"
+      ],
+      "irreversible_side_effects": true,
+      "frameworks": [
+        "anthropic-sdk"
+      ],
+      "languages": {
+        "python": 3
+      }
+    },
     "inferred_profile": {
       "tool_count": 0,
       "tool_calls_per_task": 0,
@@ -888,5 +923,346 @@
     "opus": "claude-opus-5",
     "sonnet": "acme-onprem-70b",
     "haiku": "claude-haiku-4-5"
+  },
+  "report_card": {
+    "name": "call_summarization",
+    "mode": "full",
+    "overall_score": 84.7,
+    "overall_grade": "B",
+    "summary": "Full report card for **call_summarization**: overall **B** (84.7/100). Task complexity 3 (moderate), design 1 (trivial), behaviour 2 (simple). Weakest dimension: Governance and guardrails (F).",
+    "complexity": {
+      "task": {
+        "level": 3,
+        "label": "moderate"
+      },
+      "design": {
+        "level": 1,
+        "label": "trivial"
+      },
+      "behaviour": {
+        "level": 2,
+        "label": "simple"
+      }
+    },
+    "design_metrics": {
+      "tool_count": 0,
+      "tool_overlap_count": 0,
+      "overlapping_tools": [],
+      "prompt_definitions": 1,
+      "prompt_files": 1,
+      "prompt_chars": 143,
+      "loop_patterns": {},
+      "delegation_depth": 0,
+      "parallel_fanout": false,
+      "handoffs": false,
+      "router": false,
+      "evaluator_loop": false,
+      "tool_loop": false,
+      "termination_limits": false,
+      "memory": false,
+      "context_management": false,
+      "structured_output": true,
+      "prompt_caching": false,
+      "approval_gate": false,
+      "evals": false,
+      "tests": false,
+      "tracing": false,
+      "side_effect_kinds": [
+        "external-post",
+        "ticket/crm"
+      ],
+      "irreversible_side_effects": true,
+      "frameworks": [
+        "anthropic-sdk"
+      ],
+      "languages": {
+        "python": 3
+      }
+    },
+    "behaviour": {
+      "runs": 120,
+      "tasks": 60,
+      "success_rate": 0.875,
+      "steps": {
+        "mean": 3.0,
+        "p50": 3.0,
+        "p95": 3.0,
+        "std": 0.0,
+        "cv": 0.0,
+        "max": 3
+      },
+      "llm_calls": {
+        "mean": 3.0,
+        "p50": 3.0,
+        "p95": 3.0,
+        "std": 0.0,
+        "cv": 0.0,
+        "max": 3
+      },
+      "tool_calls": {
+        "mean": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "std": 0.0,
+        "cv": 0.0,
+        "max": 0
+      },
+      "distinct_tools": 0,
+      "tool_error_rate": 0.0,
+      "repetition_rate": 0.0,
+      "termination_limit_rate": 0.017,
+      "timeout_error_rate": 0.0,
+      "handoffs_per_run": 0.0,
+      "spawns_per_run": 0.0,
+      "verify_rate": 0.0,
+      "human_rate": 0.0,
+      "branching_factor": 1.0,
+      "trajectory_diversity": 0.0,
+      "consistency": 0.78,
+      "pass_all_runs": 0.77,
+      "tokens_per_run": {
+        "mean": 12115.77,
+        "p50": 12310.5,
+        "p95": 14100.3,
+        "std": 1344.92,
+        "cv": 0.11,
+        "max": 14449
+      },
+      "peak_context": {
+        "mean": 4053.71,
+        "p50": 4088.0,
+        "p95": 4700.3,
+        "std": 444.52,
+        "cv": 0.11,
+        "max": 4774
+      },
+      "context_growth_per_step": 400.0,
+      "latency_ms": {
+        "mean": 17920.71,
+        "p50": 17933.8,
+        "p95": 18960.0,
+        "std": 627.97,
+        "cv": 0.04,
+        "max": 19503.3
+      },
+      "cost_per_run": 0.03292,
+      "cost_per_completed_task": 0.03763,
+      "successes_per_1k_tokens": 0.072
+    },
+    "dimensions": [
+      {
+        "id": "quality",
+        "name": "Outcome quality",
+        "score": 84.6,
+        "grade": "B",
+        "findings": [
+          "Only 78% of repeated tasks agree on outcome across runs: reliability across runs is low (Galileo reports 60% single-run falling to 25% over eight runs)."
+        ],
+        "metrics": {
+          "success_rate": 0.875,
+          "consistency": 0.78,
+          "pass_all_runs": 0.77,
+          "tasks": 60,
+          "runs": 120
+        },
+        "weight": 30
+      },
+      {
+        "id": "reliability",
+        "name": "Reliability and control",
+        "score": 87.5,
+        "grade": "B",
+        "findings": [
+          "High-stakes workload with little verification in traces and no eval harness in code (verification failures are ~25% of multi-agent failures)."
+        ],
+        "metrics": {
+          "repetition_rate": 0.0,
+          "termination_limit_rate": 0.017,
+          "timeout_error_rate": 0.0,
+          "tool_error_rate": 0.0,
+          "verify_rate": 0.0,
+          "termination_limits_in_code": false
+        },
+        "weight": 20
+      },
+      {
+        "id": "efficiency",
+        "name": "Cost and token efficiency",
+        "score": 100.0,
+        "grade": "A",
+        "findings": [],
+        "metrics": {
+          "tokens_per_run": {
+            "mean": 12115.77,
+            "p50": 12310.5,
+            "p95": 14100.3,
+            "std": 1344.92,
+            "cv": 0.11,
+            "max": 14449
+          },
+          "expected_tokens": 12400,
+          "ratio_to_estimate": 0.98,
+          "cost_per_run": 0.03292,
+          "cost_per_completed_task": 0.03763,
+          "successes_per_1k_tokens": 0.072,
+          "peak_context": {
+            "mean": 4053.71,
+            "p50": 4088.0,
+            "p95": 4700.3,
+            "std": 444.52,
+            "cv": 0.11,
+            "max": 4774
+          },
+          "context_growth_per_step": 400.0
+        },
+        "weight": 15
+      },
+      {
+        "id": "latency",
+        "name": "Latency",
+        "score": 100.0,
+        "grade": "A",
+        "findings": [],
+        "metrics": {
+          "p50_s": 17.93,
+          "p95_s": 18.96,
+          "max_s": 19.5,
+          "budget_s": 60.0
+        },
+        "weight": 15
+      },
+      {
+        "id": "governance",
+        "name": "Governance and guardrails",
+        "score": 30.0,
+        "grade": "F",
+        "findings": [
+          "No eval harness or tests found: build a ~20-query eval before changing structure.",
+          "Irreversible integrations without an approval or confirmation gate in code.",
+          "No tracing/observability library detected; multi-agent failures cannot be diagnosed without per-turn traces.",
+          "Traces show no human approval steps despite irreversible tools."
+        ],
+        "metrics": {
+          "evals": false,
+          "tests": false,
+          "approval_gate": false,
+          "termination_limits": false,
+          "tracing": false,
+          "structured_output": true,
+          "memory": false,
+          "context_management": false,
+          "prompt_caching": false,
+          "irreversible_side_effects": true
+        },
+        "weight": 10
+      },
+      {
+        "id": "fit",
+        "name": "Complexity fit",
+        "score": 88.0,
+        "grade": "B",
+        "findings": [
+          "High stakes, little verification"
+        ],
+        "metrics": {
+          "task_level": 3,
+          "design_level": 1,
+          "behaviour_level": 2
+        },
+        "weight": 10
+      }
+    ],
+    "mismatches": [
+      {
+        "id": "under_verified",
+        "severity": "warn",
+        "title": "High stakes, little verification",
+        "detail": "Only 0% of runs include a verification step for a stakes-4 workload.",
+        "action": "Add an evaluator/verifier step (tests, schema checks, or an independent model) before returning."
+      }
+    ],
+    "agents": [
+      {
+        "agent": "agent",
+        "role": null,
+        "model": null,
+        "behaviour": {
+          "runs": 120,
+          "tasks": 60,
+          "success_rate": 0.875,
+          "steps": {
+            "mean": 3.0,
+            "p50": 3.0,
+            "p95": 3.0,
+            "std": 0.0,
+            "cv": 0.0,
+            "max": 3
+          },
+          "llm_calls": {
+            "mean": 3.0,
+            "p50": 3.0,
+            "p95": 3.0,
+            "std": 0.0,
+            "cv": 0.0,
+            "max": 3
+          },
+          "tool_calls": {
+            "mean": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "std": 0.0,
+            "cv": 0.0,
+            "max": 0
+          },
+          "distinct_tools": 0,
+          "tool_error_rate": 0.0,
+          "repetition_rate": 0.0,
+          "termination_limit_rate": 0.017,
+          "timeout_error_rate": 0.0,
+          "handoffs_per_run": 0.0,
+          "spawns_per_run": 0.0,
+          "verify_rate": 0.0,
+          "human_rate": 0.0,
+          "branching_factor": 1.0,
+          "trajectory_diversity": 0.0,
+          "consistency": 0.78,
+          "pass_all_runs": 0.77,
+          "tokens_per_run": {
+            "mean": 12115.77,
+            "p50": 12310.5,
+            "p95": 14100.3,
+            "std": 1344.92,
+            "cv": 0.11,
+            "max": 14449
+          },
+          "peak_context": {
+            "mean": 4053.71,
+            "p50": 4088.0,
+            "p95": 4700.3,
+            "std": 444.52,
+            "cv": 0.11,
+            "max": 4774
+          },
+          "context_growth_per_step": 400.0,
+          "latency_ms": {
+            "mean": 17920.71,
+            "p50": 17933.82,
+            "p95": 18960.03,
+            "std": 627.97,
+            "cv": 0.04,
+            "max": 19503.3
+          },
+          "cost_per_run": 0.03292,
+          "cost_per_completed_task": 0.03763,
+          "successes_per_1k_tokens": 0.072
+        },
+        "grade": "A",
+        "score": 100.0,
+        "findings": [
+          "stable: no loops, low variance, no tool errors"
+        ]
+      }
+    ],
+    "trace_warnings": []
   }
 }

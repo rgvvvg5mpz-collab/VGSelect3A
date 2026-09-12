@@ -210,6 +210,8 @@
           <label class="drop" id="drop" for="zip"><b>Drop a .zip here</b> or click to choose<input type="file" id="zip" accept=".zip,application/zip" class="sr"></label><div class="help" id="zipname"></div></div>
         <div class="field"><div class="lbl">Or a path on the server <button class="tip" type="button" data-tip="Only directories under the service's configured scan roots are allowed. The status line at the bottom shows which." aria-label="About server path">i</button></div><input type="text" id="scan-path" placeholder="/scan/my-repo"></div>
         <div class="field"><div class="lbl">Or a git URL <button class="tip" type="button" data-tip="Shallow clone into a temporary directory, scanned and deleted. Must be enabled on the server." aria-label="About git URL">i</button></div><input type="url" id="scan-git" placeholder="https://github.com/org/repo.git"></div>
+        <div class="field"><div class="lbl">Run-time traces (optional) <button class="tip" type="button" data-tip="Add production or eval traces to grade the agent's behaviour: JSONL in the vgselect-trace format, a LangSmith run export, or OpenTelemetry GenAI spans. Without traces the report card is design-time only (from the code)." aria-label="About traces">i</button></div>
+          <label class="drop" id="drop-traces" for="traces"><b>Drop a traces file here</b> or click to choose<input type="file" id="traces" accept=".jsonl,.json,application/json" class="sr"></label><div class="help" id="tracesname"></div></div>
         <div class="cta"><button class="btn" id="btn-scan">Scan and pre-fill profile</button></div>
       </div>
       <div class="pane" id="pane-describe">
@@ -256,7 +258,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 const title = n => n.replace(/_s$/, ' (seconds)').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
-let FIELDS = [], CITES = {}, EXTRAS = {}, LAST = null, LAST_SCAN = null;
+let FIELDS = [], CITES = {}, EXTRAS = {}, LAST = null, LAST_SCAN = null, TRACES = null;
 
 const GROUPS = {meta:"About the application", task:"Task shape", tools:"Tools", knowledge:"Knowledge and context", quality:"Quality and risk", ops:"Operating constraints"};
 let CATALOG = null;
@@ -387,6 +389,19 @@ $('#help-link').addEventListener('click', e=>{ e.preventDefault(); $('#results')
 const drop=$('#drop'); ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hot');})); ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('hot');}));
 drop.addEventListener('drop', e=>{ $('#zip').files=e.dataTransfer.files; $('#zipname').textContent=$('#zip').files[0]?.name||''; });
 $('#zip').addEventListener('change', ()=>{ $('#zipname').textContent=$('#zip').files[0]?.name||''; });
+const dropT=$('#drop-traces'); ['dragenter','dragover'].forEach(ev=>dropT.addEventListener(ev,e=>{e.preventDefault();dropT.classList.add('hot');})); ['dragleave','drop'].forEach(ev=>dropT.addEventListener(ev,e=>{e.preventDefault();dropT.classList.remove('hot');}));
+dropT.addEventListener('drop', e=>{ $('#traces').files=e.dataTransfer.files; loadTraces(); });
+$('#traces').addEventListener('change', loadTraces);
+async function loadTraces(){
+  const f=$('#traces').files[0]; if(!f){ TRACES=null; $('#tracesname').textContent=''; return; }
+  const raw=(await f.text()).trim();
+  try{
+    if(raw.startsWith('[')) TRACES=JSON.parse(raw);
+    else if(raw.startsWith('{') && !raw.includes('\n')){ const d=JSON.parse(raw); TRACES=d.runs||d.spans||d.records||[d]; }
+    else TRACES=raw.split('\n').filter(l=>l.trim()).map(l=>JSON.parse(l));
+    $('#tracesname').textContent=`${f.name}: ${TRACES.length} records`;
+  }catch(err){ TRACES=null; $('#tracesname').textContent='Could not parse traces: '+err.message; }
+}
 
 function busy(on,msg){ document.querySelectorAll('.btn').forEach(b=>b.disabled=on); if(on) $('#results').innerHTML=`<div class="card"><span class="spin"></span>${esc(msg||'Working…')}</div>`; }
 function showError(m){ const e=$('#error'); e.textContent=m; e.classList.toggle('on', !!m); }
@@ -397,7 +412,7 @@ $('#btn-recommend').addEventListener('click', async e=>{
   e.preventDefault(); showError('');
   const profile={...EXTRAS, ...readForm()};
   busy(true,'Scoring ten topologies…');
-  try{ render(await post('/api/v1/recommend',{profile, policy: readPolicy()})); }
+  try{ render(await post('/api/v1/recommend',{profile, policy: readPolicy(), traces: TRACES||undefined})); }
   catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
 });
 $('#btn-scan').addEventListener('click', async e=>{
@@ -406,8 +421,8 @@ $('#btn-scan').addEventListener('click', async e=>{
   busy(true,'Scanning repository…');
   try{
     let j;
-    if($('#zip').files.length){ const fd=new FormData(); fd.append('archive',$('#zip').files[0]); fd.append('overrides',JSON.stringify(overrides)); fd.append('policy',JSON.stringify(readPolicy())); j=await post('/api/v1/scan/upload', fd, true); }
-    else { const body={overrides, policy: readPolicy()}; if($('#scan-path').value) body.path=$('#scan-path').value; else if($('#scan-git').value) body.git_url=$('#scan-git').value; else throw new Error('Choose a zip, a server path, or a git URL.'); j=await post('/api/v1/scan', body); }
+    if($('#zip').files.length){ const fd=new FormData(); fd.append('archive',$('#zip').files[0]); fd.append('overrides',JSON.stringify(overrides)); fd.append('policy',JSON.stringify(readPolicy())); if($('#traces').files[0]) fd.append('traces',$('#traces').files[0]); j=await post('/api/v1/scan/upload', fd, true); }
+    else { const body={overrides, policy: readPolicy(), traces: TRACES||undefined}; if($('#scan-path').value) body.path=$('#scan-path').value; else if($('#scan-git').value) body.git_url=$('#scan-git').value; else throw new Error('Choose a zip, a server path, or a git URL.'); j=await post('/api/v1/scan', body); }
     fillForm(j.profile); EXTRAS={tools:j.profile.tools, sources:j.profile.sources};
     render(j.recommendation, j.scan); toast('Profile pre-filled from the scan. Review the low-confidence fields.');
   }catch(err){ showError(err.message); $('#results').innerHTML=''; } finally{ busy(false); }
@@ -459,6 +474,27 @@ function render(rec, scan){
       <details style="margin-top:10px"><summary class="muted" style="cursor:pointer">Evidence (${scan.evidence.length} locations)</summary><div class="wrap"><table><tr><th>Category</th><th>Label</th><th>Location</th><th>Snippet</th></tr>${scan.evidence.map(e=>`<tr><td>${esc(e.category)}</td><td>${esc(e.label)}</td><td style="font-family:var(--mono);font-size:12px">${esc(e.path)}:${e.line}</td><td class="muted">${esc(e.snippet)}</td></tr>`).join('')}</table></div></details></div>`;
   }
 
+  if(rec.report_card){
+    const rc=rec.report_card, L={1:'trivial',2:'simple',3:'moderate',4:'complex',5:'open-ended'};
+    const gcls=g=>({A:'ok',B:'ok',C:'warn',D:'bad',F:'bad'})[g]||'neutral';
+    h += `<div class="card"><h2>Agent report card <span class="badge ${gcls(rc.overall_grade)}" style="font-size:14px;margin-left:8px">${esc(rc.overall_grade)}${rc.overall_score!=null?' · '+rc.overall_score:''}</span> <span class="badge neutral">${esc(rc.mode)}</span></h2>
+      <p class="lede">${md(rc.summary)}</p>
+      <div class="tiles">
+        <div class="tile"><div class="k">Task complexity <button class="tip" data-tip="From the profile: complexity, breadth, sources, parallel sub-tasks, context pressure." aria-label="About task complexity">i</button></div><div class="v">${rc.complexity.task.level}<small>${esc(rc.complexity.task.label)}</small></div></div>
+        <div class="tile"><div class="k">Design complexity <button class="tip" data-tip="From the code: tools and overlap, delegation depth, handoffs, loops, prompt load." aria-label="About design complexity">i</button></div><div class="v">${rc.complexity.design.level}<small>${esc(rc.complexity.design.label)}</small></div></div>
+        <div class="tile"><div class="k">Behaviour complexity <button class="tip" data-tip="From traces: steps per run and their spread, branching factor, spawns and handoffs." aria-label="About behaviour complexity">i</button></div><div class="v">${rc.complexity.behaviour? rc.complexity.behaviour.level+'<small>'+esc(rc.complexity.behaviour.label)+'</small>':'<small>add traces</small>'}</div></div>
+      </div>
+      <div class="wrap"><table><tr><th>Dimension</th><th>Grade</th><th>Score</th><th>Findings</th></tr>
+      ${rc.dimensions.map(d=>`<tr><td><b>${esc(d.name)}</b><div class="muted">weight ${d.weight}</div></td><td><span class="badge ${gcls(d.grade)}">${esc(d.grade)}</span></td><td>${d.score!=null?d.score:'n/a'}</td><td>${d.findings.length?'<ul style="margin:0;padding-left:16px">'+d.findings.map(f=>`<li>${esc(f)}</li>`).join('')+'</ul>':'<span class="muted">no issues</span>'}</td></tr>`).join('')}</table></div>
+      ${rc.mismatches.length?`<h3>Mismatches</h3><ul>${rc.mismatches.map(m=>`<li><span class="badge ${m.severity==='high'?'bad':m.severity==='warn'?'warn':'info'}">${esc(m.severity)}</span> <b>${esc(m.title)}.</b> ${esc(m.detail)} <span class="muted">Action: ${esc(m.action)}</span></li>`).join('')}</ul>`:''}
+      ${rc.behaviour?`<details><summary class="muted" style="cursor:pointer">Behavioural metrics (${rc.behaviour.runs} runs, ${rc.behaviour.tasks} tasks)</summary><div class="wrap"><table>
+        <tr><th>Success</th><th>Consistency</th><th>Steps p50/p95/CV</th><th>Tool calls</th><th>Tool errors</th><th>Loops</th><th>Limit hits</th><th>Branching</th><th>Tokens/run</th><th>Peak ctx</th><th>Latency p50/p95</th><th>$/completed</th></tr>
+        <tr><td>${rc.behaviour.success_rate!=null?Math.round(rc.behaviour.success_rate*100)+'%':'n/a'}</td><td>${rc.behaviour.consistency!=null?Math.round(rc.behaviour.consistency*100)+'%':'n/a'}</td><td>${rc.behaviour.steps.p50}/${rc.behaviour.steps.p95}/${rc.behaviour.steps.cv}</td><td>${rc.behaviour.tool_calls.mean}</td><td>${Math.round(rc.behaviour.tool_error_rate*100)}%</td><td>${Math.round(rc.behaviour.repetition_rate*100)}%</td><td>${Math.round(rc.behaviour.termination_limit_rate*100)}%</td><td>${rc.behaviour.branching_factor}</td><td>${Math.round(rc.behaviour.tokens_per_run.mean).toLocaleString()}</td><td>${Math.round(rc.behaviour.peak_context.max).toLocaleString()}</td><td>${(rc.behaviour.latency_ms.p50/1000).toFixed(1)}s/${(rc.behaviour.latency_ms.p95/1000).toFixed(1)}s</td><td>${rc.behaviour.cost_per_completed_task!=null?'$'+rc.behaviour.cost_per_completed_task.toFixed(4):'n/a'}</td></tr></table></div></details>`:''}
+      ${rc.agents.length?`<h3>Per-agent cards</h3><div class="wrap"><table><tr><th>Agent</th><th>Role</th><th>Model</th><th>Grade</th><th>Steps p50/p95</th><th>Tool calls</th><th>Errors</th><th>Loops</th><th>Tokens/run</th><th>Latency p50</th><th>Findings</th></tr>
+        ${rc.agents.map(a=>`<tr><td><b>${esc(a.agent)}</b></td><td>${esc(a.role||'-')}</td><td class="pill">${esc(a.model||'-')}</td><td><span class="badge ${gcls(a.grade)}">${esc(a.grade)}</span></td><td>${a.behaviour.steps.p50}/${a.behaviour.steps.p95}</td><td>${a.behaviour.tool_calls.mean}</td><td>${Math.round(a.behaviour.tool_error_rate*100)}%</td><td>${Math.round(a.behaviour.repetition_rate*100)}%</td><td>${Math.round(a.behaviour.tokens_per_run.mean).toLocaleString()}</td><td>${(a.behaviour.latency_ms.p50/1000).toFixed(1)}s</td><td class="muted">${esc(a.findings.join('; '))}</td></tr>`).join('')}</table></div>`:''}
+      ${rc.trace_warnings.length?`<p class="muted">Trace notes: ${esc(rc.trace_warnings.join('; '))}</p>`:''}
+    </div>`;
+  }
   h += `<div class="card"><h2>Compare the options</h2><p class="lede">Ranked by score. Expand a row to see every rule that fired. Struck-through options cannot do the job.</p>
     <div class="wrap"><table id="cmp"><tr><th>#</th><th>Architecture</th><th data-tip="${esc(HEAD_TIPS.score)}" tabindex="0">Score</th><th data-tip="${esc(HEAD_TIPS.fit)}" tabindex="0">Fit</th><th data-tip="${esc(HEAD_TIPS.latency)}" tabindex="0">Latency</th><th data-tip="${esc(HEAD_TIPS.budget)}" tabindex="0">Budget</th><th data-tip="${esc(HEAD_TIPS.cost)}" tabindex="0">Cost</th><th data-tip="${esc(HEAD_TIPS.tokens)}" tabindex="0">Tokens</th><th data-tip="${esc(HEAD_TIPS.calls)}" tabindex="0">Calls</th><th></th></tr>`;
   const maxScore = Math.max(...rec.candidates.map(c=>Math.abs(c.score)), 1);
@@ -542,7 +578,7 @@ function helpCard(){
 async function deliverable(url, filename, msg){
   const b=$('#dl-pdf'), k=$('#dl-skel'); [b,k].forEach(x=>x.disabled=true); toast(msg);
   try{
-    const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({profile:LAST.profile, scan:LAST_SCAN, policy: readPolicy(), include_markdown:false, framework:'langgraph'})});
+    const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({profile:LAST.profile, scan:LAST_SCAN, policy: readPolicy(), traces: TRACES||undefined, include_markdown:false, framework:'langgraph'})});
     if(!r.ok){ let d=''; try{ d=(await r.json()).detail; }catch(_){} throw new Error(d||r.statusText); }
     const blob=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); toast('Downloaded '+filename);
   }catch(err){ showError('Download failed: '+err.message); }

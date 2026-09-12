@@ -80,5 +80,67 @@
     "anthropic-sdk",
     "langgraph"
   ],
-  "files": 7
+  "files": 8,
+  "card": {
+    "grade": "F",
+    "score": 54.1,
+    "task": 5,
+    "design": 4,
+    "behaviour": 5,
+    "dims": [
+      [
+        "Outcome quality",
+        "F",
+        43.8
+      ],
+      [
+        "Reliability and control",
+        "F",
+        39.8
+      ],
+      [
+        "Cost and token efficiency",
+        "A",
+        90.0
+      ],
+      [
+        "Latency",
+        "F",
+        36.3
+      ],
+      [
+        "Governance and guardrails",
+        "C",
+        70.0
+      ],
+      [
+        "Complexity fit",
+        "C",
+        71.0
+      ]
+    ],
+    "mismatches": [
+      [
+        "high",
+        "Loops without limits"
+      ],
+      [
+        "info",
+        "Overlapping tools"
+      ]
+    ],
+    "agents": [
+      [
+        "agent",
+        "D",
+        "tool error rate 10%"
+      ],
+      [
+        "evaluator",
+        "A",
+        "stable: no loops, low variance, no tool errors"
+      ]
+    ],
+    "runs": 80
+  }
 }

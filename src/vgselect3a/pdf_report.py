@@ -309,6 +309,40 @@ def build_pdf(rec: "Recommendation") -> bytes:
             for c in unfilled[:3]:
                 S.append(bl(f"<b>{_esc(c.component_id)}</b>: " + _esc("; ".join(f"{j.model_id}: {j.reason}" for j in c.rejected[:4]))))
 
+    # ------------------------------------------------------------ report card
+    if rec.report_card is not None:
+        rc = rec.report_card
+        from .report_card import LEVEL_NAMES
+        S.append(Paragraph(f"{sec}. Agent report card ({rc.mode})", h2)); sec += 1
+        S.append(Paragraph(_md_inline(rc.summary), body))
+        rows = [[Paragraph(h_, cellb) for h_ in ("Dimension", "Grade", "Score", "Weight", "Findings")]]
+        for d_ in rc.dimensions:
+            rows.append([Paragraph(_esc(d_.name), cell), Paragraph(f"<b>{_esc(d_.grade)}</b>", cell), Paragraph(_esc(d_.score if d_.score is not None else "n/a"), cell),
+                         Paragraph(f"{d_.weight:.0f}", cell), Paragraph("<br/>".join(f"• {_esc(x)}" for x in d_.findings) or "-", cell)])
+        rows.append([Paragraph("<b>Overall</b>", cell), Paragraph(f"<b>{_esc(rc.overall_grade)}</b>", cell), Paragraph(_esc(rc.overall_score if rc.overall_score is not None else "n/a"), cell), Paragraph("", cell), Paragraph("", cell)])
+        S.append(table(rows, [34 * mm, 14 * mm, 14 * mm, 14 * mm, avail - 76 * mm]))
+        S.append(Paragraph("Complexity", h3))
+        crow = [[Paragraph("Axis", cellb), Paragraph("Level", cellb)],
+                [Paragraph("Task", cell), Paragraph(f"{rc.task_level} ({LEVEL_NAMES[rc.task_level]})", cell)],
+                [Paragraph("Design", cell), Paragraph(f"{rc.design_level} ({LEVEL_NAMES[rc.design_level]}): {rc.design_metrics.get('tool_count', 0)} tools, delegation depth {rc.design_metrics.get('delegation_depth', 0)}", cell)]]
+        if rc.behaviour_level:
+            b_ = rc.behaviour
+            crow.append([Paragraph("Behaviour", cell), Paragraph(f"{rc.behaviour_level} ({LEVEL_NAMES[rc.behaviour_level]}): steps p50 {b_.steps['p50']}, p95 {b_.steps['p95']}, CV {b_.steps['cv']}, branching {b_.branching_factor}", cell)])
+        S.append(table(crow, [30 * mm, avail - 30 * mm]))
+        if rc.mismatches:
+            S.append(Paragraph("Mismatches", h3))
+            for m_ in rc.mismatches:
+                S.append(bl(f"<b>{_esc(m_.title)}</b> ({_esc(m_.severity)}): {_esc(m_.detail)} <i>Action: {_esc(m_.action)}</i>"))
+        if rc.agents:
+            S.append(Paragraph("Per-agent cards", h3))
+            rows = [[Paragraph(h_, cellb) for h_ in ("Agent", "Role", "Grade", "Steps p50/p95", "Tools/run", "Errors", "Loops", "Tokens/run", "Findings")]]
+            for a_ in rc.agents:
+                b_ = a_.behaviour
+                rows.append([Paragraph(_esc(a_.agent), cell), Paragraph(_esc(a_.role or "-"), cell), Paragraph(f"<b>{_esc(a_.grade)}</b>", cell),
+                             Paragraph(f"{b_.steps['p50']}/{b_.steps['p95']}", cell), Paragraph(f"{b_.tool_calls['mean']}", cell), Paragraph(f"{b_.tool_error_rate:.0%}", cell),
+                             Paragraph(f"{b_.repetition_rate:.0%}", cell), Paragraph(f"{b_.tokens_per_run['mean']:,.0f}", cell), Paragraph(_esc("; ".join(a_.findings)), cell)])
+            S.append(table(rows, [22 * mm, 22 * mm, 12 * mm, 20 * mm, 16 * mm, 14 * mm, 14 * mm, 18 * mm, avail - 138 * mm]))
+
     # ------------------------------------------------------------ next steps
     S.append(Paragraph(f"{sec}. Cross-cutting recommendations", h2)); sec += 1
     for a in rec.plan.augmentations:

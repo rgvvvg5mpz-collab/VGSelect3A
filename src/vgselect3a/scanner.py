@@ -63,6 +63,7 @@ class ScanResult:
     evidence: list[Evidence]
     inferred: list[Inference]
     warnings: list[str] = field(default_factory=list)
+    design: dict[str, Any] = field(default_factory=dict)   # static design-complexity metrics (see report_card.py)
 
     def inferred_profile(self) -> dict[str, Any]:
         return {i.field: i.value for i in self.inferred}
@@ -84,7 +85,7 @@ class ScanResult:
             current_topology_reason=d.get("current_topology_reason", ""),
             evidence=[Evidence(**{k: e[k] for k in ("category", "label", "path", "line", "snippet")}) for e in d.get("evidence", [])],
             inferred=[Inference(**{k: i[k] for k in ("field", "value", "confidence", "reason")}) for i in d.get("inferred", [])],
-            warnings=list(d.get("warnings", [])),
+            warnings=list(d.get("warnings", [])), design=dict(d.get("design", {})),
         )
 
 
@@ -180,6 +181,8 @@ QUALITY_PATTERNS: dict[str, list[str]] = {
     "human-approval": [r"human[_ -]?in[_ -]?the[_ -]?loop|approval|approve\(|confirm\(|requires_confirmation|interrupt\("],
     "memory": [r"memory_20250818", r"ConversationBufferMemory", r"/memories", r"MemorySaver", r"checkpointer"],
     "compaction/context": [r"compact_20260112", r"context_management", r"clear_tool_uses", r"summarize_history|trim_messages"],
+    "termination-limits": [r"max_iterations|max_iter\b|recursion_limit|max_turns|max_steps|max_handoffs|max_rounds|MAX_ITERATIONS|RECURSION_LIMIT|MAX_TOOL_CALLS|max_tool_calls|budget_tokens|task_budget"],
+    "observability/tracing": [r"langsmith|opentelemetry|traceloop|arize|langfuse|phoenix|braintrust|@traceable|trace\.get_tracer"],
 }
 
 
@@ -240,6 +243,7 @@ def scan_repository(root: str | os.PathLike, max_evidence_per_label: int = 5) ->
     long_prompts = 0
     openapi_ops = 0
     system_prompt_files: set[str] = set()
+    prompt_chars = 0
     total_tool_call_sites = 0
     dep_text = ""
 
@@ -323,9 +327,11 @@ def scan_repository(root: str | os.PathLike, max_evidence_per_label: int = 5) ->
                 for line, snip in h[:1]:
                     add("quality", name, p, line, snip)
         # long prompt literals ~ separate roles/agents
-        for m in re.finditer(r"(?:system|SYSTEM|instructions|prompt)[\w]*\s*[:=]\s*[fr]?(?:\"\"\"|'''|`)", text):
+        for m in re.finditer(r"(?:[A-Za-z_]*(?:system|SYSTEM|instructions|INSTRUCTIONS|prompt|PROMPT|persona|PERSONA)[\w]*|[A-Z][A-Z0-9_]{3,})\s*[:=]\s*[fr]?(\"\"\"|'''|`)", text):
             long_prompts += 1
             system_prompt_files.add(str(rel))
+            end = text.find(m.group(1), m.end())
+            prompt_chars += (end - m.end()) if end > 0 else 0
 
     # dependency file mentions (frameworks only)
     for fw, pats in FRAMEWORK_PATTERNS.items():
@@ -340,13 +346,27 @@ def scan_repository(root: str | os.PathLike, max_evidence_per_label: int = 5) ->
     tool_names = sorted(tools)
     tool_count = len(tool_names) + openapi_ops
     current, reason = _current_topology(loop_hits, tool_count, frameworks)
+    overlap = _overlapping(tool_names)
+    design = {
+        "tool_count": tool_count, "tool_overlap_count": len(overlap), "overlapping_tools": overlap[:12],
+        "prompt_definitions": long_prompts, "prompt_files": len(system_prompt_files), "prompt_chars": prompt_chars,
+        "loop_patterns": dict(loop_hits),
+        "delegation_depth": 2 if (loop_hits.get("supervisor/orchestrator") and loop_hits.get("subagents") and loop_hits.get("subagents", 0) > 4) else (1 if (loop_hits.get("subagents") or loop_hits.get("supervisor/orchestrator")) else 0),
+        "parallel_fanout": bool(loop_hits.get("parallel fan-out")), "handoffs": bool(loop_hits.get("handoffs")), "router": bool(loop_hits.get("router")),
+        "evaluator_loop": bool(loop_hits.get("evaluator loop")), "tool_loop": bool(loop_hits.get("manual tool loop") or loop_hits.get("tool runner") or loop_hits.get("langgraph graph")),
+        "termination_limits": "termination-limits" in quality, "memory": "memory" in quality, "context_management": "compaction/context" in quality,
+        "structured_output": "structured-output" in quality, "prompt_caching": "prompt-caching" in quality, "approval_gate": "human-approval" in quality,
+        "evals": "evals" in quality, "tests": "tests" in quality, "tracing": "observability/tracing" in quality,
+        "side_effect_kinds": sorted(side_effects), "irreversible_side_effects": any(v == "irreversible" for v in side_effects.values()),
+        "frameworks": sorted(frameworks), "languages": dict(languages.most_common()),
+    }
     inferred = _infer(languages, frameworks, tool_count, tool_names, sources, side_effects, loop_hits, serving, quality, long_prompts, len(system_prompt_files), total_tool_call_sites)
 
     return ScanResult(
         root=str(root_path), files_scanned=files_scanned, languages=dict(languages.most_common()),
         frameworks=sorted(frameworks), tools=tool_names + ([f"~{openapi_ops} OpenAPI operations"] if openapi_ops else []),
         knowledge_sources=sorted(sources), side_effects=sorted(f"{k} ({v})" for k, v in side_effects.items()),
-        current_topology=current, current_topology_reason=reason, evidence=evidence, inferred=inferred, warnings=warnings,
+        current_topology=current, current_topology_reason=reason, evidence=evidence, inferred=inferred, warnings=warnings, design=design,
     )
 
 

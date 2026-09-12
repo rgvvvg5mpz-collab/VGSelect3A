@@ -20,6 +20,13 @@ catalog** (Anthropic, OpenAI, Google, self-hosted open-weights, or any provider
 you register) under a governance policy, with a fallback per role and a reason
 for every rejected model.
 
+For an agent that already exists, the **agent report card** grades it: design
+complexity from the code, behavioural complexity from run-time traces
+(loops, limit hits, branching, consistency, tokens, latency, cost per
+completed task), task complexity from the profile, mismatch flags between the
+three, graded dimensions, and a card per agent in multi-agent systems. See
+[docs/REPORT_CARD.html](docs/REPORT_CARD.html).
+
 Every recommendation produces two deliverables:
 
 - an **architecture document (PDF)**: summary, evidence, scan findings and
@@ -64,6 +71,7 @@ Full write-up: [docs/METHODOLOGY.html](docs/METHODOLOGY.html) and [docs/MODEL_CA
 | Engineers consuming the service, CLI or skill | [Consumer guide](docs/CONSUMER_GUIDE.html) - endpoints, profile fields, policy, reading results, PDF and skeleton, CI use |
 | Architects and reviewers | [Methodology](docs/METHODOLOGY.html) - how the recommendation, estimates, plan, model selection and skeleton are computed |
 | Platform teams | [Model catalog](docs/MODEL_CATALOG.html) - catalog schema, per-role requirements, the selection procedure, policy, maintenance |
+| Developers with a running agent | [Report card](docs/REPORT_CARD.html) - complexity axes, metrics, grading, mismatch flags, trace format |
 | Everyone | [Industry guidance](docs/industry_guidance.html) - the evidence behind every rule and how vendor patterns map to topologies |
 | API consumers | [OpenAPI spec](openapi/vgselect-3a.openapi.json) - also live at `/openapi.json`, Swagger at `/docs` |
 | Claude Code users | [Skill](.claude/skills/vg-select-3a/SKILL.md) - scan, recommend, and produce both deliverables from the editor |
@@ -90,6 +98,7 @@ vgselect recommend --profile my_app.json --format json                 # md | js
 vgselect recommend --scan . --format pdf --out architecture.pdf        # architecture document
 vgselect scaffold --scan . --out my-agent.zip                          # LangGraph project skeleton
 vgselect catalog                                                       # the model ecosystem
+vgselect report-card --scan . --traces runs.jsonl                      # grade an existing agent from code + traces
 vgselect recommend --scan . --catalog my_catalog.json --providers anthropic,self_hosted --regions eu
 vgselect wizard --out my_app.json                                      # interactive questionnaire
 vgselect fields                                                        # every profile field explained
@@ -205,10 +214,12 @@ src/vgselect3a/
   catalog.py        model ecosystem catalog (ModelSpec, Catalog); catalogs/default.json
   requirements.py   per-role requirements derived from the plan
   model_selector.py filters, scoring, cross-role constraints, fallbacks -> model per role
+  traces.py         run-time trace format, adapters (LangSmith, OTel), behavioural metrics, synthetic traces
+  report_card.py    complexity levels, mismatch flags, graded dimensions, per-agent cards
   render.py         Markdown / JSON / Mermaid / SVG and the shared diagram layout
   pdf_report.py     architecture document (PDF, reportlab)
   scaffold/         LangGraph project skeleton generator, one template per topology, provider-aware
-  cli.py            vgselect scan | recommend | scaffold | catalog | wizard | describe | examples | fields
+  cli.py            vgselect scan | recommend | scaffold | report-card | catalog | wizard | describe | examples | fields
   intake_llm.py     optional Claude-powered prose -> profile
   service/          FastAPI app, Pydantic schemas (generated from the profile), static UI
   examples/         eight canonical profiles

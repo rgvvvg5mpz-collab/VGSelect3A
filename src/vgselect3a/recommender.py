@@ -10,8 +10,10 @@ from .decomposition import Plan, build_plan
 from .estimator import Estimate, estimate
 from .model_selector import Selection, SelectionPolicy, select_models
 from .profile import WorkloadProfile
+from .report_card import ReportCard, build_report_card
 from .rules import Signal, evaluate_rules
 from .scanner import ScanResult
+from .traces import TraceSet
 from .topologies import MODEL_TIERS, TOPOLOGIES, ModelTier, Topology
 
 LATENCY_RULES = {"R23", "R24", "R25"}
@@ -78,6 +80,7 @@ class Recommendation:
     selection: Selection | None = None
     selected_estimate: Estimate | None = None
     tiers: dict[str, ModelTier] = field(default_factory=lambda: dict(MODEL_TIERS))
+    report_card: ReportCard | None = None
 
     @property
     def primary(self) -> Candidate:
@@ -102,6 +105,9 @@ class Recommendation:
     def to_svg(self) -> str:
         from .render import to_svg
         return to_svg(self.plan)
+
+    def to_report_card_markdown(self) -> str:
+        return self.report_card.to_markdown() if self.report_card else ""
 
     def to_pdf(self) -> bytes:
         """Architecture document (needs the `pdf` extra)."""
@@ -178,7 +184,7 @@ def tiers_from_catalog(p: WorkloadProfile, catalog: Catalog, policy: SelectionPo
 
 
 def recommend(p: WorkloadProfile, scan: ScanResult | None = None, catalog: Catalog | None = None,
-              policy: SelectionPolicy | None = None) -> Recommendation:
+              policy: SelectionPolicy | None = None, traces: TraceSet | None = None) -> Recommendation:
     """Rank topologies for a profile. Pass the ScanResult the profile was derived
     from so the report can show the current-vs-recommended gap. `catalog` and
     `policy` describe the model ecosystem; the bundled catalog is used otherwise."""
@@ -233,6 +239,8 @@ def recommend(p: WorkloadProfile, scan: ScanResult | None = None, catalog: Catal
             object.__setattr__(sel_tiers[c.tier], "_selected", True) if False else None
     selected_estimate = estimate(p, cands[0].topology.id, sel_tiers)
     rec = Recommendation(p, cands, plan, frontier, fastest, accurate, _headline(p, cands[0], fastest, accurate), scan, selection, selected_estimate, tiers)
+    if scan is not None or traces is not None:
+        rec.report_card = build_report_card(p, scan=scan, traces=traces, rec=rec)
     if scan is not None and scan.current_topology not in ("none", cands[0].topology.id):
         cur = next((c for c in cands if c.topology.id == scan.current_topology), None)
         if cur is not None:

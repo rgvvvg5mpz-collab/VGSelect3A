@@ -23,7 +23,7 @@
 <p class="sub">For engineers who want an architecture recommendation for an agentic application from a running <b>VG Select: 3A</b> service, the CLI, the Python library or the Claude Code skill. Deployers should read the <a href="DEPLOYMENT.html">Deployment guide</a>; the reasoning behind the answers is in <a href="METHODOLOGY.html">Methodology</a>; model selection in <a href="MODEL_CATALOG.html">Model catalog</a>; the evidence in <a href="industry_guidance.html">Industry guidance</a>.</p>
 
 <nav>
-  <a href="#quick">60-second version</a><a href="#ways">Ways to consume</a><a href="#endpoints">Endpoints</a><a href="#profile">Profile</a><a href="#result">Reading the result</a><a href="#models">Model per role</a><a href="#deliverables">Deliverables</a><a href="#clients">Client snippets</a><a href="#ci">CI</a><a href="#skill">Claude Code skill</a><a href="#faq">FAQ</a>
+  <a href="#quick">60-second version</a><a href="#ways">Ways to consume</a><a href="#endpoints">Endpoints</a><a href="#profile">Profile</a><a href="#result">Reading the result</a><a href="#models">Model per role</a><a href="#deliverables">Deliverables</a><a href="#clients">Client snippets</a><a href="#ci">CI</a><a href="#skill">Claude Code skill</a><a href="#card">Report card</a><a href="#faq">FAQ</a>
 </nav>
 
 <h2 id="quick">1. The 60-second version</h2>
@@ -66,6 +66,7 @@ curl -s "$VGSELECT_URL/api/v1/recommend/skeleton" -H 'content-type: application/
 <tr><td>POST</td><td><code>/api/v1/recommend/pdf</code></td><td><code>{"profile": {...}, "scan": &lt;scan object, optional&gt;, "policy": {...}}</code></td><td><code>application/pdf</code> architecture document (503 if the server lacks reportlab)</td></tr>
 <tr><td>POST</td><td><code>/api/v1/recommend/skeleton</code></td><td><code>{"profile": {...}, "scan": &lt;optional&gt;, "policy": {...}, "framework": "langgraph"}</code></td><td><code>application/zip</code> runnable project skeleton</td></tr>
 <tr><td>POST</td><td><code>/api/v1/describe</code></td><td><code>{"text": "prose description", "model": "claude-opus-5", "overrides": {...}, "policy": {...}}</code></td><td><code>RecommendationOut</code> (503 if the server has no Anthropic credentials)</td></tr>
+<tr><td>POST</td><td><code>/api/v1/report-card</code></td><td><code>{"profile": {...}, "scan": &lt;optional&gt;, "traces": [...]}</code></td><td>Agent report card (JSON plus <code>markdown</code>); see <a href="REPORT_CARD.html">Report card</a></td></tr>
 <tr><td>GET</td><td><code>/api/v1/catalog</code></td><td></td><td>The model ecosystem catalog (models, providers, platforms, regions)</td></tr>
 <tr><td>POST</td><td><code>/api/v1/catalog/validate</code></td><td><code>[ModelSpec, ...]</code></td><td>Validates entries; lists illustrative ones</td></tr>
 <tr><td>GET</td><td><code>/api/v1/fields</code></td><td></td><td>Profile field definitions (name, kind, choices, range, description, group)</td></tr>
@@ -101,6 +102,7 @@ curl -s "$VGSELECT_URL/api/v1/recommend/skeleton" -H 'content-type: application/
   <li><code>candidates[]</code>: all ten topologies, ranked. <code>score</code> = <code>fit</code> (rule evidence) + <code>latency_adj</code> + <code>cost_adj</code>. <code>quality_proxy</code> is the fit excluding latency and cost rules. <code>latency_verdict</code> is fits / tight / exceeds / far over against your budget. <code>viable=false</code> means the topology cannot do the job (<code>infeasible_reason</code>). Each candidate lists its <code>signals</code> (rule id, delta, rationale, citation) and <code>estimate.assumptions</code>.</li>
   <li><code>frontier[]</code>: the Pareto set over (latency, quality_proxy). <code>fastest_viable</code> and <code>most_accurate</code> are the two ends.</li>
   <li><code>plan</code>: components (name, role, <code>model_id</code>, <code>provider</code>, <code>fallback_model</code>, <code>tier</code>, <code>effort</code>, tools, <code>parallel_group</code>), edges, <code>briefing_rules</code> for subagents, and <code>augmentations</code> (cross-cutting recommendations with citations).</li>
+  <li><code>report_card</code>: present when a scan or traces were supplied: complexity levels, graded dimensions, mismatches, per-agent cards (<a href="REPORT_CARD.html">Report card</a>).</li>
   <li><code>selection</code>: model per role (see section 6). <code>selected_estimate</code> re-runs the topology estimate on the chosen models; <code>tiers</code> lists the reference model per capability level used for the ranking.</li>
   <li><code>mermaid</code>: a flowchart of the plan for docs and wikis; <code>svg</code>: the same diagram rendered server-side as standalone SVG.</li>
   <li><code>scan</code>: present when the recommendation came from a scan: frameworks, tools, sources, side effects, <code>current_topology</code>, <code>inferred[]</code> with confidence, and <code>evidence[]</code> with file:line.</li>
@@ -199,6 +201,11 @@ PY</code></pre>
 
 <h2 id="skill">10. The Claude Code skill</h2>
 <p>Copy <code>.claude/skills/vg-select-3a/</code> into your project (or <code>~/.claude/skills/</code>) and set <code>VGSELECT_URL</code> if you have a deployment. Then ask Claude Code, for example, "Should this agent be split into subagents?" It scans the repository, asks for the few fields code cannot reveal (including data sensitivity and provider or region constraints), runs the recommender, reports the topology, the gap from the current implementation, the latency/accuracy frontier, the plan and the model per role, and writes the architecture PDF and the skeleton zip.</p>
+
+<h2 id="card">10a. Grading an agent you already run</h2>
+<p>Export run-time traces (JSONL in the <code>vgselect-trace/1</code> format, a LangSmith run export, or OpenTelemetry GenAI spans) and add them to a scan or recommend request, or upload them on the Scan tab. The response and the PDF gain an <b>agent report card</b>: task, design and behavioural complexity, mismatch flags (over-built, loops without limits, unpredictable path, coordination waste, under-verified), graded dimensions, and a card per agent for multi-agent systems. Format and grading rules: <a href="REPORT_CARD.html">Report card</a>.</p>
+<pre><code>vgselect report-card --scan . --traces runs.jsonl --set latency_budget_s=8 --set accuracy_priority=4
+curl -s "$VGSELECT_URL/api/v1/scan/upload" -F archive=@repo.zip -F traces=@runs.jsonl -F 'overrides={"latency_budget_s": 8}'</code></pre>
 
 <h2 id="faq">11. FAQ</h2>
 <ul>

@@ -1,8 +1,8 @@
 {
   "root": "/Users/saxena/Desktop/ClaudeCode_GIT/AgentTopologyBuilder/case_study/02_robo_advisor",
-  "files_scanned": 7,
+  "files_scanned": 8,
   "languages": {
-    "python": 2
+    "python": 3
   },
   "frameworks": [
     "anthropic-sdk",
@@ -29,6 +29,34 @@
   "current_topology": "evaluator_optimizer",
   "current_topology_reason": "Generator with an evaluator/critic and iteration cap.",
   "evidence": [
+    {
+      "category": "agent_patterns",
+      "label": "evaluator loop",
+      "path": "evals/run_eval.py",
+      "line": 1,
+      "snippet": "\"\"\"Compliance eval: 240 conversations from the LangSmith dataset scored by an LLM judge against rubric.md.\"\"\""
+    },
+    {
+      "category": "agent_patterns",
+      "label": "evaluator loop",
+      "path": "evals/run_eval.py",
+      "line": 7,
+      "snippet": "def suitability_judge(run, example) -> dict:"
+    },
+    {
+      "category": "quality",
+      "label": "evals",
+      "path": "evals/run_eval.py",
+      "line": 1,
+      "snippet": "\"\"\"Compliance eval: 240 conversations from the LangSmith dataset scored by an LLM judge against rubric.md.\"\"\""
+    },
+    {
+      "category": "quality",
+      "label": "observability/tracing",
+      "path": "evals/run_eval.py",
+      "line": 1,
+      "snippet": "\"\"\"Compliance eval: 240 conversations from the LangSmith dataset scored by an LLM judge against rubric.md.\"\"\""
+    },
     {
       "category": "frameworks",
       "label": "anthropic-sdk",
@@ -217,7 +245,7 @@
       "field": "scope_breadth",
       "value": 1,
       "confidence": 0.4,
-      "reason": "0 file(s) define system prompts/instructions; routing/handoffs raise this."
+      "reason": "1 file(s) define system prompts/instructions; routing/handoffs raise this."
     },
     {
       "field": "parallel_subtasks",
@@ -251,9 +279,9 @@
     },
     {
       "field": "verifiability",
-      "value": "none",
-      "confidence": 0.3,
-      "reason": "No tests, evals or schemas found."
+      "value": "strong",
+      "confidence": 0.6,
+      "reason": "Eval harness present."
     },
     {
       "field": "human_in_loop",
@@ -281,6 +309,48 @@
     }
   ],
   "warnings": [],
+  "design": {
+    "tool_count": 10,
+    "tool_overlap_count": 3,
+    "overlapping_tools": [
+      "search_methodology",
+      "search_policy",
+      "search_products"
+    ],
+    "prompt_definitions": 1,
+    "prompt_files": 1,
+    "prompt_chars": 132,
+    "loop_patterns": {
+      "evaluator loop": 9,
+      "tool runner": 2
+    },
+    "delegation_depth": 0,
+    "parallel_fanout": false,
+    "handoffs": false,
+    "router": false,
+    "evaluator_loop": true,
+    "tool_loop": true,
+    "termination_limits": false,
+    "memory": true,
+    "context_management": false,
+    "structured_output": false,
+    "prompt_caching": false,
+    "approval_gate": true,
+    "evals": true,
+    "tests": false,
+    "tracing": true,
+    "side_effect_kinds": [
+      "external-post"
+    ],
+    "irreversible_side_effects": true,
+    "frameworks": [
+      "anthropic-sdk",
+      "langgraph"
+    ],
+    "languages": {
+      "python": 3
+    }
+  },
   "inferred_profile": {
     "tool_count": 10,
     "tool_calls_per_task": 6,
@@ -295,7 +365,7 @@
     "task_complexity": "complex",
     "latency_budget_s": 8.0,
     "interaction": "multi_turn",
-    "verifiability": "none",
+    "verifiability": "strong",
     "human_in_loop": true,
     "error_recoverability": "hard",
     "accuracy_priority": 4,

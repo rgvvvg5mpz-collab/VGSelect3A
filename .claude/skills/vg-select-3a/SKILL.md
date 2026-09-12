@@ -49,6 +49,8 @@ not produce.
    ```
    (`--format pdf` needs the `pdf` extra: `pip install -e '.[pdf]'`.) Offer to unzip the skeleton into a directory the user names (never over an existing project without asking) and to run its smoke test (`pip install -r requirements.txt && pytest`). Summarise what the skeleton contains: graph wiring for the topology, role agents on the recommended models, tool stubs named after the repository's tools, termination limits, and the TODOs to fill in.
 
+6. **If the agent already runs in production or has eval traces**, ask for a traces export (JSONL `vgselect-trace/1`, LangSmith run export, or OTel GenAI spans; format in `docs/REPORT_CARD.html`) and add `--traces FILE` to the commands above, or run `vgselect report-card --scan . --traces FILE`. Report the overall grade, the three complexity levels, the mismatch flags with their actions, the weakest dimension, and the per-agent rows for multi-agent systems.
+
 ## Rules of thumb the engine encodes (so you can sanity-check output)
 
 - Start simple: single call -> single agent -> workflow -> multi-agent, promoting only on measured need.

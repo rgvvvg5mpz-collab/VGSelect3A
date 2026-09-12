@@ -881,6 +881,46 @@
       }
     ],
     "warnings": [],
+    "design": {
+      "tool_count": 7,
+      "tool_overlap_count": 5,
+      "overlapping_tools": [
+        "get_balances",
+        "get_contributions_ytd",
+        "get_cost_basis",
+        "get_positions",
+        "get_transactions"
+      ],
+      "prompt_definitions": 1,
+      "prompt_files": 1,
+      "prompt_chars": 166,
+      "loop_patterns": {
+        "tool runner": 2
+      },
+      "delegation_depth": 0,
+      "parallel_fanout": false,
+      "handoffs": false,
+      "router": false,
+      "evaluator_loop": false,
+      "tool_loop": true,
+      "termination_limits": false,
+      "memory": false,
+      "context_management": false,
+      "structured_output": false,
+      "prompt_caching": false,
+      "approval_gate": false,
+      "evals": false,
+      "tests": true,
+      "tracing": false,
+      "side_effect_kinds": [],
+      "irreversible_side_effects": false,
+      "frameworks": [
+        "anthropic-sdk"
+      ],
+      "languages": {
+        "python": 3
+      }
+    },
     "inferred_profile": {
       "tool_count": 7,
       "tool_calls_per_task": 4,
@@ -1002,5 +1042,373 @@
     "opus": "acme-onprem-70b",
     "sonnet": "acme-onprem-70b",
     "haiku": "acme-onprem-70b"
+  },
+  "report_card": {
+    "name": "account_inquiry",
+    "mode": "full",
+    "overall_score": 63.8,
+    "overall_grade": "D",
+    "summary": "Full report card for **account_inquiry**: overall **D** (63.8/100). Task complexity 2 (simple), design 4 (complex), behaviour 5 (open-ended). Weakest dimension: Latency (F).",
+    "complexity": {
+      "task": {
+        "level": 2,
+        "label": "simple"
+      },
+      "design": {
+        "level": 4,
+        "label": "complex"
+      },
+      "behaviour": {
+        "level": 5,
+        "label": "open-ended"
+      }
+    },
+    "design_metrics": {
+      "tool_count": 7,
+      "tool_overlap_count": 5,
+      "overlapping_tools": [
+        "get_balances",
+        "get_contributions_ytd",
+        "get_cost_basis",
+        "get_positions",
+        "get_transactions"
+      ],
+      "prompt_definitions": 1,
+      "prompt_files": 1,
+      "prompt_chars": 166,
+      "loop_patterns": {
+        "tool runner": 2
+      },
+      "delegation_depth": 0,
+      "parallel_fanout": false,
+      "handoffs": false,
+      "router": false,
+      "evaluator_loop": false,
+      "tool_loop": true,
+      "termination_limits": false,
+      "memory": false,
+      "context_management": false,
+      "structured_output": false,
+      "prompt_caching": false,
+      "approval_gate": false,
+      "evals": false,
+      "tests": true,
+      "tracing": false,
+      "side_effect_kinds": [],
+      "irreversible_side_effects": false,
+      "frameworks": [
+        "anthropic-sdk"
+      ],
+      "languages": {
+        "python": 3
+      }
+    },
+    "behaviour": {
+      "runs": 160,
+      "tasks": 80,
+      "success_rate": 0.844,
+      "steps": {
+        "mean": 7.24,
+        "p50": 7.0,
+        "p95": 17.1,
+        "std": 4.26,
+        "cv": 0.59,
+        "max": 22
+      },
+      "llm_calls": {
+        "mean": 3.95,
+        "p50": 4.0,
+        "p95": 8.0,
+        "std": 1.72,
+        "cv": 0.44,
+        "max": 9
+      },
+      "tool_calls": {
+        "mean": 3.29,
+        "p50": 3.0,
+        "p95": 10.0,
+        "std": 2.59,
+        "cv": 0.79,
+        "max": 13
+      },
+      "distinct_tools": 4,
+      "tool_error_rate": 0.03,
+      "repetition_rate": 0.1,
+      "termination_limit_rate": 0.044,
+      "timeout_error_rate": 0.025,
+      "handoffs_per_run": 0.0,
+      "spawns_per_run": 0.0,
+      "verify_rate": 0.0,
+      "human_rate": 0.0,
+      "branching_factor": 2.4,
+      "trajectory_diversity": 0.47,
+      "consistency": 0.71,
+      "pass_all_runs": 0.7,
+      "tokens_per_run": {
+        "mean": 22165.39,
+        "p50": 19143.0,
+        "p95": 58229.75,
+        "std": 14717.42,
+        "cv": 0.66,
+        "max": 77267
+      },
+      "peak_context": {
+        "mean": 6731.29,
+        "p50": 6287.0,
+        "p95": 10808.1,
+        "std": 2142.84,
+        "cv": 0.32,
+        "max": 13537
+      },
+      "context_growth_per_step": 1159.9,
+      "latency_ms": {
+        "mean": 17388.42,
+        "p50": 16868.35,
+        "p95": 31931.89,
+        "std": 7005.46,
+        "cv": 0.4,
+        "max": 39568.3
+      },
+      "cost_per_run": 0.0506,
+      "cost_per_completed_task": 0.05998,
+      "successes_per_1k_tokens": 0.038
+    },
+    "dimensions": [
+      {
+        "id": "quality",
+        "name": "Outcome quality",
+        "score": 80.4,
+        "grade": "B",
+        "findings": [
+          "Only 71% of repeated tasks agree on outcome across runs: reliability across runs is low (Galileo reports 60% single-run falling to 25% over eight runs)."
+        ],
+        "metrics": {
+          "success_rate": 0.844,
+          "consistency": 0.71,
+          "pass_all_runs": 0.7,
+          "tasks": 80,
+          "runs": 160
+        },
+        "weight": 30
+      },
+      {
+        "id": "reliability",
+        "name": "Reliability and control",
+        "score": 57.9,
+        "grade": "F",
+        "findings": [
+          "No termination limits found in code while runs are long or loop: every loop needs a cap.",
+          "High-stakes workload with little verification in traces and no eval harness in code (verification failures are ~25% of multi-agent failures)."
+        ],
+        "metrics": {
+          "repetition_rate": 0.1,
+          "termination_limit_rate": 0.044,
+          "timeout_error_rate": 0.025,
+          "tool_error_rate": 0.03,
+          "verify_rate": 0.0,
+          "termination_limits_in_code": false
+        },
+        "weight": 20
+      },
+      {
+        "id": "efficiency",
+        "name": "Cost and token efficiency",
+        "score": 89.0,
+        "grade": "B",
+        "findings": [
+          "Measured 22,165 tokens per run is 1.8x the estimate for this topology: look for redundant reading, missing caching, or over-long tool results."
+        ],
+        "metrics": {
+          "tokens_per_run": {
+            "mean": 22165.39,
+            "p50": 19143.0,
+            "p95": 58229.75,
+            "std": 14717.42,
+            "cv": 0.66,
+            "max": 77267
+          },
+          "expected_tokens": 12480,
+          "ratio_to_estimate": 1.78,
+          "cost_per_run": 0.0506,
+          "cost_per_completed_task": 0.05998,
+          "successes_per_1k_tokens": 0.038,
+          "peak_context": {
+            "mean": 6731.29,
+            "p50": 6287.0,
+            "p95": 10808.1,
+            "std": 2142.84,
+            "cv": 0.32,
+            "max": 13537
+          },
+          "context_growth_per_step": 1159.9
+        },
+        "weight": 15
+      },
+      {
+        "id": "latency",
+        "name": "Latency",
+        "score": 10.0,
+        "grade": "F",
+        "findings": [
+          "Median latency 16.9s exceeds the 5s budget.",
+          "p95 latency 31.9s is 6.4x the budget: the tail is driven by long tool chains or loops."
+        ],
+        "metrics": {
+          "p50_s": 16.87,
+          "p95_s": 31.93,
+          "max_s": 39.57,
+          "budget_s": 5.0
+        },
+        "weight": 15
+      },
+      {
+        "id": "governance",
+        "name": "Governance and guardrails",
+        "score": 60.0,
+        "grade": "D",
+        "findings": [
+          "Tests exist but no eval harness for model behaviour.",
+          "Loops or delegation without termination limits in code.",
+          "No tracing/observability library detected; multi-agent failures cannot be diagnosed without per-turn traces.",
+          "High-stakes outputs without schema-validated structured output."
+        ],
+        "metrics": {
+          "evals": false,
+          "tests": true,
+          "approval_gate": false,
+          "termination_limits": false,
+          "tracing": false,
+          "structured_output": false,
+          "memory": false,
+          "context_management": false,
+          "prompt_caching": false,
+          "irreversible_side_effects": false
+        },
+        "weight": 10
+      },
+      {
+        "id": "fit",
+        "name": "Complexity fit",
+        "score": 72.0,
+        "grade": "C",
+        "findings": [
+          "Over-built for the task",
+          "High stakes, little verification",
+          "Overlapping tools"
+        ],
+        "metrics": {
+          "task_level": 2,
+          "design_level": 4,
+          "behaviour_level": 5
+        },
+        "weight": 10
+      }
+    ],
+    "mismatches": [
+      {
+        "id": "over_built",
+        "severity": "warn",
+        "title": "Over-built for the task",
+        "detail": "Design complexity is level 4 (complex) for a level-2 (simple) task.",
+        "action": "Collapse structure: fewer roles, a single agent or a code-defined workflow; multi-agent costs ~15x chat tokens."
+      },
+      {
+        "id": "under_verified",
+        "severity": "warn",
+        "title": "High stakes, little verification",
+        "detail": "Only 0% of runs include a verification step for a stakes-5 workload.",
+        "action": "Add an evaluator/verifier step (tests, schema checks, or an independent model) before returning."
+      },
+      {
+        "id": "tool_overlap",
+        "severity": "info",
+        "title": "Overlapping tools",
+        "detail": "5 tools share a name stem (get_balances, get_contributions_ytd, get_cost_basis, get_positions).",
+        "action": "Consolidate or namespace tools; overlap, not count, is what confuses agents (OpenAI)."
+      }
+    ],
+    "agents": [
+      {
+        "agent": "agent",
+        "role": "Plans and executes the whole task in one tool-use loop.",
+        "model": "acme-onprem-70b",
+        "behaviour": {
+          "runs": 160,
+          "tasks": 80,
+          "success_rate": 0.844,
+          "steps": {
+            "mean": 7.24,
+            "p50": 7.0,
+            "p95": 17.1,
+            "std": 4.26,
+            "cv": 0.59,
+            "max": 22
+          },
+          "llm_calls": {
+            "mean": 3.95,
+            "p50": 4.0,
+            "p95": 8.0,
+            "std": 1.72,
+            "cv": 0.44,
+            "max": 9
+          },
+          "tool_calls": {
+            "mean": 3.29,
+            "p50": 3.0,
+            "p95": 10.0,
+            "std": 2.59,
+            "cv": 0.79,
+            "max": 13
+          },
+          "distinct_tools": 4,
+          "tool_error_rate": 0.03,
+          "repetition_rate": 0.1,
+          "termination_limit_rate": 0.044,
+          "timeout_error_rate": 0.025,
+          "handoffs_per_run": 0.0,
+          "spawns_per_run": 0.0,
+          "verify_rate": 0.0,
+          "human_rate": 0.0,
+          "branching_factor": 2.4,
+          "trajectory_diversity": 0.47,
+          "consistency": 0.71,
+          "pass_all_runs": 0.7,
+          "tokens_per_run": {
+            "mean": 22165.39,
+            "p50": 19143.0,
+            "p95": 58229.75,
+            "std": 14717.42,
+            "cv": 0.66,
+            "max": 77267
+          },
+          "peak_context": {
+            "mean": 6731.29,
+            "p50": 6287.0,
+            "p95": 10808.1,
+            "std": 2142.84,
+            "cv": 0.32,
+            "max": 13537
+          },
+          "context_growth_per_step": 1159.9,
+          "latency_ms": {
+            "mean": 17388.42,
+            "p50": 16868.35,
+            "p95": 31931.93,
+            "std": 7005.46,
+            "cv": 0.4,
+            "max": 39568.29
+          },
+          "cost_per_run": 0.0506,
+          "cost_per_completed_task": 0.05998,
+          "successes_per_1k_tokens": 0.038
+        },
+        "grade": "A",
+        "score": 100.0,
+        "findings": [
+          "stable: no loops, low variance, no tool errors"
+        ]
+      }
+    ],
+    "trace_warnings": []
   }
 }

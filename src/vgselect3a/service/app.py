@@ -36,6 +36,7 @@ from ..profile import FIELD_SPECS, WorkloadProfile
 from ..recommender import recommend
 from ..render import CITATIONS
 from ..scanner import ScanResult, merge_profile, scan_repository
+from ..traces import parse_records
 from ..topologies import TOPOLOGIES
 from .schemas import DeliverableRequest, DescribeRequest, HealthOut, RecommendRequest, RecommendationOut, ScanOut, ScanRequest
 
@@ -43,6 +44,7 @@ TAGS = [
     {"name": "recommend", "description": "Rank topologies for a workload profile and return a decomposition plan."},
     {"name": "scan", "description": "Scan a code repository to infer the workload profile before recommending."},
     {"name": "deliverables", "description": "Architecture document (PDF) and downloadable agent skeleton (zip) for the recommendation."},
+    {"name": "report-card", "description": "Grade an existing agent: design complexity from code, behavioural complexity from traces."},
     {"name": "reference", "description": "Field definitions, bundled examples, topology catalog."},
     {"name": "catalog", "description": "The model ecosystem catalog used for per-role model selection."},
 ]
@@ -126,12 +128,14 @@ def _profile_dict(model: Any) -> dict[str, Any]:
     return {k: v for k, v in model.model_dump(exclude_none=True).items()}
 
 
-def _rec_out(profile_data: dict[str, Any], scan: ScanResult | None, include_markdown: bool, policy: Any = None, catalog_models: list[dict[str, Any]] | None = None) -> RecommendationOut:
+def _rec_out(profile_data: dict[str, Any], scan: ScanResult | None, include_markdown: bool, policy: Any = None, catalog_models: list[dict[str, Any]] | None = None,
+             traces: list[dict[str, Any]] | None = None) -> RecommendationOut:
     try:
         profile = WorkloadProfile.from_dict(profile_data)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
-    rec = recommend(profile, scan=scan, catalog=_catalog_for(catalog_models), policy=_policy_for(policy))
+    ts = parse_records(traces, "request") if traces else None
+    rec = recommend(profile, scan=scan, catalog=_catalog_for(catalog_models), policy=_policy_for(policy), traces=ts)
     data = rec.to_dict()
     data["product"] = PRODUCT_NAME
     data["version"] = __version__
@@ -165,12 +169,12 @@ def _clone(url: str) -> Path:
     return tmp / "repo"
 
 
-def _scan_and_maybe_recommend(root: Path, overrides: dict[str, Any], do_recommend: bool, include_markdown: bool, policy: Any = None, catalog_models=None) -> ScanOut:
+def _scan_and_maybe_recommend(root: Path, overrides: dict[str, Any], do_recommend: bool, include_markdown: bool, policy: Any = None, catalog_models=None, traces=None) -> ScanOut:
     scan = scan_repository(root)
     profile = merge_profile(scan, overrides)
     out = ScanOut(scan=scan.to_dict(), profile=profile)
     if do_recommend:
-        out.recommendation = _rec_out(profile, scan, include_markdown, policy, catalog_models)
+        out.recommendation = _rec_out(profile, scan, include_markdown, policy, catalog_models, traces)
     return out
 
 
@@ -240,7 +244,7 @@ def examples() -> list[dict[str, Any]]:
 
 @app.post("/api/v1/recommend", response_model=RecommendationOut, tags=["recommend"], summary="Recommend a topology for a profile")
 def api_recommend(req: RecommendRequest) -> RecommendationOut:
-    return _rec_out(_profile_dict(req.profile), None, req.include_markdown, req.policy, req.catalog_models)
+    return _rec_out(_profile_dict(req.profile), None, req.include_markdown, req.policy, req.catalog_models, req.traces)
 
 
 def _rec_for_deliverable(req: DeliverableRequest):
@@ -250,7 +254,7 @@ def _rec_for_deliverable(req: DeliverableRequest):
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     catalog = _catalog_for(req.catalog_models)
-    rec = recommend(profile, scan=scan, catalog=catalog, policy=_policy_for(req.policy))
+    rec = recommend(profile, scan=scan, catalog=catalog, policy=_policy_for(req.policy), traces=parse_records(req.traces, "request") if req.traces else None)
     rec._catalog = catalog  # lets the skeleton resolve providers for request-supplied entries
     return rec
 
@@ -276,6 +280,16 @@ def api_recommend_skeleton(req: DeliverableRequest) -> Response:
     return Response(content=data, media_type="application/zip", headers={"Content-Disposition": f'attachment; filename="{name}-{req.framework}-skeleton.zip"'})
 
 
+@app.post("/api/v1/report-card", tags=["report-card"], summary="Agent report card from a profile, optional scan object and run-time traces")
+def api_report_card(req: DeliverableRequest) -> dict[str, Any]:
+    rec = _rec_for_deliverable(req)
+    from ..report_card import build_report_card
+    card = rec.report_card or build_report_card(rec.profile, scan=rec.scan, traces=parse_records(req.traces, "request") if req.traces else None, rec=rec)
+    d = card.to_dict()
+    d["markdown"] = card.to_markdown()
+    return d
+
+
 @app.post("/api/v1/scan", response_model=ScanOut, tags=["scan"], summary="Scan a repository by server path or git URL")
 def api_scan(req: ScanRequest) -> ScanOut:
     if bool(req.path) == bool(req.git_url):
@@ -287,7 +301,7 @@ def api_scan(req: ScanRequest) -> ScanOut:
         else:
             root = _clone(req.git_url or "")
             tmp = root.parent
-        return _scan_and_maybe_recommend(root, _profile_dict(req.overrides), req.recommend, req.include_markdown, req.policy, req.catalog_models)
+        return _scan_and_maybe_recommend(root, _profile_dict(req.overrides), req.recommend, req.include_markdown, req.policy, req.catalog_models, req.traces)
     finally:
         if tmp:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -300,6 +314,7 @@ async def api_scan_upload(
     recommend: bool = Form(True),
     include_markdown: bool = Form(True),
     policy: str = Form("{}", description="JSON SelectionPolicy object."),
+    traces: UploadFile | None = File(None, description="Optional run-time traces file (JSONL, JSON array, LangSmith export or OTel spans)."),
 ) -> ScanOut:
     limit = int(os.environ.get("VGSELECT_MAX_UPLOAD_MB", "50")) * 1024 * 1024
     data = await archive.read()
@@ -310,6 +325,18 @@ async def api_scan_upload(
         pol = SelectionPolicy.from_dict(json.loads(policy or "{}"))
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=422, detail=f"overrides/policy is not valid JSON: {e}") from e
+    trace_records = None
+    if traces is not None:
+        raw = (await traces.read()).decode("utf-8", errors="ignore").strip()
+        try:
+            if raw.startswith("["):
+                trace_records = json.loads(raw)
+            elif raw.startswith("{") and "\n" not in raw:
+                d0 = json.loads(raw); trace_records = d0.get("runs") or d0.get("spans") or d0.get("records") or [d0]
+            else:
+                trace_records = [json.loads(line) for line in raw.splitlines() if line.strip()]
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=422, detail=f"traces file is not valid JSON/JSONL: {e}") from e
     tmp = Path(tempfile.mkdtemp(prefix="vgselect-"))
     try:
         with zipfile.ZipFile(io.BytesIO(data)) as zf:
@@ -321,7 +348,7 @@ async def api_scan_upload(
         # if the archive wraps everything in one top-level folder, descend into it
         entries = [p for p in tmp.iterdir() if not p.name.startswith("__MACOSX")]
         root = entries[0] if len(entries) == 1 and entries[0].is_dir() else tmp
-        return _scan_and_maybe_recommend(root, ov, recommend, include_markdown, _PolicyShim(pol))
+        return _scan_and_maybe_recommend(root, ov, recommend, include_markdown, _PolicyShim(pol), None, trace_records)
     except zipfile.BadZipFile as e:
         raise HTTPException(status_code=422, detail="Upload is not a valid zip archive.") from e
     finally:
