@@ -372,7 +372,7 @@ curl -s http://localhost:8080/api/v1/catalog | python -c 'import sys,json; d=jso
 
 # the UI and the user guide
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/ ; curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/guide</code></pre>
-<p>Run the test suite before promoting a build: <code>pip install -e '.[dev]' && pytest</code> (77 tests: engine, scanner, catalog and model selection, traces and report card, every endpoint, PDF generation, and syntax checks of the generated skeleton for all ten topologies).</p>
+<p>Run the test suite before promoting a build: <code>pip install -e '.[dev]' && pytest</code> (78 tests: engine, scanner, catalog and model selection, traces and report card, every endpoint, PDF generation, and syntax checks of the generated skeleton for all ten topologies).</p>
 
 <h2 id="troubleshoot">12. Troubleshooting</h2>
 <table>

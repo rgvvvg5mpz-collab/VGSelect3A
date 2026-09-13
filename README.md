@@ -188,19 +188,25 @@ generated skeleton runs mixed-provider plans through LangChain's
 
 ## The web UI
 
-A guided three-step flow in Vanguard colours. Start from a bundled scenario, a
-repository scan (zip upload, server path, or git URL), a prose description, or
-a blank profile. Describe the workload with pill groups, switches, sliders and
-unit-labelled numbers, and constrain the model ecosystem (providers,
-platforms, regions, verified-only); every field, table header and citation
-has a tooltip, and a live sentence restates what you are asking for. The
-result leads with a verdict card, then the reasons with citations, what the
-scan found and the gap from the current implementation, a comparison table
-with per-row rule expansions, a latency-versus-fit chart, the model selection
-per role with alternatives and rejections, the build plan as cards plus a
-server-rendered diagram, a next-steps checklist, and the assumptions. Buttons
-on the verdict card download the PDF, the LangGraph skeleton, Markdown and
-JSON. No external front-end dependencies.
+A guided flow in Vanguard colours with a progress tracker (Start, Describe,
+Results). Step 1 offers five starting points: a bundled scenario, a repository
+scan (zip, server path or git URL, plus optional traces), a prose description
+filled in by Claude, a blank profile, or "Grade agent" for an agent that
+already runs. Step 2 groups the twenty-six fields with completion badges, pill
+groups, switches, sliders, unit-labelled numbers and one-click presets, and a
+live sentence restating what you are asking for; a Model ecosystem group
+constrains providers, platforms and regions. Results open with a sticky
+summary strip and jump links, then the verdict card (budget badge, latency bar,
+cost, tokens, score, cited reasons), what the scan found and the gap from the
+current implementation, the agent report card (grade ring, complexity tiles,
+graded dimensions, mismatches, per-agent rows), the options table with per-row
+rule expansions, a latency-versus-fit chart, the model per role, the build
+plan with a server-rendered diagram, a next-steps checklist and the
+assumptions. Every control, header, tile, chip and citation has a tooltip;
+Ctrl/⌘+Enter runs the recommendation; inputs are remembered until Reset. The
+verdict card downloads the PDF, the LangGraph skeleton, Markdown and JSON. The
+user guide is served by the app at `/guide`. No external front-end
+dependencies.
 
 ## Repository layout
 
@@ -231,8 +237,19 @@ case_study/         three mock applications with fictional traces and every 3A o
 .claude/skills/     Claude Code skill
 .claude/launch.json dev-server config for the Claude Code browser preview
 tests/              engine, scanner (fixture repo), catalog and selection, API, PDF and skeleton tests
-Dockerfile          production image (non-root, healthcheck)
+Dockerfile          production image (non-root, healthcheck); published to ghcr.io by CI
+.github/workflows/  CI: tests, OpenAPI and user-guide freshness, clean-install smoke test, image publish, release on tags
 ```
+
+## Releases
+
+Versions are tagged `vX.Y.Z`. Pushing a tag runs the pipeline: tests, a
+clean-install smoke test of the wheel, an image push to
+`ghcr.io/rgvvvg5mpz-collab/vgselect3a` (tags: version, major.minor, `main`,
+commit SHA) that is started and health-checked before publishing, and a GitHub
+release with notes from [CHANGELOG.md](CHANGELOG.md). Latest:
+[v0.4.0](https://github.com/rgvvvg5mpz-collab/VGSelect3A/releases/tag/v0.4.0).
+Deployment, configuration and operations: [docs/DEPLOYMENT.html](docs/DEPLOYMENT.html).
 
 ## Tests
 
@@ -240,7 +257,7 @@ Dockerfile          production image (non-root, healthcheck)
 pip install -e '.[dev]' && pytest
 ```
 
-77 tests: eight canonical scenarios, monotonicity of the latency/accuracy
+78 tests: eight canonical scenarios, monotonicity of the latency/accuracy
 balance, viability, the scanner against a fixture repository, catalog
 validation, per-role requirements, model selection under policies (providers,
 regions, data class, evidence, verifier independence, orchestrator floor),
