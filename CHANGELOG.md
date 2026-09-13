@@ -7,6 +7,7 @@
 - Scanner emits static design metrics (tools and overlap, prompt load, loop patterns, delegation depth, termination limits, memory, context management, structured output, caching, approval gates, evals, tests, tracing, side effects).
 - `vgselect report-card`, `--traces` on recommend, `POST /api/v1/report-card`, traces on recommend/scan/upload requests, report card in the UI, Markdown report and PDF.
 - Case studies carry fictional traces and report cards. docs/REPORT_CARD.html.
+- Packaging fix: the bundled model catalog is now included in wheels and images (a non-editable install previously failed at start-up). CI pipeline (`.github/workflows/ci.yml`): tests, clean-install smoke test, image publish to GHCR on main and tags, GitHub release on tags.
 - New end-user guide (docs/USER_GUIDE.html), served by the app at `/guide` and linked from the UI header; deployment guide rewritten as a full operations document (architecture, systemd, Compose, Kubernetes, configuration reference, proxy and auth, monitoring, troubleshooting, CI/CD, go-live checklist).
 
 ## 0.3.0 - 2026-09-07

@@ -25,7 +25,7 @@ vgselect-service = "vgselect3a.service.app:run"
 where = ["src"]
 
 [tool.setuptools.package-data]
-vgselect3a = ["examples/*.json", "service/static/*"]
+vgselect3a = ["examples/*.json", "catalogs/*.json", "service/static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

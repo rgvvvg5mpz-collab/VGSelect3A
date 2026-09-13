@@ -1,0 +1,92 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e '.[dev]' build
+      - name: Test
+        run: pytest -q
+      - name: OpenAPI export is current
+        run: python scripts/export_openapi.py && git diff --exit-code openapi/
+      - name: Served user guide matches docs
+        run: python scripts/sync_docs.py && git diff --exit-code src/vgselect3a/service/static/user_guide.html
+      - name: Build wheel and smoke-test a clean install
+        run: |
+          python -m build --wheel --outdir dist .
+          python -m venv /tmp/clean && /tmp/clean/bin/pip install -q dist/*.whl 'fastapi>=0.115' 'reportlab>=4' 'python-multipart'
+          cd /tmp && /tmp/clean/bin/python -c "from vgselect3a.catalog import Catalog; from vgselect3a import recommend, WorkloadProfile; assert Catalog.default().models; r=recommend(WorkloadProfile(tool_count=3, tool_calls_per_task=3)); assert r.to_pdf().startswith(b'%PDF'); print('clean install ok')"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel
+          path: dist/*.whl
+
+  image:
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/vgselect3a
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke-test the pushed image
+        run: |
+          IMAGE=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          docker run -d --name vg -p 8080:8080 "$IMAGE"
+          for i in $(seq 1 30); do curl -sf http://localhost:8080/health && break; sleep 1; done
+          curl -sf http://localhost:8080/health | python3 -c 'import sys,json; d=json.load(sys.stdin); assert d["status"]=="ok" and d["pdf_enabled"], d; print(d)'
+          curl -sf -o /dev/null http://localhost:8080/guide
+          docker logs vg | tail -5; docker rm -f vg
+
+  release:
+    needs: image
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Release notes from the changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="## $VERSION" 'index($0,v)==1{p=1;next} /^## /{if(p)exit} p' CHANGELOG.md > notes.md
+          echo "" >> notes.md
+          echo "Image: \`ghcr.io/${{ github.repository_owner }}/vgselect3a:$VERSION\`" >> notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          body_path: notes.md
