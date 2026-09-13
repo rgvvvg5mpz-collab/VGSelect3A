@@ -22,7 +22,7 @@
 </head>
 <body>
 <h1>VG Select: 3A — Deployment Guide</h1>
-<p class="sub">For the engineer who deploys and operates <b>VG Select: 3A (Automated Agentic Architecture)</b> as an internal service. People who use the deployed application should read the <a href="USER_GUIDE.html">User guide</a>; engineers integrating with the API or CLI should read the <a href="CONSUMER_GUIDE.html">Consumer guide</a>. Version 0.4.0.</p>
+<p class="sub">For the engineer who deploys and operates <b>VG Select: 3A (Automated Agentic Architecture)</b> as an internal service. People who use the deployed application should read the <a href="USER_GUIDE.html">User guide</a>; engineers integrating with the API or CLI should read the <a href="CONSUMER_GUIDE.html">Consumer guide</a>. Version 0.4.1.</p>
 
 <nav>
   <a href="#what">1 What you are deploying</a><a href="#arch">2 Architecture</a><a href="#prereq">3 Prerequisites and sizing</a><a href="#install">4 Installation</a><a href="#config">5 Configuration</a><a href="#models">6 Managing the available models</a><a href="#describe">7 Optional Claude intake</a><a href="#security">8 Security</a><a href="#proxy">9 Reverse proxy, TLS and authentication</a><a href="#ops">10 Operations and monitoring</a><a href="#verify">11 Verify the deployment</a><a href="#troubleshoot">12 Troubleshooting</a><a href="#upgrade">13 Upgrades, rollbacks and tuning</a><a href="#cicd">14 CI/CD</a><a href="#checklist">15 Go-live checklist</a>
@@ -123,16 +123,16 @@ WantedBy=multi-user.target</code></pre>
 
 <h3>4.2 Docker</h3>
 <p>Released images are published by CI to GitHub Container Registry on every tagged release; pull one instead of building:</p>
-<pre><code>docker pull ghcr.io/rgvvvg5mpz-collab/vgselect3a:0.4.0     # or :0.4 for the latest patch, :main for the latest build
+<pre><code>docker pull ghcr.io/rgvvvg5mpz-collab/vgselect3a:0.4.1     # or :0.4 for the latest patch, :main for the latest build
 docker run -d --name vgselect -p 8080:8080 \
   -v /srv/repos:/scan:ro \
   -v /etc/vgselect/catalog.json:/catalog.json:ro \
   -e VGSELECT_SCAN_ROOTS=/scan \
   -e VGSELECT_CATALOG=/catalog.json \
   --restart unless-stopped \
-  ghcr.io/rgvvvg5mpz-collab/vgselect3a:0.4.0</code></pre>
+  ghcr.io/rgvvvg5mpz-collab/vgselect3a:0.4.1</code></pre>
 <p>To build locally instead:</p>
-<pre><code>docker build -t vgselect-3a:0.4.0 .
+<pre><code>docker build -t vgselect-3a:0.4.1 .
 docker run -d --name vgselect -p 8080:8080 \
   -v /srv/repos:/scan:ro \
   -v /etc/vgselect/catalog.json:/catalog.json:ro \
@@ -140,14 +140,14 @@ docker run -d --name vgselect -p 8080:8080 \
   -e VGSELECT_CATALOG=/catalog.json \
   -e VGSELECT_ALLOW_GIT_CLONE=0 \
   --restart unless-stopped \
-  vgselect-3a:0.4.0</code></pre>
+  vgselect-3a:0.4.1</code></pre>
 <p>The image runs as a non-root user, exposes 8080, and has a <code>HEALTHCHECK</code> on <code>/health</code>. To add the describe endpoint, uncomment the <code>[service,llm]</code> line in the <code>Dockerfile</code> and pass <code>ANTHROPIC_API_KEY</code> as a secret, never as a build argument.</p>
 
 <h4>Docker Compose</h4>
 <pre><code>services:
   vgselect:
     build: .
-    image: vgselect-3a:0.4.0
+    image: vgselect-3a:0.4.1
     ports: ["8080:8080"]
     environment:
       VGSELECT_SCAN_ROOTS: /scan
@@ -183,7 +183,7 @@ spec:
       securityContext: { runAsNonRoot: true }
       containers:
         - name: vgselect
-          image: ghcr.io/rgvvvg5mpz-collab/vgselect3a:0.4.0   # or your mirror
+          image: ghcr.io/rgvvvg5mpz-collab/vgselect3a:0.4.1   # or your mirror
           ports: [{ containerPort: 8080 }]
           env:
             - { name: VGSELECT_CATALOG, value: /config/catalog.json }
@@ -416,8 +416,8 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/ ; curl -s -o /de
   <li><b>release</b> (version tags only): creates a GitHub release with notes taken from <code>CHANGELOG.md</code> and the image reference.</li>
 </ul>
 <p>To ship a version: bump the version (section 13), update the changelog, merge to <code>main</code>, then tag and push the tag:</p>
-<pre><code>git tag -a v0.4.0 -m "VG Select: 3A 0.4.0" && git push origin v0.4.0</code></pre>
-<p>Mirror the image into your internal registry if production cannot pull from GHCR: <code>docker pull ghcr.io/&lt;owner&gt;/vgselect3a:0.4.0 && docker tag ... registry.internal/vgselect3a:0.4.0 && docker push registry.internal/vgselect3a:0.4.0</code>.</p>
+<pre><code>git tag -a v0.4.1 -m "VG Select: 3A 0.4.1" && git push origin v0.4.1</code></pre>
+<p>Mirror the image into your internal registry if production cannot pull from GHCR: <code>docker pull ghcr.io/&lt;owner&gt;/vgselect3a:0.4.1 && docker tag ... registry.internal/vgselect3a:0.4.1 && docker push registry.internal/vgselect3a:0.4.1</code>.</p>
 <h4>Using the service in other teams' pipelines</h4>
 <p>Teams can fail a pull request when an agent's implemented topology drifts from the agreed design, or when its report-card grade drops; see the <a href="CONSUMER_GUIDE.html#ci">Consumer guide</a>. Give CI a service token at the proxy.</p>
 

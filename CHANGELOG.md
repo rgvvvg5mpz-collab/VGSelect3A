@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 - 2026-09-12
+
+- Container images are now built for linux/amd64 and linux/arm64 (0.4.0 was amd64-only and could not run natively on Apple Silicon or Graviton hosts).
+
 ## 0.4.0 - 2026-09-12
 
 - Agent report card: task, design and behavioural complexity levels with mismatch flags; graded dimensions (outcome quality, reliability and control, cost and token efficiency, latency, governance, complexity fit); per-agent cards for multi-agent systems.

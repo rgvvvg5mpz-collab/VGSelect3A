@@ -22,5 +22,5 @@ __all__ = [
     "TOPOLOGIES",
     "Topology",
 ]
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 PRODUCT_NAME = "VG Select: 3A (Automated Agentic Architecture)"

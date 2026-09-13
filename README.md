@@ -248,7 +248,7 @@ clean-install smoke test of the wheel, an image push to
 `ghcr.io/rgvvvg5mpz-collab/vgselect3a` (tags: version, major.minor, `main`,
 commit SHA) that is started and health-checked before publishing, and a GitHub
 release with notes from [CHANGELOG.md](CHANGELOG.md). Latest:
-[v0.4.0](https://github.com/rgvvvg5mpz-collab/VGSelect3A/releases/tag/v0.4.0).
+[v0.4.1](https://github.com/rgvvvg5mpz-collab/VGSelect3A/releases/tag/v0.4.1).
 Deployment, configuration and operations: [docs/DEPLOYMENT.html](docs/DEPLOYMENT.html).
 
 ## Tests
